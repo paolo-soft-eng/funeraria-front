@@ -1,0 +1,309 @@
+import React, { useState, useRef, useEffect, useContext } from 'react';
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
+import {
+  Home,
+  Info,
+  Briefcase,
+  Phone,
+  Menu as MenuIcon,
+  BookOpen,
+  ShoppingCart,
+  MessageSquare,
+  User,
+  LogOut,
+  HelpCircle,
+  X,
+  Bell
+} from 'lucide-react';
+
+import { EmailContext } from '../EmailContext';
+
+const ClientDashboard = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileView, setIsMobileView] = useState(false);
+  const [currentPage, setCurrentPage] = useState('Client Dashboard');
+  const [profileImage, setProfileImage] = useState(null);
+  const navigate = useNavigate();
+  const {email} = useContext(EmailContext);
+  const location = useLocation();
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobileView(window.innerWidth < 1024);
+      if (window.innerWidth < 1024) {
+        setIsSidebarOpen(false);
+      } else {
+        setIsSidebarOpen(true);
+      }
+    };
+
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Update current page title based on the current path
+    const path = location.pathname.split('/').pop();
+    const navItem = mainNavItems.find(item => item.name === path);
+    if (navItem) {
+      setCurrentPage(navItem.label);
+    } else if (path === 'profile') {
+      setCurrentPage('Profile');
+    } else {
+      setCurrentPage('Client Dashboard');
+    }
+  }, [location.pathname]);
+
+  // Fetch profile image when email is available
+  useEffect(() => {
+    if (email) {
+      fetchProfileImage();
+    }
+  }, [email]);
+
+  const fetchProfileImage = async () => {
+    try {
+      const response = await axios.get(`http://localhost/apii/components/client_picture.php?email=${email}`);
+      if (response.data.success && response.data.image_path) {
+        setProfileImage(response.data.image_path);
+      }
+    } catch (error) {
+      console.error('Error fetching profile image:', error);
+    }
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleLogout = async () => {
+    const userConfirmed = window.confirm("Are you sure you want to log out?");
+
+    if (userConfirmed) {
+      try {
+        await axios.post('http://localhost/apii/config/logout.php');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userRole');
+        navigate('/');
+      } catch (error) {
+        console.error('Error logging out:', error);
+        alert('Failed to log out. Please try again.');
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const mainNavItems = [
+    { name: 'home', icon: <Home size={20} />, label: 'Home' },
+    { name: 'about', icon: <Info size={20} />, label: 'About' },
+    { name: 'services', icon: <Briefcase size={20} />, label: 'Services' },
+    { name: 'contact', icon: <Phone size={20} />, label: 'Contact' },
+    { name: 'menu', icon: <BookOpen size={20} />, label: 'Menu List' },
+    { name: 'cart', icon: <ShoppingCart size={20} />, label: 'Cart' },
+    { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
+    { name: 'settings', icon: <HelpCircle size={20} />, label: 'Settings' }
+  ];
+
+
+  return (
+    <div className="flex h-screen bg-gray-50 text-gray-800">
+      {isSidebarOpen && isMobileView && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={toggleSidebar}></div>
+      )}
+
+      <aside
+        className={`fixed lg:static z-30 h-full bg-gray-800 text-white transition-all duration-300 ${
+          isSidebarOpen ? 'w-64' : 'w-0 lg:w-20 overflow-hidden'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between p-4">
+            <Link to="/dashboard-client/home" className="flex items-center">
+              {isSidebarOpen ? (
+                <h1 className="text-xl font-bold">Funeraria Gomez</h1>
+              ) : (
+                <span className="text-2xl font-bold">FG</span>
+              )}
+            </Link>
+            {isMobileView && (
+              <button onClick={toggleSidebar} className="text-white">
+                <X size={24} />
+              </button>
+            )}
+          </div>
+
+          <div className={`px-4 py-6 ${isSidebarOpen ? 'flex items-center' : 'flex flex-col items-center'}`}>
+            {profileImage ? (
+              <div className="rounded-full p-1 flex items-center justify-center overflow-hidden">
+                <img 
+                  src={`http://localhost/apii/components/${profileImage}`} 
+                  alt="Profile" 
+                  className="rounded-full w-9 h-9 object-cover"
+                />
+              </div>
+            ) : (
+              <div className="rounded-full bg-gray-700 p-2 flex items-center justify-center">
+                <User size={isSidebarOpen ? 24 : 18} />
+              </div>
+            )}
+            {isSidebarOpen && (
+              <div className="ml-3">
+                <p className="font-medium">Client User</p>
+                <p className="text-xs text-white truncate max-w-[180px]">{email}</p>
+              </div>
+            )}
+          </div>
+
+          <nav className="mt-6 flex-grow">
+            <ul className="space-y-1">
+              {mainNavItems.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    to={`/dashboard-client/${item.name}`}
+                    className={`flex items-center px-4 py-3 hover:bg-gray-700 transition-colors ${
+                      isSidebarOpen ? 'justify-start' : 'justify-center'
+                    }`}
+                  >
+                    <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
+                    {isSidebarOpen && <span>{item.label}</span>}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+      </aside>
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <header className="bg-white shadow-sm z-10">
+          <div className="px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center">
+              <button onClick={toggleSidebar} className="mr-4 focus:outline-none">
+                <MenuIcon size={24} />
+              </button>
+              <h2 className="text-xl font-semibold hidden sm:block">{currentPage}</h2>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <button className="relative p-2 text-gray-600 hover:text-indigo-600 transition-colors">
+                <Bell size={20} />
+                <span className="absolute top-1 right-1 bg-red-500 rounded-full w-2 h-2"></span>
+              </button>
+
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={toggleDropdown}
+                  className="flex items-center space-x-2 focus:outline-none"
+                >
+                  {profileImage ? (
+                    <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={`http://localhost/apii/components/${profileImage}`} 
+                        alt="Profile" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700">
+                      <User size={18} />
+                    </div>
+                  )}
+                  <span className="hidden md:block text-sm">Client</span>
+                  <svg
+                    className="hidden md:block"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M6 9L12 15L18 9"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                    <Link
+                      to="/dashboard-client/settings"
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <User size={16} className="mr-2" />
+                      <span>Settings</span>
+                    </Link>
+                    <div className="border-t border-gray-100 my-1"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <LogOut size={16} className="mr-2" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-auto">
+          <div>
+            <Outlet />
+          </div>
+        </main>
+
+        <footer className="bg-white border-t border-gray-200 py-4 px-6 mt-auto">
+          <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center">
+            <div className="mb-3 sm:mb-0">
+              <p className="text-sm text-gray-600">
+                &copy; 2025 Funeraria Gomez. All rights reserved.
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4">
+              <a href="#" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
+                Terms of Service
+              </a>
+              <a href="#" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
+                Privacy Policy
+              </a>
+              <a href="#" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
+                Contact Support
+              </a>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+};
+
+export default ClientDashboard;
