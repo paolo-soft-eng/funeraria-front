@@ -11,42 +11,31 @@ export const fetchServices = async () => {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Error response:", errorText);
-            throw new Error(`Error: ${response.status} ${response.statusText}. Response: ${errorText}`);
-        }
-
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            const text = await response.text();
-            console.error("Server returned non-JSON response:", text);
-            throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}...`);
-        }
-
-        let data;
-        try {
-            data = await response.json();
-            console.log('Fetched data:', data); // Debugging statement
-
-            if (!Array.isArray(data)) {
-                console.warn('API did not return an array for services:', data);
-                if (data && Array.isArray(data.data)) {
-                    return data.data;
-                }
-                return [];
+            // First try to get error message from response JSON if possible
+            try {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            } catch (jsonError) {
+                // If response isn't JSON, use status text
+                throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
             }
-
-            return data;
-        } catch (jsonError) {
-            console.error('JSON parsing error:', jsonError);
-            throw new Error(`Failed to parse JSON response: ${jsonError.message}`);
         }
+
+        const data = await response.json();
+        
+        // Ensure the response is an array
+        if (!Array.isArray(data)) {
+            console.warn('Expected array but received:', data);
+            return [];
+        }
+
+        return data;
     } catch (error) {
         console.error('Failed to fetch services:', error);
+        // Return empty array but also log the error for debugging
         return [];
     }
 };
-
 
 // Fetch a specific service by ID
 export const fetchServiceById = async (serviceId) => {

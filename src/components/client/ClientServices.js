@@ -7,13 +7,20 @@ const ClientServices = () => {
   const [error, setError] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
 
-  const fetchServicesData = async () => {
+ const fetchServicesData = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       const data = await fetchServices();
-      setServices(data);
-      setLoading(false);
-    } catch (err) {
-      setError('Failed to load services. Please try again later.');
+      setServices(data || []); // Ensure we always have an array
+      
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      setError(error.message);
+      setServices([]); // Set empty array on error
+      
+    } finally {
       setLoading(false);
     }
   };
