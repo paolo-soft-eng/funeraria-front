@@ -11,12 +11,12 @@ import {
   Users,
   MessageSquare
 } from 'lucide-react';
-
+import { useNavigate } from 'react-router-dom';
 export default function FuneralManagementLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const handleNavigate = ()=>{
-    // navigate('/auth')
+  const navigate = useNavigate();
+  const handleNavigate = () => {
+     navigate('/auth')
     console.log('Navigate to auth');
   }
 
@@ -97,7 +97,7 @@ export default function FuneralManagementLanding() {
                   Our comprehensive funeral management system helps you handle all aspects of memorial services with dignity and respect.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                  <button 
+                  <button
                     className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white py-4 px-8 rounded-lg transition-all duration-300 shadow-lg border border-white/30 font-medium text-lg"
                     onClick={handleNavigate}
                   >
@@ -186,10 +186,10 @@ export default function FuneralManagementLanding() {
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="lg:w-1/2">
               <div className="bg-gray-200 h-96 lg:h-[500px] rounded-2xl shadow-lg overflow-hidden">
-                <img 
-                  src="/api/placeholder/600/500" 
-                  alt="Funeral service professionals" 
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" 
+                <img
+                  src="/api/placeholder/600/500"
+                  alt="Funeral service professionals"
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                 />
               </div>
             </div>
@@ -401,7 +401,7 @@ export default function FuneralManagementLanding() {
           </div>
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-            <p className="text-lg">© {new Date().getFullYear()} Gomez Funeraria Funeral Management System. All rights reserved.</p>
+            <p className="text-lg">© {new Date().getFullYear()} Gomez Funeraria. All rights reserved.</p>
           </div>
         </div>
       </footer>
