@@ -11,20 +11,19 @@ import {
   Users,
   MessageSquare
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-
 
 export default function FuneralManagementLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
 
   const handleNavigate = ()=>{
-    navigate('/auth')
+    // navigate('/auth')
+    console.log('Navigate to auth');
   }
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 font-sans">
       {/* Navigation */}
-      <nav className="bg-gray-900 text-white py-4 px-6 shadow-md">
+      <nav className="bg-gray-900/95 backdrop-blur-sm text-white py-4 px-6 shadow-lg relative z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center">
             <Heart className="h-8 w-8 text-gray-400 mr-3" />
@@ -36,11 +35,11 @@ export default function FuneralManagementLanding() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-6">
-            <a href="#" className="hover:text-gray-300 transition-colors">Home</a>
-            <a href="#services" className="hover:text-gray-300 transition-colors">Services</a>
-            <a href="#about" className="hover:text-gray-300 transition-colors">About</a>
-            <a href="#testimonials" className="hover:text-gray-300 transition-colors">Testimonials</a>
-            <a href="#contact" className="hover:text-gray-300 transition-colors">Contact</a>
+            <a href="#" className="hover:text-gray-300 transition-colors duration-300">Home</a>
+            <a href="#services" className="hover:text-gray-300 transition-colors duration-300">Services</a>
+            <a href="#about" className="hover:text-gray-300 transition-colors duration-300">About</a>
+            <a href="#testimonials" className="hover:text-gray-300 transition-colors duration-300">Testimonials</a>
+            <a href="#contact" className="hover:text-gray-300 transition-colors duration-300">Contact</a>
           </div>
 
           {/* Mobile menu button */}
@@ -58,87 +57,122 @@ export default function FuneralManagementLanding() {
         {mobileMenuOpen && (
           <div className="md:hidden mt-4 pt-2 border-t border-gray-700">
             <div className="flex flex-col space-y-3 px-2">
-              <a href="#" className="py-2 hover:text-gray-300 transition-colors">Home</a>
-              <a href="#services" className="py-2 hover:text-gray-300 transition-colors">Services</a>
-              <a href="#about" className="py-2 hover:text-gray-300 transition-colors">About</a>
-              <a href="#testimonials" className="py-2 hover:text-gray-300 transition-colors">Testimonials</a>
-              <a href="#contact" className="py-2 hover:text-gray-300 transition-colors">Contact</a>
+              <a href="#" className="py-2 hover:text-gray-300 transition-colors duration-300">Home</a>
+              <a href="#services" className="py-2 hover:text-gray-300 transition-colors duration-300">Services</a>
+              <a href="#about" className="py-2 hover:text-gray-300 transition-colors duration-300">About</a>
+              <a href="#testimonials" className="py-2 hover:text-gray-300 transition-colors duration-300">Testimonials</a>
+              <a href="#contact" className="py-2 hover:text-gray-300 transition-colors duration-300">Contact</a>
             </div>
           </div>
         )}
       </nav>
 
-      {/* Hero Section */}
-      <section className="bg-gradient-to-b from-gray-900 to-gray-800 text-white py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="md:w-1/2 mb-8 md:mb-0">
-              <h2 className="text-4xl md:text-5xl font-semibold mb-4">Compassionate Service in Your Time of Need</h2>
-              <p className="text-lg text-gray-300 mb-8">Our comprehensive funeral management system helps you handle all aspects of memorial services with dignity and respect.</p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-6 rounded-lg transition-colors shadow-lg" onClick={handleNavigate}>
-                  Get Started
-                </button>
-                <button className="border border-white hover:bg-white hover:text-gray-900 text-white py-3 px-6 rounded-lg transition-colors">
-                  Learn More
-                </button>
+      {/* Hero Section with Video Background */}
+      <section className="relative h-screen overflow-hidden">
+        {/* Video Background */}
+        <div className="absolute inset-0 w-full h-full z-0">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          >
+            <source src="/vid.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          {/* Dark overlay for text readability */}
+          <div className="absolute inset-0 bg-black/50"></div>
+        </div>
+
+        {/* Content overlay */}
+        <div className="relative z-10 h-full flex items-center">
+          <div className="max-w-7xl mx-auto px-6 w-full">
+            <div className="flex flex-col items-center text-center text-white">
+              <div className="max-w-4xl">
+                <h2 className="text-4xl md:text-6xl lg:text-7xl font-light mb-6 leading-tight">
+                  Compassionate Service in Your Time of Need
+                </h2>
+                <p className="text-xl md:text-2xl text-gray-200 mb-12 font-light leading-relaxed max-w-3xl mx-auto">
+                  Our comprehensive funeral management system helps you handle all aspects of memorial services with dignity and respect.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                  <button 
+                    className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white py-4 px-8 rounded-lg transition-all duration-300 shadow-lg border border-white/30 font-medium text-lg"
+                    onClick={handleNavigate}
+                  >
+                    Get Started
+                  </button>
+                  <button className="border-2 border-white/70 hover:bg-white hover:text-gray-900 text-white py-4 px-8 rounded-lg transition-all duration-300 font-medium text-lg">
+                    Learn More
+                  </button>
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+          <div className="animate-bounce">
+            <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
+              <div className="w-1 h-3 bg-white/70 rounded-full mt-2 animate-pulse"></div>
             </div>
           </div>
         </div>
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-16 bg-white">
+      <section id="services" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-semibold mb-4">Our Comprehensive Services</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-light mb-6 text-gray-800">Our Comprehensive Services</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               We provide complete funeral management solutions to help you honor your loved ones with dignity and ease.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Service 1 */}
-            <div className="bg-gray-50 rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
-              <div className="bg-gray-100 p-3 rounded-full w-16 h-16 mb-6 flex items-center justify-center">
-                <Calendar className="h-8 w-8 text-gray-600" />
+            <div className="group bg-gray-50 rounded-xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-4 rounded-full w-20 h-20 mb-8 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Calendar className="h-10 w-10 text-gray-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Service Planning</h3>
-              <p className="text-gray-600">
+              <h3 className="text-2xl font-semibold mb-4 text-gray-800">Service Planning</h3>
+              <p className="text-gray-600 leading-relaxed">
                 Comprehensive planning tools for funeral services, memorials, and celebrations of life.
               </p>
             </div>
 
             {/* Service 2 */}
-            <div className="bg-gray-50 rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
-              <div className="bg-gray-100 p-3 rounded-full w-16 h-16 mb-6 flex items-center justify-center">
-                <FileText className="h-8 w-8 text-gray-600" />
+            <div className="group bg-gray-50 rounded-xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-4 rounded-full w-20 h-20 mb-8 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <FileText className="h-10 w-10 text-gray-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Documentation</h3>
-              <p className="text-gray-600">
+              <h3 className="text-2xl font-semibold mb-4 text-gray-800">Documentation</h3>
+              <p className="text-gray-600 leading-relaxed">
                 Assistance with all necessary paperwork, permits, and legal documentation.
               </p>
             </div>
 
             {/* Service 3 */}
-            <div className="bg-gray-50 rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
-              <div className="bg-gray-100 p-3 rounded-full w-16 h-16 mb-6 flex items-center justify-center">
-                <Users className="h-8 w-8 text-gray-600" />
+            <div className="group bg-gray-50 rounded-xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-4 rounded-full w-20 h-20 mb-8 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Users className="h-10 w-10 text-gray-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Family Support</h3>
-              <p className="text-gray-600">
+              <h3 className="text-2xl font-semibold mb-4 text-gray-800">Family Support</h3>
+              <p className="text-gray-600 leading-relaxed">
                 Compassionate guidance and support for family members during difficult times.
               </p>
             </div>
 
             {/* Service 4 */}
-            <div className="bg-gray-50 rounded-lg p-6 shadow-md hover:shadow-lg transition-shadow">
-              <div className="bg-gray-100 p-3 rounded-full w-16 h-16 mb-6 flex items-center justify-center">
-                <MessageSquare className="h-8 w-8 text-gray-600" />
+            <div className="group bg-gray-50 rounded-xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2">
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-4 rounded-full w-20 h-20 mb-8 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <MessageSquare className="h-10 w-10 text-gray-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Grief Resources</h3>
-              <p className="text-gray-600">
+              <h3 className="text-2xl font-semibold mb-4 text-gray-800">Grief Resources</h3>
+              <p className="text-gray-600 leading-relaxed">
                 Access to counseling services and resources for grief management and healing.
               </p>
             </div>
@@ -147,27 +181,31 @@ export default function FuneralManagementLanding() {
       </section>
 
       {/* About Section */}
-      <section id="about" className="py-16 bg-gray-100">
+      <section id="about" className="py-20 bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center gap-12">
-            <div className="md:w-1/2">
-              <div className="bg-gray-200 h-96 rounded-lg shadow-md flex items-center justify-center">
-                <img src="/api/placeholder/500/384" alt="Funeral service professionals" className="rounded-lg" />
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            <div className="lg:w-1/2">
+              <div className="bg-gray-200 h-96 lg:h-[500px] rounded-2xl shadow-lg overflow-hidden">
+                <img 
+                  src="/api/placeholder/600/500" 
+                  alt="Funeral service professionals" 
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" 
+                />
               </div>
             </div>
-            <div className="md:w-1/2">
-              <h2 className="text-3xl font-semibold mb-4">About Gomez Funeraria</h2>
-              <p className="text-gray-600 mb-4">
+            <div className="lg:w-1/2">
+              <h2 className="text-4xl md:text-5xl font-light mb-8 text-gray-800">About Gomez Funeraria</h2>
+              <p className="text-xl text-gray-600 mb-6 leading-relaxed">
                 For over 25 years, we've been helping families navigate the difficult journey of saying goodbye to loved ones. Our compassionate team understands the importance of honoring a life well-lived.
               </p>
-              <p className="text-gray-600 mb-6">
+              <p className="text-xl text-gray-600 mb-10 leading-relaxed">
                 Our funeral management system was developed with input from funeral directors, grief counselors, and families to ensure it meets the needs of everyone involved in the memorial process.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-6 rounded-lg transition-colors shadow-lg">
+              <div className="flex flex-col sm:flex-row gap-6">
+                <button className="bg-gray-800 hover:bg-gray-900 text-white py-4 px-8 rounded-lg transition-all duration-300 shadow-lg text-lg font-medium">
                   Our Story
                 </button>
-                <button className="bg-white hover:bg-gray-200 text-gray-800 py-3 px-6 rounded-lg transition-colors shadow-lg border border-gray-300">
+                <button className="bg-white hover:bg-gray-50 text-gray-800 py-4 px-8 rounded-lg transition-all duration-300 shadow-lg border-2 border-gray-300 text-lg font-medium">
                   Meet Our Team
                 </button>
               </div>
@@ -177,60 +215,60 @@ export default function FuneralManagementLanding() {
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="py-16 bg-white">
+      <section id="testimonials" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-semibold mb-4">What Families Say</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-light mb-6 text-gray-800">What Families Say</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Hear from families who have used our funeral management services during their time of need.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Testimonial 1 */}
-            <div className="bg-gray-50 p-6 rounded-lg shadow-md">
-              <div className="flex items-center mb-4">
-                <div className="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center">
-                  <span className="text-gray-600 font-semibold">JD</span>
+            <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
+              <div className="flex items-center mb-6">
+                <div className="bg-gradient-to-br from-gray-200 to-gray-300 w-16 h-16 rounded-full flex items-center justify-center">
+                  <span className="text-gray-700 font-bold text-lg">JD</span>
                 </div>
                 <div className="ml-4">
-                  <h4 className="font-semibold">James Douglas</h4>
-                  <p className="text-gray-500 text-sm">Chicago, IL</p>
+                  <h4 className="font-semibold text-lg text-gray-800">James Douglas</h4>
+                  <p className="text-gray-500">Chicago, IL</p>
                 </div>
               </div>
-              <p className="text-gray-600 italic">
+              <p className="text-gray-600 italic text-lg leading-relaxed">
                 "During our family's difficult time, Gomez Funeraria made the process seamless and respectful. Their organization and compassion were invaluable."
               </p>
             </div>
 
             {/* Testimonial 2 */}
-            <div className="bg-gray-50 p-6 rounded-lg shadow-md">
-              <div className="flex items-center mb-4">
-                <div className="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center">
-                  <span className="text-gray-600 font-semibold">MR</span>
+            <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
+              <div className="flex items-center mb-6">
+                <div className="bg-gradient-to-br from-gray-200 to-gray-300 w-16 h-16 rounded-full flex items-center justify-center">
+                  <span className="text-gray-700 font-bold text-lg">MR</span>
                 </div>
                 <div className="ml-4">
-                  <h4 className="font-semibold">Maria Rodriguez</h4>
-                  <p className="text-gray-500 text-sm">Austin, TX</p>
+                  <h4 className="font-semibold text-lg text-gray-800">Maria Rodriguez</h4>
+                  <p className="text-gray-500">Austin, TX</p>
                 </div>
               </div>
-              <p className="text-gray-600 italic">
+              <p className="text-gray-600 italic text-lg leading-relaxed">
                 "The management system simplified all the complicated paperwork and planning. It allowed us to focus on celebrating my father's life instead of administrative tasks."
               </p>
             </div>
 
             {/* Testimonial 3 */}
-            <div className="bg-gray-50 p-6 rounded-lg shadow-md">
-              <div className="flex items-center mb-4">
-                <div className="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center">
-                  <span className="text-gray-600 font-semibold">TJ</span>
+            <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
+              <div className="flex items-center mb-6">
+                <div className="bg-gradient-to-br from-gray-200 to-gray-300 w-16 h-16 rounded-full flex items-center justify-center">
+                  <span className="text-gray-700 font-bold text-lg">TJ</span>
                 </div>
                 <div className="ml-4">
-                  <h4 className="font-semibold">Thomas Johnson</h4>
-                  <p className="text-gray-500 text-sm">Denver, CO</p>
+                  <h4 className="font-semibold text-lg text-gray-800">Thomas Johnson</h4>
+                  <p className="text-gray-500">Denver, CO</p>
                 </div>
               </div>
-              <p className="text-gray-600 italic">
+              <p className="text-gray-600 italic text-lg leading-relaxed">
                 "I was overwhelmed until we found Gomez Funeraria. Their guidance and support through every step of planning my mother's memorial was a blessing."
               </p>
             </div>
@@ -239,17 +277,17 @@ export default function FuneralManagementLanding() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gray-700 text-white">
+      <section className="py-20 bg-gradient-to-r from-gray-800 to-gray-900 text-white">
         <div className="max-w-4xl mx-auto text-center px-6">
-          <h2 className="text-3xl font-semibold mb-4">Ready to Get Started?</h2>
-          <p className="text-gray-100 mb-8 max-w-2xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-light mb-8">Ready to Get Started?</h2>
+          <p className="text-xl text-gray-100 mb-12 max-w-3xl mx-auto leading-relaxed">
             Our dedicated team is available 24/7 to help you navigate funeral arrangements with dignity and respect.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-gray-700 hover:bg-gray-50 py-3 px-8 rounded-lg transition-colors shadow-lg font-semibold">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <button className="bg-white text-gray-800 hover:bg-gray-100 py-4 px-10 rounded-lg transition-all duration-300 shadow-lg font-semibold text-lg">
               Request a Consultation
             </button>
-            <button className="border border-white hover:bg-gray-600 text-white py-3 px-8 rounded-lg transition-colors">
+            <button className="border-2 border-white hover:bg-white hover:text-gray-800 text-white py-4 px-10 rounded-lg transition-all duration-300 font-semibold text-lg">
               View Our Services
             </button>
           </div>
@@ -257,73 +295,81 @@ export default function FuneralManagementLanding() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-16 bg-gray-800 text-white">
+      <section id="contact" className="py-20 bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-semibold mb-4">Contact Us</h2>
-            <p className="text-gray-300 max-w-2xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-light mb-6">Contact Us</h2>
+            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               We're available 24/7 to provide support and answer any questions you may have.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Contact Info */}
-            <div className="bg-gray-700 p-6 rounded-lg">
-              <h3 className="text-xl font-semibold mb-6">Get In Touch</h3>
+            <div className="bg-gray-800 p-8 rounded-2xl shadow-lg">
+              <h3 className="text-2xl font-semibold mb-8 text-white">Get In Touch</h3>
 
-              <div className="flex items-center mb-4">
-                <Phone className="h-5 w-5 text-gray-400 mr-3" />
-                <span>(555) 123-4567</span>
-              </div>
+              <div className="space-y-6">
+                <div className="flex items-center">
+                  <div className="bg-gray-700 p-3 rounded-full mr-4">
+                    <Phone className="h-6 w-6 text-gray-300" />
+                  </div>
+                  <span className="text-lg">(555) 123-4567</span>
+                </div>
 
-              <div className="flex items-center mb-4">
-                <Mail className="h-5 w-5 text-gray-400 mr-3" />
-                <span>support@gomezfuneraria.com</span>
-              </div>
+                <div className="flex items-center">
+                  <div className="bg-gray-700 p-3 rounded-full mr-4">
+                    <Mail className="h-6 w-6 text-gray-300" />
+                  </div>
+                  <span className="text-lg">support@gomezfuneraria.com</span>
+                </div>
 
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 text-gray-400 mr-3" />
-                <span>Available 24/7</span>
+                <div className="flex items-center">
+                  <div className="bg-gray-700 p-3 rounded-full mr-4">
+                    <Clock className="h-6 w-6 text-gray-300" />
+                  </div>
+                  <span className="text-lg">Available 24/7</span>
+                </div>
               </div>
             </div>
 
             {/* Contact Form */}
-            <div className="bg-gray-700 p-6 rounded-lg md:col-span-2">
-              <h3 className="text-xl font-semibold mb-6">Send Us a Message</h3>
+            <div className="bg-gray-800 p-8 rounded-2xl shadow-lg lg:col-span-2">
+              <h3 className="text-2xl font-semibold mb-8 text-white">Send Us a Message</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <input
                   type="text"
                   placeholder="First Name"
-                  className="p-3 rounded bg-gray-600 text-white placeholder-gray-400 border border-gray-500"
+                  className="p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300"
                 />
                 <input
                   type="text"
                   placeholder="Last Name"
-                  className="p-3 rounded bg-gray-600 text-white placeholder-gray-400 border border-gray-500"
+                  className="p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <input
                   type="email"
                   placeholder="Email Address"
-                  className="p-3 rounded bg-gray-600 text-white placeholder-gray-400 border border-gray-500"
+                  className="p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300"
                 />
                 <input
                   type="tel"
                   placeholder="Phone Number"
-                  className="p-3 rounded bg-gray-600 text-white placeholder-gray-400 border border-gray-500"
+                  className="p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300"
                 />
               </div>
 
               <textarea
                 placeholder="Your Message"
-                className="w-full p-3 rounded bg-gray-600 text-white placeholder-gray-400 border border-gray-500 mb-4"
-                rows="4"
+                className="w-full p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300 mb-6"
+                rows="5"
               ></textarea>
 
-              <button className="bg-gray-600 hover:bg-gray-700 text-white py-3 px-6 rounded-lg transition-colors shadow-lg">
+              <button className="bg-gray-600 hover:bg-gray-700 text-white py-4 px-8 rounded-lg transition-all duration-300 shadow-lg font-semibold text-lg">
                 Send Message
               </button>
             </div>
@@ -332,30 +378,30 @@ export default function FuneralManagementLanding() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
+      <footer className="bg-black text-white py-12">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-8">
             <div className="mb-6 md:mb-0">
               <div className="flex items-center">
-                <Heart className="h-6 w-6 text-gray-400 mr-2" />
-                <h3 className="text-lg font-semibold">Gomez Funeraria</h3>
+                <Heart className="h-8 w-8 text-gray-400 mr-3" />
+                <h3 className="text-2xl font-semibold">Gomez Funeraria</h3>
               </div>
-              <p className="text-gray-400 text-sm mt-2">
+              <p className="text-gray-400 mt-2 text-lg">
                 Compassionate Funeral Management Services
               </p>
             </div>
 
             <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
-              <a href="#" className="text-gray-300 hover:text-white transition-colors">Home</a>
-              <a href="#services" className="text-gray-300 hover:text-white transition-colors">Services</a>
-              <a href="#about" className="text-gray-300 hover:text-white transition-colors">About</a>
-              <a href="#testimonials" className="text-gray-300 hover:text-white transition-colors">Testimonials</a>
-              <a href="#contact" className="text-gray-300 hover:text-white transition-colors">Contact</a>
+              <a href="#" className="text-gray-300 hover:text-white transition-colors duration-300 text-lg">Home</a>
+              <a href="#services" className="text-gray-300 hover:text-white transition-colors duration-300 text-lg">Services</a>
+              <a href="#about" className="text-gray-300 hover:text-white transition-colors duration-300 text-lg">About</a>
+              <a href="#testimonials" className="text-gray-300 hover:text-white transition-colors duration-300 text-lg">Testimonials</a>
+              <a href="#contact" className="text-gray-300 hover:text-white transition-colors duration-300 text-lg">Contact</a>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
-            <p>© {new Date().getFullYear()} Gomez Funeraria Funeral Management System. All rights reserved.</p>
+          <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
+            <p className="text-lg">© {new Date().getFullYear()} Gomez Funeraria Funeral Management System. All rights reserved.</p>
           </div>
         </div>
       </footer>
