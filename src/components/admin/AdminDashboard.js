@@ -100,6 +100,8 @@ const AdminDashboard = () => {
             try {
                 const response = await axios.post('http://localhost/apii/components/fetchAdminProfile.php', { email });
                 setUserData(response.data.data);
+                console.log(response);
+                
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }
