@@ -12,6 +12,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
 export default function FuneralManagementLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function FuneralManagementLanding() {
           <div className="flex items-center">
             <Heart className="h-8 w-8 text-gray-400 mr-3" />
             <div>
-              <h1 className="text-xl font-semibold">Gomez Funeraria</h1>
+              <h1 className="text-xl font-semibold">Funeraria Gomez</h1>
               <p className="text-xs text-gray-300">Funeral Management Services</p>
             </div>
           </div>
@@ -187,7 +188,7 @@ export default function FuneralManagementLanding() {
             <div className="lg:w-1/2">
               <div className="bg-gray-200 h-96 lg:h-[500px] rounded-2xl shadow-lg overflow-hidden">
                 <img
-                  src="/api/placeholder/600/500"
+                  src="/crush.png"
                   alt="Funeral service professionals"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                 />
