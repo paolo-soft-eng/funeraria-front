@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Phone,
   Mail,
@@ -16,8 +16,98 @@ import { useNavigate } from 'react-router-dom';
 export default function FuneralManagementLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevData => ({
+      ...prevData,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
+    // Client-side validation
+    if (!formData.name.trim()) {
+      setError('Name is required');
+      setIsSubmitting(false);
+      return;
+    }
+    
+    if (!formData.email.trim()) {
+      setError('Email is required');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.phone.trim()) {
+      setError('Phone number is required');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.message.trim()) {
+      setError('Message is required');
+      setIsSubmitting(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost/apii/components/contact_submit.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response');
+      }
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to submit the form');
+      }
+
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+
+      // Reset form after successful submission
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        message: ''
+      });
+      
+      // Reset submission status after 5 seconds
+      setTimeout(() => {
+        setIsSubmitted(false);
+      }, 5000);
+    } catch (err) {
+      console.error('Error submitting form:', err);
+      setIsSubmitting(false);
+      setError(err.message || 'An unexpected error occurred. Please try again.');
+    }
+  };
+
   const handleNavigate = () => {
-     navigate('/auth')
+    navigate('/auth');
     console.log('Navigate to auth');
   }
 
@@ -338,41 +428,91 @@ export default function FuneralManagementLanding() {
             <div className="bg-gray-800 p-8 rounded-2xl shadow-lg lg:col-span-2">
               <h3 className="text-2xl font-semibold mb-8 text-white">Send Us a Message</h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <input
-                  type="text"
-                  placeholder="First Name"
-                  className="p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300"
-                />
-                <input
-                  type="text"
-                  placeholder="Last Name"
-                  className="p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300"
-                />
-              </div>
+              {isSubmitted ? (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-50 mb-6">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                  </div>
+                  <h4 className="text-xl font-semibold text-white mb-2">Thank You for Reaching Out</h4>
+                  <p className="text-gray-300">We'll get back to you shortly.</p>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit}>
+                  {error && (
+                    <div className="mb-6 p-4 bg-red-900/50 border border-red-700 rounded-xl">
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p className="text-red-200">{error}</p>
+                      </div>
+                    </div>
+                  )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  className="p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300"
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone Number"
-                  className="p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300"
-                />
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Name"
+                      className="p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300"
+                      required
+                    />
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="Email Address"
+                      className="p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300"
+                      required
+                    />
+                  </div>
 
-              <textarea
-                placeholder="Your Message"
-                className="w-full p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300 mb-6"
-                rows="5"
-              ></textarea>
+                  <div className="mb-6">
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="Phone Number"
+                      className="w-full p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300"
+                      required
+                    />
+                  </div>
 
-              <button className="bg-gray-600 hover:bg-gray-700 text-white py-4 px-8 rounded-lg transition-all duration-300 shadow-lg font-semibold text-lg">
-                Send Message
-              </button>
+                  <textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    placeholder="Your Message"
+                    className="w-full p-4 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:border-gray-500 focus:outline-none transition-colors duration-300 mb-6"
+                    rows="5"
+                    required
+                  ></textarea>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-gray-600 hover:bg-gray-700 text-white py-4 px-8 rounded-lg transition-all duration-300 shadow-lg font-semibold text-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <span>Send Message</span>
+                    )}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>
