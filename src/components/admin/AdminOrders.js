@@ -125,6 +125,7 @@ const AdminOrders = () => {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Date</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
@@ -152,6 +153,7 @@ const AdminOrders = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.order_items}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.service_name || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.address}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.delivery_date).toLocaleDateString()}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.created_at).toLocaleString()}</td>
@@ -235,6 +237,14 @@ const AdminOrders = () => {
                         <div className="mt-3 pt-3 border-t">
                           <p className="text-sm text-gray-600">
                             <span className="font-medium">Items:</span> {order.order_items}
+                          </p>
+                        </div>
+                      )}
+
+                      {order.service_name && (
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Service:</span> {order.service_name}
                           </p>
                         </div>
                       )}

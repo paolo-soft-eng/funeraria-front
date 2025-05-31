@@ -101,7 +101,7 @@ const AdminDashboard = () => {
                 const response = await axios.post('http://localhost/apii/components/fetchAdminProfile.php', { email });
                 setUserData(response.data.data);
                 console.log(response);
-                
+
             } catch (error) {
                 console.error('Error fetching user data:', error);
             }
@@ -534,7 +534,15 @@ const AdminDashboard = () => {
                                                             year: 'numeric'
                                                         })}
                                                     </span>
-                                                    <h6 className="font-medium  text-gray-800">Order Items: {order.order_items}</h6>
+                                                    {/* Show either order items or service name, but not both */}
+                                                    {order.order_items ? (
+                                                        <h6 className="font-medium text-gray-800">Order Items: {order.order_items}</h6>
+                                                    ) : order.service_name ? (
+                                                        <p className="text-sm text-gray-600">
+                                                            <span className="font-medium">Service: </span>
+                                                            {order.service_name}
+                                                        </p>
+                                                    ) : null}
                                                 </div>
                                                 <p className="text-gray-600 text-sm mt-3 flex items-center">
                                                     <MapPin size={16} className="mr-2 text-gray-400" />
