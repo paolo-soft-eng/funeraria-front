@@ -18,7 +18,8 @@ import {
     MapPin,
     Activity,
     Settings,
-    BarChart2
+    BarChart2,
+    Calendar
 } from 'lucide-react';
 import { EmailContext } from '../EmailContext';
 
@@ -36,7 +37,9 @@ const AdminDashboard = () => {
         totalClients: 0,
         totalRevenue: 0,
         newMessages: 0,
-        recent_messages: []
+        recent_messages: [],
+        upcoming_orders: [],
+        upcoming_appointments: []
     });
 
     useEffect(() => {
@@ -48,6 +51,7 @@ const AdminDashboard = () => {
                 );
                 console.log('API Response:', response.data); // Log the response
                 if (response.data.success) {
+                    console.log('Upcoming Appointments:', response.data.data.upcoming_appointments); // Add this line to debug appointments
                     setDashboardStats({
                         totalOrders: response.data.data.total_orders || 0,
                         totalClients: response.data.data.total_clients || 0,
@@ -57,6 +61,7 @@ const AdminDashboard = () => {
                         clients_percentage_change: response.data.data.clients_percentage_change || 0,
                         revenue_percentage_change: response.data.data.revenue_percentage_change || 0,
                         upcoming_orders: response.data.data.upcoming_orders || [],
+                        upcoming_appointments: response.data.data.upcoming_appointments || [],
                         recent_messages: response.data.data.recent_messages || []
                     });
                 } else {
@@ -565,6 +570,62 @@ const AdminDashboard = () => {
                                         </button>
                                     </div>
                                 </div>
+
+                                {/* Upcoming Appointments */}
+                                <div className="bg-white rounded-lg shadow-sm p-6">
+                                    <h3 className="text-xl font-semibold mb-6 flex items-center text-gray-800">
+                                        <Calendar size={20} className="mr-2 text-indigo-600" />
+                                        Upcoming Appointments
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {dashboardStats.upcoming_appointments && dashboardStats.upcoming_appointments.length > 0 ? (
+                                            dashboardStats.upcoming_appointments.map((appointment) => (
+                                                <div key={appointment.id} className="p-5 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-lg transition-shadow duration-300">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs bg-indigo-100 text-indigo-800 px-4 py-1 rounded-full whitespace-nowrap min-w-[140px] text-center mb-3 self-end">
+                                                            {new Date(appointment.appointment_date).toLocaleDateString('en-US', {
+                                                                month: 'long',
+                                                                day: 'numeric',
+                                                                year: 'numeric'
+                                                            })}
+                                                        </span>
+                                                        <p className="text-sm text-gray-600">
+                                                            <span className="font-medium">Purpose: </span>
+                                                            {appointment.purpose}
+                                                        </p>
+                                                    </div>
+                                                    <div className="mt-4 flex items-center text-sm text-gray-500">
+                                                        <Clock size={16} className="mr-2" />
+                                                        <span>{appointment.appointment_time}</span>
+                                                    </div>
+                                                    <div className="mt-3 flex items-center text-sm text-gray-500">
+                                                        <User size={16} className="mr-2" />
+                                                        <span>Client: {appointment.client_name}</span>
+                                                    </div>
+                                                    <div className="mt-3">
+                                                        <span className={`px-2 py-1 text-xs rounded-full ${
+                                                            appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                                                            appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
+                                                            'bg-gray-100 text-gray-800'
+                                                        }`}>
+                                                            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="col-span-2 text-center text-gray-500 py-4">
+                                                No upcoming appointments found
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="mt-6 text-center">
+                                        <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-2 px-4 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors duration-300" onClick={() => navigate('/dashboard-admin/appointments')}>
+                                            View All Appointments
+                                        </button>
+                                    </div>
+                                </div>
+
                                 {/* Quick Actions */}
                                 <div className="bg-white rounded-lg shadow-sm p-6">
                                     <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>

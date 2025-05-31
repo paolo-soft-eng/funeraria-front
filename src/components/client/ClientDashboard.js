@@ -120,7 +120,6 @@ const ClientDashboard = () => {
     { name: 'home', icon: <Home size={20} />, label: 'Home' },
     { name: 'about', icon: <Info size={20} />, label: 'About' },
     { name: 'services', icon: <Briefcase size={20} />, label: 'Services' },
-    { name: 'contact', icon: <Phone size={20} />, label: 'Contact' },
     { name: 'menu', icon: <BookOpen size={20} />, label: 'Menu List' },
     { name: 'cart', icon: <ShoppingCart size={20} />, label: 'Cart' },
     { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
@@ -285,7 +284,7 @@ const ClientDashboard = () => {
           <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center">
             <div className="mb-3 sm:mb-0">
               <p className="text-sm text-gray-600">
-                &copy; 2025 Funeraria Gomez. All rights reserved.
+                &copy; 2025 Gomez Funeraria. All rights reserved.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-4">

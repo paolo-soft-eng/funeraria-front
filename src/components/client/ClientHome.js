@@ -151,7 +151,7 @@ const ClientHome = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
-            <h1 className="text-3xl font-bold text-gray-800 mb-8">Gomez Funeraria Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-8">Gomez Funeraria</h1>
             
             {/* Welcome Section */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -184,7 +184,7 @@ const ClientHome = () => {
                         <p className="text-gray-500 text-center py-4">No appointments found</p>
                     ) : (
                         filteredAppointments.map(appointment => (
-                            <div key={appointment.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                            <div key={appointment.id} className="border border-blue-300 rounded-lg p-4 hover:bg-gray-50 transition-colors">
                                 <div className="flex justify-between items-start">
                                     <div>
                                         <h3 className="font-medium text-gray-800">{appointment.type}</h3>
@@ -444,7 +444,7 @@ const ClientHome = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {griefResources.map((resource, index) => (
-                        <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div key={index} className="border border-purple-300 rounded-lg p-4 hover:shadow-md transition-shadow">
                             <div className="flex items-center mb-2">
                                 <MessageSquare className="h-5 w-5 text-purple-400 mr-2" />
                                 <h3 className="font-medium text-gray-800">{resource.title}</h3>
