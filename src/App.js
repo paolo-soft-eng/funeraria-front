@@ -8,7 +8,6 @@ import ClientMenu from './components/client/ClientMenu';
 import ClientCart from './components/client/ClientCart';
 import ClientProfile from './components/client/ClientProfile';
 import ClientServices from './components/client/ClientServices';
-import ClientContact from './components/client/ClientContact';
 import ClientMessages from './components/client/ClientMessages';
 import { EmailProvider } from './components/EmailContext';
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -18,7 +17,6 @@ import AdminItemList from './components/admin/AdminItemList';
 import AdminMessages from './components/admin/AdminMessages';
 import AdminSettings from './components/admin/AdminSettings';
 import AdminClients from './components/admin/AdminClients';
-import AdminContacts from './components/admin/AdminContact';
 import AdminAppointments from './components/admin/AdminAppointments';
 import AdminAnalytics from './components/admin/AdminAnalytics';
 import LandingPage from './components/LandingPage';
@@ -50,7 +48,6 @@ const App = () => {
               <Route path="cart" element={<ClientCart />} />
               <Route path="settings" element={<ClientProfile />} />
               <Route path="services" element={<ClientServices />} />
-              <Route path="contact" element={<ClientContact />} />
               <Route path="messages" element={<ClientMessages />} />
             </Route>
             
@@ -99,14 +96,6 @@ const App = () => {
                 <AdminAnalytics/>
               </ProtectedRoute>
             } />
-            <Route path='/dashboard-admin/contacts' element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminContacts/>
-              </ProtectedRoute>
-            } />
-
-            
-            
             <Route path="*" element={<ErrorPage />} />
             <Route path='/super-admin' element={<SuperAdmin/>}>
             </Route>
