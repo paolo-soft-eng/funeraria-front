@@ -51,7 +51,7 @@ const ClientHome = () => {
                     service: 'Funeral Service', // Default service name
                     date: order.delivery_date,
                     status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
-                    amount: `$${order.total_amount}`,
+                    amount: `₱${order.total_amount}`,
                     payment_status: order.payment_status,
                     payment_method: order.payment_method
                 }));
