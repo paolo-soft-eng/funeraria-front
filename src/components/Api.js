@@ -197,24 +197,3 @@ export const fetchFlowersByServiceId = async (serviceId) => {
         return [];
     }
 };
-
-// Initialize the database with sample data
-export const initializeDatabase = async () => {
-    try {
-        // Fixed URL path
-        const response = await fetch(`${API_BASE_URL}/apii/components/initialize.php`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`Error: ${response.status} ${response.statusText}`);
-        }        
-        return await response.json();
-    } catch (error) {
-        console.error('Failed to initialize database:', error);
-        throw error;
-    }
-};

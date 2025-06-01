@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BarChart2,
   TrendingUp,
@@ -16,57 +16,107 @@ import AdminLayout from './AdminLayout';
 const AdminAnalytics = () => {
   const [timeRange, setTimeRange] = useState('month');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState({
+    revenue: [],
+    services: [],
+    topClients: [],
+    recentActivity: [],
+    performance: {},
+    kpis: {}
+  });
+  const [filters, setFilters] = useState({
+    startDate: '',
+    endDate: '',
+    serviceType: '',
+    clientType: '',
+    paymentStatus: ''
+  });
 
-  const revenueData = [
-    { month: 'Jan', value: 12000 },
-    { month: 'Feb', value: 15000 },
-    { month: 'Mar', value: 18000 },
-    { month: 'Apr', value: 16000 },
-    { month: 'May', value: 21000 },
-    { month: 'Jun', value: 19000 },
-    { month: 'Jul', value: 22000 },
-    { month: 'Aug', value: 25000 },
-    { month: 'Sep', value: 23000 },
-    { month: 'Oct', value: 26000 },
-    { month: 'Nov', value: 28000 },
-    { month: 'Dec', value: 30000 },
-  ];
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [timeRange]);
 
-  const serviceData = [
-    { name: 'Cremations', value: 35 },
-    { name: 'Memorial Services', value: 25 },
-    { name: 'Traditional Burials', value: 20 },
-    { name: 'Custom Services', value: 15 },
-    { name: 'Other', value: 5 },
-  ];
+  const fetchAnalyticsData = async () => {
+    try {
+      setLoading(true);
+      const queryParams = new URLSearchParams({
+        action: 'all',
+        ...filters
+      });
+      
+      const response = await fetch(`http://localhost/apii/components/analytics.php?${queryParams}`);
+      const result = await response.json();
+      
+      if (result.success) {
+        setAnalyticsData(result.data);
+      } else {
+        throw new Error(result.error);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleFilterSubmit = (e) => {
+    e.preventDefault();
+    fetchAnalyticsData();
+  };
+
+  const handleFilterReset = () => {
+    setFilters({
+      startDate: '',
+      endDate: '',
+      serviceType: '',
+      clientType: '',
+      paymentStatus: ''
+    });
+    fetchAnalyticsData();
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
+  const revenueData = analyticsData.revenue;
+  const serviceData = analyticsData.services;
   const totalRevenue = revenueData.reduce((sum, item) => sum + item.value, 0);
 
-  const topClients = [
-    { id: 1, name: 'Rodriguez Family', services: 5, revenue: 8500 },
-    { id: 2, name: 'Santos Enterprises', services: 3, revenue: 7200 },
-    { id: 3, name: 'Gonzales Group', services: 4, revenue: 6800 },
-    { id: 4, name: 'Martinez Corporation', services: 2, revenue: 5400 },
-  ];
+  const topClients = analyticsData.topClients;
 
   const kpis = [
     {
       title: 'Total Revenue',
-      value: `$${(totalRevenue/1000).toFixed(1)}k`,
+      value: `$${(analyticsData.kpis.total_revenue/1000).toFixed(1)}k`,
       change: '+18%',
       icon: <DollarSign size={20} />,
       color: 'text-emerald-600 bg-emerald-100'
     },
     {
       title: 'Total Orders',
-      value: '248',
+      value: analyticsData.kpis.total_orders.toString(),
       change: '+12%',
       icon: <ShoppingCart size={20} />,
       color: 'text-indigo-600 bg-indigo-100'
     },
     {
       title: 'New Clients',
-      value: '42',
+      value: analyticsData.kpis.new_clients.toString(),
       change: '+5%',
       icon: <Users size={20} />,
       color: 'text-blue-600 bg-blue-100'
@@ -162,42 +212,72 @@ const AdminAnalytics = () => {
         {isFilterOpen && (
           <div className="mt-4 bg-white rounded-lg shadow-sm p-4">
             <h3 className="font-medium text-gray-800 mb-3">Filter Options</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
-                <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
-                  <option value="">All Services</option>
-                  <option value="cremation">Cremations</option>
-                  <option value="memorial">Memorial Services</option>
-                  <option value="burial">Traditional Burials</option>
-                  <option value="custom">Custom Services</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
-                <div className="flex space-x-2">
-                  <input type="date" className="w-full p-2 border border-gray-300 rounded-md text-sm" />
-                  <input type="date" className="w-full p-2 border border-gray-300 rounded-md text-sm" />
+            <form onSubmit={handleFilterSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
+                  <select 
+                    name="serviceType"
+                    value={filters.serviceType}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="">All Services</option>
+                    <option value="1">Basic Package</option>
+                    <option value="2">Standard Package</option>
+                    <option value="3">Premium Package</option>
+                    <option value="4">Customized Package</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+                  <div className="flex space-x-2">
+                    <input 
+                      type="date" 
+                      name="startDate"
+                      value={filters.startDate}
+                      onChange={handleFilterChange}
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm" 
+                    />
+                    <input 
+                      type="date" 
+                      name="endDate"
+                      value={filters.endDate}
+                      onChange={handleFilterChange}
+                      className="w-full p-2 border border-gray-300 rounded-md text-sm" 
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Client Type</label>
+                  <select 
+                    name="clientType"
+                    value={filters.clientType}
+                    onChange={handleFilterChange}
+                    className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  >
+                    <option value="">All Clients</option>
+                    <option value="client">Individual</option>
+                    <option value="admin">Corporate</option>
+                  </select>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Client Type</label>
-                <select className="w-full p-2 border border-gray-300 rounded-md text-sm">
-                  <option value="">All Clients</option>
-                  <option value="individual">Individual</option>
-                  <option value="corporate">Corporate</option>
-                  <option value="government">Government</option>
-                </select>
+              <div className="mt-4 flex justify-end">
+                <button 
+                  type="button"
+                  onClick={handleFilterReset}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-medium mr-2 hover:bg-gray-300"
+                >
+                  Reset
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700"
+                >
+                  Apply Filters
+                </button>
               </div>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <button className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-medium mr-2 hover:bg-gray-300">
-                Reset
-              </button>
-              <button className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700">
-                Apply Filters
-              </button>
-            </div>
+            </form>
           </div>
         )}
       </div>
@@ -323,49 +403,18 @@ const AdminAnalytics = () => {
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
 
           <div className="space-y-4">
-            <div className="flex gap-3">
-              <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 flex-shrink-0">
-                <ShoppingCart size={16} />
+            {analyticsData.recentActivity.map((activity, index) => (
+              <div key={index} className="flex gap-3">
+                <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 flex-shrink-0">
+                  <ShoppingCart size={16} />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-800 font-medium">{activity.type === 'order' ? 'New order created' : 'Event scheduled'}</p>
+                  <p className="text-xs text-gray-500">{activity.client_name}</p>
+                  <p className="text-xs text-gray-400 mt-1">{activity.created_at}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm text-gray-800 font-medium">New order created</p>
-                <p className="text-xs text-gray-500">Memorial service for Martinez family</p>
-                <p className="text-xs text-gray-400 mt-1">Today, 9:42 AM</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 flex-shrink-0">
-                <DollarSign size={16} />
-              </div>
-              <div>
-                <p className="text-sm text-gray-800 font-medium">Payment received</p>
-                <p className="text-xs text-gray-500">$4,200 from Rodriguez Corporation</p>
-                <p className="text-xs text-gray-400 mt-1">Yesterday, 4:25 PM</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <div className="h-8 w-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 flex-shrink-0">
-                <Users size={16} />
-              </div>
-              <div>
-                <p className="text-sm text-gray-800 font-medium">New client registered</p>
-                <p className="text-xs text-gray-500">Santos Family Services</p>
-                <p className="text-xs text-gray-400 mt-1">Yesterday, 2:15 PM</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <div className="h-8 w-8 bg-red-100 rounded-full flex items-center justify-center text-red-600 flex-shrink-0">
-                <Calendar size={16} />
-              </div>
-              <div>
-                <p className="text-sm text-gray-800 font-medium">Event scheduled</p>
-                <p className="text-xs text-gray-500">Memorial service at Central Chapel</p>
-                <p className="text-xs text-gray-400 mt-1">Jan 20, 10:30 AM</p>
-              </div>
-            </div>
+            ))}
           </div>
 
           <div className="mt-4 pt-3 border-t border-gray-100 text-center">
@@ -392,30 +441,26 @@ const AdminAnalytics = () => {
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-gray-700">On-time Delivery</span>
-                <span className="font-medium">96%</span>
+                <span className="font-medium">{analyticsData.performance.on_time_delivery}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-blue-500 h-2 rounded-full" style={{ width: '96%' }}></div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-700">Budget Accuracy</span>
-                <span className="font-medium">89%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-amber-500 h-2 rounded-full" style={{ width: '89%' }}></div>
+                <div 
+                    className="bg-blue-500 h-2 rounded-full" 
+                    style={{ width: `${analyticsData.performance.on_time_delivery}%` }}
+                ></div>
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span className="text-gray-700">Repeat Business</span>
-                <span className="font-medium">78%</span>
+                <span className="font-medium">{analyticsData.performance.repeat_business}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div className="bg-indigo-500 h-2 rounded-full" style={{ width: '78%' }}></div>
+                <div 
+                    className="bg-indigo-500 h-2 rounded-full" 
+                    style={{ width: `${analyticsData.performance.repeat_business}%` }}
+                ></div>
               </div>
             </div>
           </div>
