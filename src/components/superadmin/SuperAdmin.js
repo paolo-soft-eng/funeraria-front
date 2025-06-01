@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Trash2, Edit, Copy, X, RefreshCw, Search, UserCog, ArrowUp, ArrowDown, Shield, Mail, Phone, MapPin, Calendar } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 
 const SuperAdmin = () => {
   const [users, setUsers] = useState([]);
@@ -24,7 +22,6 @@ const SuperAdmin = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsers();
@@ -40,7 +37,15 @@ const SuperAdmin = () => {
       }
       
       const data = await response.json();
-      setUsers(data);
+      // Ensure each user has a status field, defaulting to 'disabled' if not set
+      const usersWithStatus = data.map(user => {
+        console.log(`User ${user.id} status from DB:`, user.status);
+        return {
+          ...user,
+          status: user.status || 'disabled'
+        };
+      });
+      setUsers(usersWithStatus);
       setLoading(false);
     } catch (error) {
       setError('Error fetching users: ' + error.message);
@@ -252,22 +257,51 @@ const SuperAdmin = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  const handleLogout = async () => {
-        const userConfirmed = window.confirm("Are you sure you want to log out?");
+  const handleToggleAdminStatus = async (userId, currentStatus) => {
+    try {
+      // Get the current user from the users array
+      const currentUser = users.find(user => user.id === userId);
+      const effectiveCurrentStatus = currentUser?.status || 'disabled';
+      
+      console.log('Toggling status for user:', userId, 'Current status:', effectiveCurrentStatus);
+      
+      const newStatus = effectiveCurrentStatus === 'active' ? 'disabled' : 'active';
+      
+      const response = await fetch('http://localhost/apii/components/superadmin/toggleAdminStatus.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          status: newStatus
+        })
+      });
 
-        if (userConfirmed) {
-            try {
-                await axios.post('http://localhost/apii/config/logout.php');
-                localStorage.removeItem('userEmail');
-                localStorage.removeItem('userRole');
+      const data = await response.json();
+      console.log('Server response:', data);
 
-                navigate('/');
-            } catch (error) {
-                console.error('Error logging out:', error);
-                alert('Failed to log out. Please try again.');
-            }
-        }
-    };
+      if (!response.ok) {
+        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+      }
+      
+      if (data.success) {
+        // Update the local state with the status from the backend response
+        setUsers(prevUsers => prevUsers.map(user => 
+          user.id === userId 
+            ? { ...user, status: data.new_status }
+            : user
+        ));
+        showNotification(`Status updated from ${data.previous_status} to ${data.new_status}`, 'success');
+      } else {
+        throw new Error(data.message || 'Failed to update admin status');
+      }
+    } catch (error) {
+      console.error('Error toggling status:', error);
+      setError('Error updating admin status: ' + error.message);
+      showNotification(error.message, 'error');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -307,8 +341,6 @@ const SuperAdmin = () => {
                     </>
                   )}
                 </button>
-
-                <button className='bg-red-500 text-white border-black p-3 hover:bg-red-600 py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200' onClick={handleLogout}>Log Out</button>
               </div>
             </div>
           </div>
@@ -573,6 +605,11 @@ const SuperAdmin = () => {
                             Phone {getSortIcon('telephone')}
                           </div>
                         </th>
+                        <th onClick={() => requestSort('status')} className="py-3 px-4 text-left text-sm font-medium text-gray-600 uppercase tracking-wider cursor-pointer hover:bg-gray-200 transition-colors duration-150">
+                          <div className="flex items-center">
+                            Status {getSortIcon('status')}
+                          </div>
+                        </th>
                         <th className="py-3 px-4 text-left text-sm font-medium text-gray-600 uppercase tracking-wider">
                           Actions
                         </th>
@@ -605,27 +642,31 @@ const SuperAdmin = () => {
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <div className="flex space-x-2">
-                              <a 
-                                href={`/edit_user.php?id=${user.id}`} 
-                                className="bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 rounded-lg transition-colors duration-200 flex items-center"
-                                title="Edit"
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              user.status === 'active' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {user.status || 'disabled'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => handleToggleAdminStatus(user.id, user.status)}
+                                className={`px-3 py-1 rounded-md text-sm font-medium ${
+                                  user.status === 'active'
+                                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                }`}
                               >
-                                <Edit size={16} />
-                              </a>
-                              <button 
-                                onClick={() => copyToClipboard(JSON.stringify(user))}
-                                className="bg-gray-50 text-gray-600 hover:bg-gray-100 p-2 rounded-lg transition-colors duration-200 flex items-center"
-                                title="Copy"
-                              >
-                                <Copy size={16} />
+                                {user.status === 'active' ? 'Disable' : 'Enable'}
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleDelete(user.id)}
-                                className="bg-red-50 text-red-600 hover:bg-red-100 p-2 rounded-lg transition-colors duration-200 flex items-center"
-                                title="Delete"
+                                className="px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-md text-sm font-medium"
                               >
-                                <Trash2 size={16} />
+                                Delete
                               </button>
                             </div>
                           </td>
@@ -661,26 +702,21 @@ const SuperAdmin = () => {
                             </div>
                           </div>
                           <div className="flex space-x-2">
-                            <a 
-                              href={`/edit_user.php?id=${user.id}`} 
-                              className="text-blue-600 hover:text-blue-800"
-                              title="Edit"
+                            <button
+                              onClick={() => handleToggleAdminStatus(user.id, user.status)}
+                              className={`px-3 py-1 rounded-md text-sm font-medium ${
+                                user.status === 'active'
+                                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                  : 'bg-green-100 text-green-700 hover:bg-green-200'
+                              }`}
                             >
-                              <Edit size={16} />
-                            </a>
-                            <button 
-                              onClick={() => copyToClipboard(JSON.stringify(user))}
-                              className="text-gray-600 hover:text-gray-800"
-                              title="Copy"
-                            >
-                              <Copy size={16} />
+                              {user.status === 'active' ? 'Disable' : 'Enable'}
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDelete(user.id)}
-                              className="text-red-600 hover:text-red-800"
-                              title="Delete"
+                              className="px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-md text-sm font-medium"
                             >
-                              <Trash2 size={16} />
+                              Delete
                             </button>
                           </div>
                         </div>
@@ -696,6 +732,16 @@ const SuperAdmin = () => {
                           <div className="flex items-center mb-2">
                             <Phone size={14} className="text-gray-400 mr-2 w-6" />
                             <span className="text-sm text-gray-900">{user.telephone}</span>
+                          </div>
+                          <div className="flex items-center mb-2">
+                            <span className="text-sm font-medium text-gray-500 w-24">Status:</span>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              user.status === 'active' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {user.status || 'disabled'}
+                            </span>
                           </div>
                           <div className="flex items-center">
                             <MapPin size={14} className="text-gray-400 mr-2 w-6" />

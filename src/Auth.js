@@ -45,8 +45,6 @@ const Auth = () => {
       navigate('/super-admin');
     }
 
-
-
     // Check if passwords match
     if (!isLogin && formData.password !== formData.confirmPassword) {
       alert("Passwords do not match");
@@ -68,8 +66,6 @@ const Auth = () => {
           localStorage.setItem('userRole', response.data.user.role);
 
           const userRole = response.data.user.role;
-
-          
 
           if (userRole === 'admin') {
             alert('Login successful as admin');
@@ -96,8 +92,14 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("Error:", error);
-      if (error.response && error.response.data) {
-        alert('Error: ' + error.response.data.message);
+      if (error.response) {
+        if (error.response.status === 403 && error.response.data.status === 'disabled') {
+          alert('Your account has been disabled. Please contact the administrator.');
+        } else if (error.response.data) {
+          alert('Error: ' + error.response.data.message);
+        } else {
+          alert('Error: ' + error.message);
+        }
       } else {
         alert('Error: ' + error.message);
       }
