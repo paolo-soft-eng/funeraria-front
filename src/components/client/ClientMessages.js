@@ -572,15 +572,15 @@ export default function ClientMessages() {
 
   // Update the handleAdminClick function
   const handleAdminClick = (admin) => {
-  setSelectedAdmin(admin);
-  setMessages([]);
-  processedMessageIds.clear(); // Add this line
-  setShowSidebar(false);
-  markMessagesAsRead(admin.id);
-  if (userId) {
-    countMessages(admin.id, userId);
-  }
-};
+    setSelectedAdmin(admin);
+    setMessages([]);
+    processedMessageIds.clear(); // Add this line
+    setShowSidebar(false);
+    markMessagesAsRead(admin.id);
+    if (userId) {
+      countMessages(admin.id, userId);
+    }
+  };
 
   useEffect(() => {
     if (selectedAdmin && userId) {

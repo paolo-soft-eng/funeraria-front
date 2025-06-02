@@ -12,12 +12,14 @@ import {
   RefreshCw
 } from 'lucide-react';
 import AdminLayout from './AdminLayout';
+import { useNavigate } from 'react-router-dom';
 
 const AdminAnalytics = () => {
   const [timeRange, setTimeRange] = useState('month');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
   const [analyticsData, setAnalyticsData] = useState({
     revenue: [],
     services: [],
@@ -48,6 +50,9 @@ const AdminAnalytics = () => {
       
       const response = await fetch(`http://localhost/apii/components/analytics.php?${queryParams}`);
       const result = await response.json();
+
+      console.log(result);
+      
       
       if (result.success) {
         setAnalyticsData(result.data);
@@ -93,30 +98,37 @@ const AdminAnalytics = () => {
     return <div>Error: {error}</div>;
   }
 
-  const revenueData = analyticsData.revenue;
-  const serviceData = analyticsData.services;
-  const totalRevenue = revenueData.reduce((sum, item) => sum + item.value, 0);
+  const handleViewAllClients = () => {
+    navigate('/dashboard-admin/clients');
+  };
+  const handleViewAllOrders = () => {
+    navigate('/dashboard-admin/orders');
+  };
 
-  const topClients = analyticsData.topClients;
+  const revenueData = analyticsData.revenue || [];
+  const serviceData = analyticsData.services || [];
+  const totalRevenue = revenueData.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+
+  const topClients = analyticsData.topClients || [];
 
   const kpis = [
     {
       title: 'Total Revenue',
-      value: `$${(analyticsData.kpis.total_revenue/1000).toFixed(1)}k`,
+      value: `₱${Number(analyticsData.kpis?.total_revenue || 0).toLocaleString()}`,
       change: '+18%',
       icon: <DollarSign size={20} />,
       color: 'text-emerald-600 bg-emerald-100'
     },
     {
       title: 'Total Orders',
-      value: analyticsData.kpis.total_orders.toString(),
+      value: (analyticsData.kpis?.total_orders || 0).toString(),
       change: '+12%',
       icon: <ShoppingCart size={20} />,
       color: 'text-indigo-600 bg-indigo-100'
     },
     {
       title: 'New Clients',
-      value: analyticsData.kpis.new_clients.toString(),
+      value: (analyticsData.kpis?.new_clients || 0).toString(),
       change: '+5%',
       icon: <Users size={20} />,
       color: 'text-blue-600 bg-blue-100'
@@ -129,6 +141,8 @@ const AdminAnalytics = () => {
       color: 'text-amber-600 bg-amber-100'
     },
   ];
+  console.log(kpis);
+  
 
   const handleTimeRangeChange = (range) => {
     setTimeRange(range);
@@ -307,7 +321,7 @@ const AdminAnalytics = () => {
             <h3 className="text-lg font-semibold text-gray-800">Revenue Overview</h3>
             <div className="text-sm text-gray-500">
               <span className="font-medium text-gray-700">Total: </span>
-              ${(totalRevenue/1000).toFixed(1)}k
+              ₱{Number(totalRevenue).toLocaleString()}
             </div>
           </div>
 
@@ -317,10 +331,10 @@ const AdminAnalytics = () => {
                 <div
                   key={index}
                   className="flex-1 mx-1 bg-indigo-500 rounded-t-sm hover:bg-indigo-600 transition-colors relative group"
-                  style={{ height: `${(item.value / 30000) * 100}%` }}
+                  style={{ height: `${((Number(item.value) || 0) / (totalRevenue || 1)) * 100}%` }}
                 >
                   <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 text-xs bg-gray-800 text-white py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                    ${(item.value/1000).toFixed(1)}k
+                    ₱{Number(item.value).toLocaleString()}
                   </div>
                 </div>
               ))}
@@ -385,7 +399,7 @@ const AdminAnalytics = () => {
                   <tr key={client.id}>
                     <td className="py-3 px-4 text-sm font-medium text-gray-800">{client.name}</td>
                     <td className="py-3 px-4 text-sm text-gray-600">{client.services}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">${client.revenue}</td>
+                    <td className="py-3 px-4 text-sm text-gray-600">₱{client.revenue}</td>
                   </tr>
                 ))}
               </tbody>
@@ -393,7 +407,10 @@ const AdminAnalytics = () => {
           </div>
 
           <div className="mt-4 pt-3 border-t border-gray-100 text-center">
-            <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+            <button 
+              onClick={handleViewAllClients}
+              className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+            >
               View All Clients
             </button>
           </div>
@@ -418,7 +435,10 @@ const AdminAnalytics = () => {
           </div>
 
           <div className="mt-4 pt-3 border-t border-gray-100 text-center">
-            <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+            <button 
+              onClick={() => handleViewAllOrders()}
+              className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+            >
               View All Activity
             </button>
           </div>
