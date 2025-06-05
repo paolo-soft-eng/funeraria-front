@@ -52,6 +52,21 @@ const AdminSettings = () => {
   const { email } = useContext(EmailContext);
   const [isLoading, setIsLoading] = useState(true);
   const [profilePreview, setProfilePreview] = useState(null);
+  const [staffMembers, setStaffMembers] = useState([]);
+  const [newStaff, setNewStaff] = useState({
+    fullName: '',
+    position: 'Support Staff',
+    email: ''
+  });
+
+  // Add this state for editing
+  const [editingStaff, setEditingStaff] = useState(null);
+
+  // Add this state near your other state declarations
+  const [staffToDelete, setStaffToDelete] = useState(null);
+
+  // Add this state near your other state declarations
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (email) {
@@ -60,6 +75,10 @@ const AdminSettings = () => {
       fetchNotificationData();
     }
   }, [email]);
+
+  useEffect(() => {
+    fetchStaff();
+  }, []);
 
   const fetchProfileData = async () => {
     try {
@@ -178,6 +197,66 @@ const AdminSettings = () => {
     } catch (error) {
       console.error('Error fetching facility data:', error);
     }
+  };
+
+  const fetchStaff = async () => {
+    try {
+      const response = await fetch('http://localhost/apii/components/staff.php');
+      const data = await response.json();
+      if (data.success) {
+        setStaffMembers(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching staff:', error);
+    }
+  };
+
+  const addStaffMember = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('http://localhost/apii/components/staff.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newStaff)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setNewStaff({
+          fullName: '',
+          position: 'Support Staff',
+          email: ''
+        });
+        fetchStaff(); // Refresh the staff list
+      }
+    } catch (error) {
+      console.error('Error adding staff:', error);
+    }
+  };
+
+  const deleteStaffMember = async (staffId) => {
+    try {
+      const response = await fetch('http://localhost/apii/components/staff.php', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ staffId })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setStaffToDelete(null); // Close the dialog
+        fetchStaff(); // Refresh the staff list
+      }
+    } catch (error) {
+      console.error('Error deleting staff:', error);
+    }
+  };
+
+  // Add this function to handle the delete confirmation
+  const confirmDelete = (staff) => {
+    setStaffToDelete(staff);
   };
 
   const handleFacilitySubmit = async (e) => {
@@ -496,6 +575,41 @@ const AdminSettings = () => {
         type: 'error',
         message: `Error: ${error.message}`
       });
+    }
+  };
+
+  // Add this function to handle staff updates
+  const updateStaffMember = async (e) => {
+    e.preventDefault();
+    try {
+        const response = await fetch('http://localhost/apii/components/staff.php', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(editingStaff)
+        });
+        const data = await response.json();
+        if (data.success) {
+            setShowEditModal(false); // Close the modal
+            setEditingStaff(null);
+            fetchStaff(); // Refresh the staff list
+            setStatusMessage({
+                type: 'success',
+                message: 'Staff member updated successfully'
+            });
+        } else {
+            setStatusMessage({
+                type: 'error',
+                message: data.message || 'Error updating staff member'
+            });
+        }
+    } catch (error) {
+        console.error('Error updating staff:', error);
+        setStatusMessage({
+            type: 'error',
+            message: 'Error updating staff member'
+        });
     }
   };
 
@@ -890,76 +1004,109 @@ finish it
               {activeTab === 'staff' && (
                 <div>
                   <h2 className="text-xl font-semibold mb-6">Staff Management</h2>
-                  <form onSubmit={handleSubmit}>
+                  
+                  {/* Add/Edit Staff Form */}
+                  <form onSubmit={editingStaff ? updateStaffMember : addStaffMember}>
                     <div className="mb-6">
                       <label className="block text-sm font-medium text-gray-700 mb-3">
-                        Staff Members
+                        {editingStaff ? 'Edit Staff Member' : 'Add New Staff Member'}
                       </label>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <input
-                              type="text"
-                              placeholder="Full Name"
-                              className="w-full p-2 border border-gray-300 rounded-md"
-                            />
-                          </div>
-                          <div>
-                            <select className="w-full p-2 border border-gray-300 rounded-md">
-                              <option>Funeral Director</option>
-                              <option>Embalmer</option>
-                              <option>Administrator</option>
-                              <option>Support Staff</option>
-                            </select>
-                          </div>
-                          <div>
-                            <input
-                              type="email"
-                              placeholder="Email"
-                              className="w-full p-2 border border-gray-300 rounded-md"
-                            />
-                          </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Full Name"
+                            value={editingStaff ? editingStaff.fullName : newStaff.fullName}
+                            onChange={(e) => editingStaff 
+                              ? setEditingStaff({...editingStaff, fullName: e.target.value})
+                              : setNewStaff({...newStaff, fullName: e.target.value})}
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                            required
+                          />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <input
-                              type="text"
-                              placeholder="Full Name"
-                              className="w-full p-2 border border-gray-300 rounded-md"
-                            />
-                          </div>
-                          <div>
-                            <select className="w-full p-2 border border-gray-300 rounded-md">
-                              <option>Funeral Director</option>
-                              <option>Embalmer</option>
-                              <option>Administrator</option>
-                              <option>Support Staff</option>
-                            </select>
-                          </div>
-                          <div>
-                            <input
-                              type="email"
-                              placeholder="Email"
-                              className="w-full p-2 border border-gray-300 rounded-md"
-                            />
-                          </div>
+                        <div>
+                          <select 
+                            value={editingStaff ? editingStaff.position : newStaff.position}
+                            onChange={(e) => editingStaff
+                              ? setEditingStaff({...editingStaff, position: e.target.value})
+                              : setNewStaff({...newStaff, position: e.target.value})}
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                            required
+                          >
+                            <option>Support Staff</option>
+                            <option>Embalmer</option>
+                          </select>
+                        </div>
+                        <div>
+                          <input
+                            type="email"
+                            placeholder="Email"
+                            value={editingStaff ? editingStaff.email : newStaff.email}
+                            onChange={(e) => editingStaff
+                              ? setEditingStaff({...editingStaff, email: e.target.value})
+                              : setNewStaff({...newStaff, email: e.target.value})}
+                            className="w-full p-2 border border-gray-300 rounded-md"
+                            required
+                          />
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
-                      >
-                        + Add Staff Member
-                      </button>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center">
-                        <Save size={16} className="mr-2" />
-                        Save Changes
-                      </button>
+                      <div className="mt-4 flex space-x-2">
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                        >
+                          {editingStaff ? 'Update Staff Member' : 'Add Staff Member'}
+                        </button>
+                        {editingStaff && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingStaff(null)}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </form>
+
+                  {/* Staff List */}
+                  <div className="mt-8">
+                    <h3 className="text-lg font-medium mb-4">Current Staff Members</h3>
+                    <div className="space-y-4">
+                      {staffMembers.map((staff) => (
+                        <div key={staff.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                          <div>
+                            <h4 className="font-medium">{staff.full_name}</h4>
+                            <p className="text-sm text-gray-600">{staff.position}</p>
+                            <p className="text-sm text-gray-500">{staff.email}</p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => {
+                                setEditingStaff({
+                                  staffId: staff.id,
+                                  fullName: staff.full_name,
+                                  position: staff.position,
+                                  email: staff.email
+                                });
+                                setShowEditModal(true);
+                              }}
+                              className="px-3 py-1 text-blue-600 hover:bg-blue-50 rounded"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => confirmDelete(staff)}
+                              className="px-3 py-1 text-red-600 hover:bg-red-50 rounded"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -999,6 +1146,118 @@ finish it
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {staffToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Confirm Staff Removal</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to remove {staffToDelete.full_name} from the staff list? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setStaffToDelete(null)}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => deleteStaffMember(staffToDelete.id)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
+              >
+                Remove Staff
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && editingStaff && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Edit Staff Member</h3>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingStaff(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <form onSubmit={updateStaffMember}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editingStaff.fullName}
+                    onChange={(e) => setEditingStaff({...editingStaff, fullName: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Position
+                  </label>
+                  <select 
+                    value={editingStaff.position}
+                    onChange={(e) => setEditingStaff({...editingStaff, position: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    required
+                  >
+                    <option>Support Staff</option>
+                    <option>Embalmer</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={editingStaff.email}
+                    onChange={(e) => setEditingStaff({...editingStaff, email: e.target.value})}
+                    className="w-full p-2 border border-gray-300 rounded-md"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingStaff(null);
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 };

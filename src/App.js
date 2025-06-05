@@ -11,7 +11,6 @@ import ClientServices from './components/client/ClientServices';
 import ClientMessages from './components/client/ClientMessages';
 import { EmailProvider } from './components/EmailContext';
 import AdminDashboard from './components/admin/AdminDashboard';
-import AdminProfile from './components/admin/AdminProfile';
 import AdminOrders from './components/admin/AdminOrders';
 import AdminItemList from './components/admin/AdminItemList';
 import AdminMessages from './components/admin/AdminMessages';
@@ -69,11 +68,6 @@ const App = () => {
             <Route path='/dashboard-admin/itemlists' element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminItemList/>
-              </ProtectedRoute>
-            } />
-            <Route path='/dashboard-admin/profile' element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminProfile/>
               </ProtectedRoute>
             } />
             <Route path='/dashboard-admin/clients' element={

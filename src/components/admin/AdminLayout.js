@@ -112,7 +112,6 @@ const AdminLayout = ({ children, currentPage }) => {
     { name: 'clients', icon: <Users size={20} />, label: 'Clients' },
     { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
     { name: 'appointments', icon: <Users size={20} />, label: 'Appointments' },
-    { name: 'contacts', icon: <MessageSquare size={20} />, label: 'Contacts' },
     { name: 'analytics', icon: <BarChart2 size={20} />, label: 'Analytics' },
     { name: 'settings', icon: <Settings size={20} />, label: 'Settings' },
   ];
