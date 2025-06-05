@@ -296,7 +296,7 @@ const Auth = () => {
                   </label>
                 </div>
                 <div className="text-sm">
-                  <a href="#" className="font-medium text-gray-600 hover:text-gray-500 transition-colors duration-200">
+                  <a href="/forgot-password" className="font-medium text-gray-600 hover:text-gray-500 transition-colors duration-200">
                     Forgot password?
                   </a>
                 </div>

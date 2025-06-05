@@ -23,6 +23,8 @@ import SuperAdmin from './components/superadmin/SuperAdmin';
 import ErrorPage from './components/ErrorPage';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import ProtectedRoute from './components/ProtectedRoute';
+import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 
 const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
@@ -34,6 +36,8 @@ const App = () => {
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path='/' element={<LandingPage/>}/>
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             
             <Route path="/dashboard-client" element={
               <ProtectedRoute allowedRoles={['client']}>
