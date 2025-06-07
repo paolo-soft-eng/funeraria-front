@@ -1,13 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { fetchServices, placeOrder, fetchCasketsByServiceId, fetchFlowersByServiceId, API_BASE_URL } from '../Api';
+import { EmailContext } from '../EmailContext';
 
 const ClientServices = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
+  const [userId, setUserId] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { email } = useContext(EmailContext);
 
- const fetchServicesData = async () => {
+  useEffect(() => {
+    if (email) {
+      // Fetch user ID based on email
+      fetch(`http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.userId) {
+            setUserId(data.userId);
+            setIsLoggedIn(true);
+          }
+        })
+        .catch(error => console.error('Error fetching user ID:', error));
+    }
+  }, [email]);
+
+  const fetchServicesData = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -105,15 +124,21 @@ const ClientServices = () => {
                   </div>
                 </div>
                 <div className="bg-gray-50 px-6 py-4">
-                  <button
-                    className="w-full bg-gray-900 text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors duration-200"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedService(service);
-                    }}
-                  >
-                    View Details
-                  </button>
+                  {!isLoggedIn ? (
+                    <div className="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-r-lg">
+                      <p className="font-medium">Please log in to view service details.</p>
+                    </div>
+                  ) : (
+                    <button
+                      className="w-full bg-gray-900 text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedService(service);
+                      }}
+                    >
+                      View Details
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -146,6 +171,24 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
   const [loadingItems, setLoadingItems] = useState(true);
   const [selectedCaskets, setSelectedCaskets] = useState([]);
   const [selectedFlowers, setSelectedFlowers] = useState([]);
+  const { email } = useContext(EmailContext);
+  const [userId, setUserId] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    if (email) {
+      // Fetch user ID based on email
+      fetch(`http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.userId) {
+            setUserId(data.userId);
+            setIsLoggedIn(true);
+          }
+        })
+        .catch(error => console.error('Error fetching user ID:', error));
+    }
+  }, [email]);
 
   useEffect(() => {
     const fetchServiceItems = async () => {
@@ -372,13 +415,19 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
               <div className="border-t border-gray-200 pt-6 mt-6">
                 <div className="flex justify-between items-center mb-6">
                   <p className="text-2xl font-bold text-gray-900">₱{service.price_range}</p>
-                  <button
-                    className="bg-gray-900 text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200"
-                    onClick={() => setShowOrderForm(true)}
-                    type="button"
-                  >
-                    Order Now
-                  </button>
+                  {!isLoggedIn ? (
+                    <div className="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-r-lg">
+                      <p className="font-medium">Please log in to place an order.</p>
+                    </div>
+                  ) : (
+                    <button
+                      className="bg-gray-900 text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200"
+                      onClick={() => setShowOrderForm(true)}
+                      type="button"
+                    >
+                      Order Now
+                    </button>
+                  )}
                 </div>
               </div>
             </>
