@@ -912,6 +912,59 @@ const ClientCart = () => {
         return new Date(dateString).toLocaleDateString(undefined, options);
     };
 
+    const formatExpirationTime = (expirationDate) => {
+        const now = new Date();
+        const expiration = new Date(expirationDate);
+        const diffInMinutes = Math.floor((expiration - now) / (1000 * 60));
+        
+        if (diffInMinutes <= 0) {
+            return 'Expired';
+        }
+        
+        if (diffInMinutes < 60) {
+            return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''}`;
+        }
+        
+        const hours = Math.floor(diffInMinutes / 60);
+        const minutes = diffInMinutes % 60;
+        
+        if (minutes === 0) {
+            return `${hours} hour${hours !== 1 ? 's' : ''}`;
+        }
+        
+        return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    };
+
+    const getExpirationStyle = (expirationDate) => {
+        const now = new Date();
+        const expiration = new Date(expirationDate);
+        const diffInMinutes = Math.floor((expiration - now) / (1000 * 60));
+        
+        if (diffInMinutes <= 0) {
+            return 'text-red-600 font-semibold';
+        }
+        
+        if (diffInMinutes < 5) {
+            return 'text-red-500';
+        }
+        
+        if (diffInMinutes < 15) {
+            return 'text-orange-500';
+        }
+        
+        return 'text-gray-600';
+    };
+
+    useEffect(() => {
+        if (userId) {
+            const interval = setInterval(() => {
+                fetchCartItems(userId);
+            }, 30000); // Refresh every 30 seconds
+
+            return () => clearInterval(interval);
+        }
+    }, [userId]);
+
     if (loading) {
         return (
             <div className="flex justify-center items-center p-6 min-h-[70vh]">
@@ -970,6 +1023,7 @@ const ClientCart = () => {
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Price</th>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Quantity</th>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Total</th>
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Expires In</th>
                                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">Actions</th>
                                                 </tr>
                                             </thead>
@@ -1015,6 +1069,11 @@ const ClientCart = () => {
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="text-sm text-gray-900">₱{(parseFloat(item.price) * parseInt(item.quantity)).toFixed(2)}</div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className={`text-sm ${getExpirationStyle(item.expiration_date)}`}>
+                                                                {formatExpirationTime(item.expiration_date)}
+                                                            </div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                             {editingItemId === item.id ? (
@@ -1121,6 +1180,11 @@ const ClientCart = () => {
 
                                                     <div className="font-medium text-gray-700">Total:</div>
                                                     <div className="text-gray-700">₱{(parseFloat(item.price) * parseInt(item.quantity)).toFixed(2)}</div>
+
+                                                    <div className="font-medium text-gray-700">Expires In:</div>
+                                                    <div className={`text-sm ${getExpirationStyle(item.expiration_date)}`}>
+                                                        {formatExpirationTime(item.expiration_date)}
+                                                    </div>
                                                 </div>
 
                                                 <div className="mt-3 flex justify-end">
