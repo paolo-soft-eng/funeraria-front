@@ -370,7 +370,7 @@ export default function ClientMessages() {
     };
 
     ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      // console.error('WebSocket error:', error);
       // Attempt to reconnect after a delay
       setTimeout(() => {
         console.log('Attempting to reconnect...');

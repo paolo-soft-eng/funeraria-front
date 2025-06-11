@@ -664,7 +664,6 @@ const ClientCart = () => {
                 return total + (parseFloat(item.price) * parseInt(item.quantity));
             }, 0);
 
-            // Make sure the amount is at least 100
             const minAmount = Math.max(totalAmount, 10);
 
             console.log("Creating payment intent:", {
