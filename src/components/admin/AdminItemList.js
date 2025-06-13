@@ -3,6 +3,7 @@ import axios from "axios";
 import AdminLayout from "./AdminLayout"; // Import the layout component
 import { EmailContext } from '../EmailContext';
 import { useNavigate } from 'react-router-dom';
+import { FaTable, FaThLarge } from 'react-icons/fa';
 
 const AdminItemList = () => {
   const [items, setItems] = useState([]);
@@ -20,6 +21,8 @@ const AdminItemList = () => {
   const { email } = useContext(EmailContext);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [viewMode, setViewMode] = useState('table');
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -207,6 +210,26 @@ const AdminItemList = () => {
     }
   };
 
+  // Add mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setViewMode('card');
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -232,10 +255,28 @@ const AdminItemList = () => {
   }
 
   return (
-    <AdminLayout currentPage = "itemlists">
+    <AdminLayout currentPage="itemlists">
       <div className="container mx-auto px-4 py-6">
         <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Manage Items</h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Manage Items</h1>
+            {!isMobile && (
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-2 rounded-md ${viewMode === 'table' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
+                >
+                  <FaTable className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('card')}
+                  className={`p-2 rounded-md ${viewMode === 'card' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
+                >
+                  <FaThLarge className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </div>
 
           {message.text && (
             <div
@@ -374,57 +415,115 @@ const AdminItemList = () => {
           </div>
 
           {items.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Image</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Name</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Details</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Price</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Stock</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {items.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-800">
-                        {item.image_path ? (
+            viewMode === 'table' ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Image</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Name</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Details</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Price</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Stock</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {items.map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-800">
+                          {item.image_path ? (
+                            <img
+                              src={`http://localhost/apii/components/${item.image_path}`}
+                              alt={item.name}
+                              className="w-16 h-16 object-cover rounded-md"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded-md">
+                              <span className="text-gray-400 text-xs">No image</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-800">{item.name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{item.details}</td>
+                        <td className="px-4 py-3 text-sm text-gray-800">₱{parseFloat(item.price).toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-gray-800">{item.stock}</td>
+                        <td className="px-4 py-3 text-sm text-right">
+                          <button
+                            onClick={() => editItem(item)}
+                            className="mr-2 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteItem(item.id)}
+                            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4 md:p-6">
+                {items.map((item) => (
+                  <div key={item.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
+                        <p className="text-sm text-gray-500">ID: {item.id}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Price:</span>
+                        <span className="font-semibold">₱{parseFloat(item.price).toFixed(2)}</span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Stock:</span>
+                        <span>{item.stock}</span>
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t">
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">Details:</span> {item.details}
+                        </p>
+                      </div>
+
+                      {item.image_path && (
+                        <div className="mt-3 pt-3 border-t">
                           <img
                             src={`http://localhost/apii/components/${item.image_path}`}
                             alt={item.name}
-                            className="w-16 h-16 object-cover rounded-md"
+                            className="w-full h-48 object-cover rounded-md"
                           />
-                        ) : (
-                          <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded-md">
-                            <span className="text-gray-400 text-xs">No image</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{item.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{item.details}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">₱{parseFloat(item.price).toFixed(2)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{item.stock}</td>
-                      <td className="px-4 py-3 text-sm text-right">
-                        <button
-                          onClick={() => editItem(item)}
-                          className="mr-2 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteItem(item.id)}
-                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 flex justify-end space-x-2">
+                      <button
+                        onClick={() => editItem(item)}
+                        className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded-md text-sm"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>
