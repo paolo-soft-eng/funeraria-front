@@ -6,7 +6,7 @@ const AdminAppointments = () => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+    const [viewMode, setViewMode] = useState('table');
     const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
     useEffect(() => {
@@ -18,13 +18,9 @@ const AdminAppointments = () => {
             }
         };
 
-        // Initial check
         handleResize();
-
-        // Add event listener
         window.addEventListener('resize', handleResize);
 
-        // Cleanup
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
@@ -64,6 +60,10 @@ const AdminAppointments = () => {
             });
 
             const data = await response.json();
+            console.log(response);
+            
+            console.log(data);
+            
             if (data.status === 'success') {
                 fetchAppointments(); // Refresh the list
             } else {
@@ -139,7 +139,7 @@ const AdminAppointments = () => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                                                 ${appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
-                                                    appointment.status === 'unfinished' ? 'bg-yellow-100 text-yellow-800' :
+                                                    appointment.status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
                                                         'bg-blue-100 text-blue-800'}`}>
                                                 {appointment.status}
                                             </span>
@@ -151,7 +151,7 @@ const AdminAppointments = () => {
                                                 className="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                             >
                                                 <option value="finished">Finished</option>
-                                                <option value="unfinished">Unfinished</option>
+                                                <option value="scheduled">Scheduled</option>
                                             </select>
                                         </td>
                                     </tr>
@@ -170,7 +170,7 @@ const AdminAppointments = () => {
                                     </div>
                                     <span className={`px-3 py-1 text-xs font-semibold rounded-full 
                                         ${appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
-                                            appointment.status === 'unfinished' ? 'bg-yellow-100 text-yellow-800' :
+                                            appointment.status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
                                                 'bg-blue-100 text-blue-800'}`}>
                                         {appointment.status}
                                     </span>
@@ -201,7 +201,7 @@ const AdminAppointments = () => {
                                         className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                     >
                                         <option value="finished">Finished</option>
-                                        <option value="unfinished">Unfinished</option>
+                                        <option value="scheduled">Scheduled</option>
                                     </select>
                                 </div>
                             </div>

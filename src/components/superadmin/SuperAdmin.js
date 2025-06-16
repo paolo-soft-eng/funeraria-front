@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { UserPlus, Trash2, Edit, Copy, X, RefreshCw, Search, UserCog, ArrowUp, ArrowDown, Shield, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import axios from 'axios';
 
 const SuperAdmin = () => {
   const [users, setUsers] = useState([]);
@@ -22,6 +24,7 @@ const SuperAdmin = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsers();
@@ -303,6 +306,23 @@ const SuperAdmin = () => {
     }
   };
 
+  const handleLogout = async ()=>{
+    const userConfirmed = window.confirm("Are you sure you want to log out?");
+
+    if (userConfirmed) {
+      try {
+        await axios.post('http://localhost/apii/config/logout.php');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userRole');
+        navigate('/');
+      } catch (error) {
+        console.error('Error logging out:', error);
+        alert('Failed to log out. Please try again.');
+      }
+    }
+    
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -341,6 +361,8 @@ const SuperAdmin = () => {
                     </>
                   )}
                 </button>
+
+                <button className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200" onClick={handleLogout}>Logout</button>
               </div>
             </div>
           </div>

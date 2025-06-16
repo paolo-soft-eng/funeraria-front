@@ -159,10 +159,11 @@ const ClientServices = () => {
 
 const ServiceDetail = ({ service, onClose, refetchServices }) => {
   const [showOrderForm, setShowOrderForm] = useState(false);
+  const {email} = useContext(EmailContext);
   const [formData, setFormData] = useState({
     service_id: service.id,
     customer_name: '',
-    customer_email: '',
+    email: email,
     customer_phone: ''
   });
   const [orderStatus, setOrderStatus] = useState(null);
@@ -171,7 +172,6 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
   const [loadingItems, setLoadingItems] = useState(true);
   const [selectedCaskets, setSelectedCaskets] = useState([]);
   const [selectedFlowers, setSelectedFlowers] = useState([]);
-  const { email } = useContext(EmailContext);
   const [userId, setUserId] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -248,7 +248,7 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
       setFormData({
         ...formData,
         customer_name: '',
-        customer_email: '',
+        email: email,
         customer_phone: ''
       });
       setSelectedCaskets([]);
@@ -461,17 +461,18 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1" >Email Address</label>
                   <input
                     type="email"
-                    name="customer_email"
-                    value={formData.customer_email}
+                    name="email"
+                    value={email}
                     onChange={(e) => setFormData({
                       ...formData,
-                      customer_email: e.target.value
+                      email: e.target.value
                     })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     required
+                    disabled
                   />
                 </div>
                 <div>

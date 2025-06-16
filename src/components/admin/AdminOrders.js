@@ -6,27 +6,6 @@ import { FaTable, FaThLarge, FaCheck, FaTrash } from 'react-icons/fa';
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-
-  // Add mobile detection
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) {
-        setViewMode('card');
-      }
-    };
-
-    // Initial check
-    handleResize();
-
-    // Add event listener
-    window.addEventListener('resize', handleResize);
-
-    // Cleanup
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   useEffect(() => {
     axios.get('http://localhost/apii/components/adminOrders.php')
@@ -116,22 +95,22 @@ const AdminOrders = () => {
           <div className="container mx-auto px-4 py-6">
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Client Orders</h1>
-              {!isMobile && (
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setViewMode('table')}
-                    className={`p-2 rounded-md ${viewMode === 'table' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-                  >
-                    <FaTable className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('card')}
-                    className={`p-2 rounded-md ${viewMode === 'card' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
-                  >
-                    <FaThLarge className="w-5 h-5" />
-                  </button>
-                </div>
-              )}
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-2 rounded-md ${viewMode === 'table' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}
+                >
+                  <FaTable className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('card')}
+                  className={`p-2 rounded-md ${viewMode === 'card' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'
+                    }`}
+                >
+                  <FaThLarge className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {viewMode === 'table' ? (

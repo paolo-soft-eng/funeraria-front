@@ -669,6 +669,7 @@ const AdminSettings = () => {
                     <div className="mb-6">
                       <div className="flex flex-col sm:flex-row items-center mb-6">
                         <div className="h-24 w-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4 sm:mb-0 sm:mr-6 overflow-hidden">
+                        <User size={30}/>
                           {profilePreview && (
                             <img
                               src={profilePreview.startsWith('blob:')

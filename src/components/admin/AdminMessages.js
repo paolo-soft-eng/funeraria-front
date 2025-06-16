@@ -67,7 +67,7 @@ const AdminMessages = () => {
     };
 
     ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      // console.error('WebSocket error:', error);
     };
 
     ws.onmessage = (event) => {
