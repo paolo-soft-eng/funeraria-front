@@ -11,6 +11,7 @@ import {
   Mail,
   Smartphone,
   MapPin,
+  Bug,
   ChevronRight,
   Settings as SettingsIcon,
   Save
@@ -71,6 +72,7 @@ const ClientProfile = () => {
     { id: 'documents', label: 'Documents', icon: <FileText size={18} /> },
     { id: 'appointments', label: 'Appointments', icon: <Calendar size={18} /> },
     { id: 'password', label: 'Password', icon: <Lock size={18} /> },
+    {id: 'report bug', label: 'Report Bug', icon: <Bug size={18} />},
     { id: 'help', label: 'Help', icon: <HelpCircle size={18} /> }
   ];
 
