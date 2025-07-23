@@ -8,6 +8,7 @@ import {
   HelpCircle,
   Mail,
   Smartphone,
+  Bug,
   Save,
   ChevronRight,
   Settings as SettingsIcon
@@ -619,6 +620,7 @@ const AdminSettings = () => {
     { id: 'notifications', label: 'Notifications', icon: <Bell size={18} /> },
     { id: 'facility', label: 'Facility', icon: <SettingsIcon size={18} /> },
     { id: 'staff', label: 'Staff', icon: <Users size={18} /> },
+    { id: 'report', label: 'Report', icon: <Bug size={18} /> },
     { id: 'help', label: 'Help', icon: <HelpCircle size={18} /> }
   ];
 

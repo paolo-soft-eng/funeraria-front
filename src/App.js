@@ -39,7 +39,7 @@ const App = () => {
               <Route path='/' element={<LandingPage/>}/>
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              
+
               <Route path="/dashboard-client" element={
                 <ProtectedRoute allowedRoles={['client']}>
                   <ClientDashboard />
@@ -54,7 +54,7 @@ const App = () => {
                 <Route path="services" element={<ClientServices />} />
                 <Route path="messages" element={<ClientMessages />} />
               </Route>
-              
+
               <Route path='/dashboard-admin/home' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboard/>
@@ -104,7 +104,7 @@ const App = () => {
               <Route path='/super-admin' element={<SuperAdmin/>}>
               </Route>
             </Routes>
-            
+
           </Router>
         </EmailProvider>
     </GoogleOAuthProvider>
@@ -112,3 +112,5 @@ const App = () => {
 };
 
 export default App;
+
+  
