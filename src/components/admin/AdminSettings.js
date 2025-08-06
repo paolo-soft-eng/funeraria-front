@@ -635,7 +635,7 @@ const AdminSettings = () => {
     setBugReportStatus(null);
   
     try {
-      const response = await fetch('http://localhost/apii/components/adminReport.php', {
+      const response = await fetch('http://localhost/apii/components/adminBug.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
