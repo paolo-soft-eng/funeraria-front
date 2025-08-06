@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Trash2, Edit, Copy, X, RefreshCw, Search, UserCog, ArrowUp, ArrowDown, Shield, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { UserPlus, Trash2, Edit, Copy, X, RefreshCw, Search, UserCog, ArrowUp, ArrowDown, Shield, Mail, Phone, MapPin, Calendar, FileText } from 'lucide-react';
 import axios from 'axios';
 
 const SuperAdmin = () => {
@@ -40,7 +40,7 @@ const SuperAdmin = () => {
       }
       
       const data = await response.json();
-      // Ensure each user has a status field, defaulting to 'disabled' if not set
+      
       const usersWithStatus = data.map(user => {
         console.log(`User ${user.id} status from DB:`, user.status);
         return {
@@ -61,7 +61,7 @@ const SuperAdmin = () => {
     await fetchUsers();
     setTimeout(() => setIsRefreshing(false), 500);
   };
-
+ 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
@@ -362,6 +362,13 @@ const SuperAdmin = () => {
                   )}
                 </button>
 
+                <button 
+                  onClick={() => navigate('/super-admin/reports')}
+                  className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200"
+                >
+                  <FileText size={18} className="mr-2" />
+                  View Reports
+                </button>
                 <button className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200" onClick={handleLogout}>Logout</button>
               </div>
             </div>
@@ -649,8 +656,8 @@ const SuperAdmin = () => {
                               <span className="font-medium text-gray-900">{user.username}</span>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-sm text-gray-900">{user.firstname}</td>
-                          <td className="py-3 px-4 text-sm text-gray-900">{user.lastname}</td>
+                          <td className="py-3 px-4 text-sm text-gray-900">{user.first_name}</td>
+                          <td className="py-3 px-4 text-sm text-gray-900">{user.last_name}</td>
                           <td className="py-3 px-4">
                             <div className="flex items-center text-sm text-gray-500">
                               <Mail size={14} className="mr-2 text-gray-400" />

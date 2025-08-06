@@ -13,6 +13,7 @@ import {
   User,
   LogOut,
   Bell,
+  Bug,
   BarChart2,
   Settings
 } from 'lucide-react';
@@ -114,6 +115,7 @@ const AdminLayout = ({ children, currentPage }) => {
     { name: 'documents', icon: <List size={20} />, label: 'Documents' },
     { name: 'appointments', icon: <Users size={20} />, label: 'Appointments' },
     { name: 'analytics', icon: <BarChart2 size={20} />, label: 'Analytics' },
+    { name: 'reports', icon: <Bug size={20} />, label: 'Reports' },
     { name: 'settings', icon: <Settings size={20} />, label: 'Settings' },
   ];
 

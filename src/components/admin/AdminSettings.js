@@ -7,8 +7,8 @@ import {
   Users,
   HelpCircle,
   Mail,
-  Smartphone,
   Bug,
+  Smartphone,
   Save,
   ChevronRight,
   Settings as SettingsIcon
@@ -620,9 +620,43 @@ const AdminSettings = () => {
     { id: 'notifications', label: 'Notifications', icon: <Bell size={18} /> },
     { id: 'facility', label: 'Facility', icon: <SettingsIcon size={18} /> },
     { id: 'staff', label: 'Staff', icon: <Users size={18} /> },
-    { id: 'report', label: 'Report', icon: <Bug size={18} /> },
+    { id: 'report', label: 'Report Bug', icon: <Bug size={18} /> },
     { id: 'help', label: 'Help', icon: <HelpCircle size={18} /> }
   ];
+  
+  const [isBugSubmitting, setIsBugSubmitting] = useState(false);
+  const [bugDescription, setBugDescription] = useState('');
+  const [bugReportStatus, setBugReportStatus] = useState(null);
+
+
+  const handleReportBug = async (e) => {
+    e.preventDefault();
+    setIsBugSubmitting(true);
+    setBugReportStatus(null);
+  
+    try {
+      const response = await fetch('http://localhost/apii/components/adminReport.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          {email: formData.email || email, 
+          description: bugDescription
+        })
+      });
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        setBugReportStatus({ type: 'success', message: data.message });
+        setBugDescription('');
+      } else {
+        setBugReportStatus({ type: 'error', message: data.message });
+      }
+    } catch (err) {
+      setBugReportStatus({ type: 'error', message: 'Failed to submit bug report. Please try again.' });
+    } finally {
+      setIsBugSubmitting(false);
+    }
+  };
 
   return (
     <AdminLayout currentPage="settings">
@@ -1072,6 +1106,7 @@ finish it
                       </div>
                     </div>
                   </form>
+                  
 
                   {/* Staff List */}
                   <div className="mt-8">
@@ -1110,6 +1145,40 @@ finish it
                       ))}
                     </div>
                   </div>
+                </div>
+              )}
+              {activeTab === 'report' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-6">Report Bug</h2>
+                  <form onSubmit={handleReportBug}>
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Describe the issue(English, Tagalog, Bisaya)
+                      </label>
+                      <textarea
+                        className="w-full p-2 border border-gray-300 rounded-md"
+                        rows={5}
+                        value={bugDescription}
+                        onChange={(e) => setBugDescription(e.target.value)}
+                        required
+                        placeholder="Please describe the bug you encountered..."
+                      />
+                    </div>
+                    {bugReportStatus && (
+                      <div className={`p-3 rounded ${bugReportStatus.type === 'success' ? 'bg-green-50 text-green-700 border-l-4 border-green-500' : 'bg-red-50 text-red-700 border-l-4 border-red-500'}`}>
+                        {bugReportStatus.message}
+                      </div>
+                    )}
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center"
+                        disabled={isBugSubmitting}
+                      >
+                        {isBugSubmitting ? 'Submitting...' : 'Submit Bug Report'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
               )}
 

@@ -63,6 +63,10 @@ const ClientProfile = () => {
     time: ''
   });
 
+  const [bugDescription, setBugDescription] = useState('');
+  const [bugReportStatus, setBugReportStatus] = useState(null);
+  const [isBugSubmitting, setIsBugSubmitting] = useState(false);
+
 
   const API_BASE_URL = 'http://localhost/apii/components/user_profile.php';
   const IMAGE_BASE_URL = 'http://localhost/apii/components/';
@@ -538,6 +542,36 @@ const ClientProfile = () => {
         console.error("Error uploading profile picture:", err);
         showMessage('Failed to upload profile picture. Please try again.', 'error');
       }
+    }
+  };
+
+
+  const handleReportBug = async (e) => {
+    e.preventDefault();
+    setIsBugSubmitting(true);
+    setBugReportStatus(null);
+  
+    try {
+      const response = await fetch('http://localhost/apii/components/report.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userData?.id || null,
+          email: userData?.email || email,
+          description: bugDescription
+        })
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+        setBugReportStatus({ type: 'success', message: data.message });
+        setBugDescription('');
+      } else {
+        setBugReportStatus({ type: 'error', message: data.message });
+      }
+    } catch (err) {
+      setBugReportStatus({ type: 'error', message: 'Failed to submit bug report. Please try again.' });
+    } finally {
+      setIsBugSubmitting(false);
     }
   };
 
@@ -1196,6 +1230,41 @@ const ClientProfile = () => {
                     <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center">
                       <Save size={16} className="mr-2" />
                       Change Password
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {activeTab === 'report bug' && (
+              <div>
+                <h2 className="text-xl font-semibold mb-6">Report a Bug</h2>
+                <form onSubmit={handleReportBug} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Describe the issue(English, Tagalog, Bisaya)
+                    </label>
+                    <textarea
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      rows={5}
+                      value={bugDescription}
+                      onChange={(e) => setBugDescription(e.target.value)}
+                      required
+                      placeholder="Please describe the bug you encountered..."
+                    />
+                  </div>
+                  {bugReportStatus && (
+                    <div className={`p-3 rounded ${bugReportStatus.type === 'success' ? 'bg-green-50 text-green-700 border-l-4 border-green-500' : 'bg-red-50 text-red-700 border-l-4 border-red-500'}`}>
+                      {bugReportStatus.message}
+                    </div>
+                  )}
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                      disabled={isBugSubmitting}
+                    >
+                      {isBugSubmitting ? 'Submitting...' : 'Submit Bug Report'}
                     </button>
                   </div>
                 </form>

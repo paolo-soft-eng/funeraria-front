@@ -14,6 +14,7 @@ import {
     LogOut,
     Bell,
     Edit,
+    Bug,
     Clock,
     MapPin,
     Activity,
@@ -166,6 +167,10 @@ const AdminDashboard = () => {
         navigate("/dashboard-admin/clients");
     }
 
+    const handleReports = () => {
+        navigate("/dashboard-admin/reports");
+    }
+
     const handleMessage = () => {
         navigate("/dashboard-admin/messages");
     }
@@ -218,6 +223,7 @@ const AdminDashboard = () => {
         { name: 'documents', icon: <List size={20} />, label: 'Documents' },
         { name: 'appointments', icon: <Users size={20} />, label: 'Appointments' }, 
         { name: 'analytics', icon: <BarChart2 size={20} />, label: 'Analytics' },
+        { name: 'reports', icon: <Bug size={20} />, label: 'Reports' },
         { name: 'settings', icon: <Settings size={20} />, label: 'Settings' },
     ];
 

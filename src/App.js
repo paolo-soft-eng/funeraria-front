@@ -18,9 +18,11 @@ import AdminSettings from './components/admin/AdminSettings';
 import AdminClients from './components/admin/AdminClients';
 import AdminAppointments from './components/admin/AdminAppointments';
 import AdminAnalytics from './components/admin/AdminAnalytics';
+import { AdminReport } from './components/admin/AdminReport';
 import AdminDocuments from './components/admin/AdminDocuments';
 import LandingPage from './components/LandingPage';
 import SuperAdmin from './components/superadmin/SuperAdmin';
+import SuperAdminReport from './components/superadmin/SuperAdminReport';
 import ErrorPage from './components/ErrorPage';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -95,6 +97,11 @@ const App = () => {
                   <AdminAnalytics/>
                 </ProtectedRoute>
               } />
+              <Route path='/dashboard-admin/reports' element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminReport/>
+                </ProtectedRoute>
+              } />
               <Route path='/dashboard-admin/documents' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDocuments/>
@@ -102,6 +109,8 @@ const App = () => {
               } />
               <Route path="*" element={<ErrorPage />} />
               <Route path='/super-admin' element={<SuperAdmin/>}>
+              </Route>
+              <Route path='/super-admin/reports' element={<SuperAdminReport/>}>
               </Route>
             </Routes>
 
