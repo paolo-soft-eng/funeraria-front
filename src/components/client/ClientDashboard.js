@@ -17,6 +17,8 @@ import {
   Bell
 } from 'lucide-react';
 
+import LoadingWrapper from '../LoadingWrapper';
+
 import { EmailContext } from '../EmailContext';
 
 const ClientDashboard = () => {
@@ -128,7 +130,8 @@ const ClientDashboard = () => {
 
 
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-800">
+    <LoadingWrapper>
+      <div className="flex h-screen bg-gray-50 text-gray-800">
       {isSidebarOpen && isMobileView && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={toggleSidebar}></div>
       )}
@@ -276,7 +279,11 @@ const ClientDashboard = () => {
 
         <main className="flex-1 overflow-auto">
           <div>
-            <Outlet />
+            <LoadingWrapper key={location.pathname} minLoadTime={1000
+              
+            }>
+              <Outlet />
+            </LoadingWrapper>
           </div>
         </main>
 
@@ -302,6 +309,7 @@ const ClientDashboard = () => {
         </footer>
       </div>
     </div>
+    </LoadingWrapper>
   );
 };
 

@@ -320,11 +320,11 @@ export default function FuneralManagementLanding() {
             <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
               <div className="flex items-center mb-6">
                 <div className="bg-gradient-to-br from-gray-200 to-gray-300 w-16 h-16 rounded-full flex items-center justify-center">
-                  <span className="text-gray-700 font-bold text-lg">JD</span>
+                  <span className="text-gray-700 font-bold text-lg">PV</span>
                 </div>
                 <div className="ml-4">
-                  <h4 className="font-semibold text-lg text-gray-800">James Douglas</h4>
-                  <p className="text-gray-500">Chicago, IL</p>
+                  <h4 className="font-semibold text-lg text-gray-800">Paolo Villanueva</h4>
+                  <p className="text-gray-500">Poblacion, Dagohoy, Bohol</p>
                 </div>
               </div>
               <p className="text-gray-600 italic text-lg leading-relaxed">
@@ -336,11 +336,11 @@ export default function FuneralManagementLanding() {
             <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
               <div className="flex items-center mb-6">
                 <div className="bg-gradient-to-br from-gray-200 to-gray-300 w-16 h-16 rounded-full flex items-center justify-center">
-                  <span className="text-gray-700 font-bold text-lg">MR</span>
+                  <span className="text-gray-700 font-bold text-lg">RJ</span>
                 </div>
                 <div className="ml-4">
-                  <h4 className="font-semibold text-lg text-gray-800">Maria Rodriguez</h4>
-                  <p className="text-gray-500">Austin, TX</p>
+                  <h4 className="font-semibold text-lg text-gray-800">Reynan Jumaylab</h4>
+                  <p className="text-gray-500">Ba-ang, Catigbian, Bohol</p>
                 </div>
               </div>
               <p className="text-gray-600 italic text-lg leading-relaxed">
@@ -352,11 +352,43 @@ export default function FuneralManagementLanding() {
             <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
               <div className="flex items-center mb-6">
                 <div className="bg-gradient-to-br from-gray-200 to-gray-300 w-16 h-16 rounded-full flex items-center justify-center">
-                  <span className="text-gray-700 font-bold text-lg">TJ</span>
+                  <span className="text-gray-700 font-bold text-lg">RB</span>
                 </div>
                 <div className="ml-4">
-                  <h4 className="font-semibold text-lg text-gray-800">Thomas Johnson</h4>
-                  <p className="text-gray-500">Denver, CO</p>
+                  <h4 className="font-semibold text-lg text-gray-800">Rosanina Bagot</h4>
+                  <p className="text-gray-500">Santa cruz, Dagohoy, Bohol, </p>
+                </div>
+              </div>
+              <p className="text-gray-600 italic text-lg leading-relaxed">
+                "I was overwhelmed until we found Gomez Funeraria. Their guidance and support through every step of planning my mother's memorial was a blessing."
+              </p>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
+              <div className="flex items-center mb-6">
+                <div className="bg-gradient-to-br from-gray-200 to-gray-300 w-16 h-16 rounded-full flex items-center justify-center">
+                  <span className="text-gray-700 font-bold text-lg">JE</span>
+                </div>
+                <div className="ml-4">
+                  <h4 className="font-semibold text-lg text-gray-800">Jasper Elevera</h4>
+                  <p className="text-gray-500">Maribojoc, Bohol</p>
+                </div>
+              </div>
+              <p className="text-gray-600 italic text-lg leading-relaxed">
+                "I was overwhelmed until we found Gomez Funeraria. Their guidance and support through every step of planning my mother's memorial was a blessing."
+              </p>
+            </div>
+
+            {/* Testimonial 3 */}
+            <div className="bg-gradient-to-br from-gray-50 to-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100">
+              <div className="flex items-center mb-6">
+                <div className="bg-gradient-to-br from-gray-200 to-gray-300 w-16 h-16 rounded-full flex items-center justify-center">
+                  <span className="text-gray-700 font-bold text-lg">AP</span>
+                </div>
+                <div className="ml-4">
+                  <h4 className="font-semibold text-lg text-gray-800">Aianlee Pantoja</h4>
+                  <p className="text-gray-500">Maribojoc, Bohol</p>
                 </div>
               </div>
               <p className="text-gray-600 italic text-lg leading-relaxed">

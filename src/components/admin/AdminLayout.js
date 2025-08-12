@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { EmailContext } from '../EmailContext';
+import LoadingWrapper from '../LoadingWrapper';
 
 const AdminLayout = ({ children, currentPage }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -125,7 +126,8 @@ const AdminLayout = ({ children, currentPage }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-800">
+    <LoadingWrapper minLoadTime={1000}>
+      <div className="flex h-screen bg-gray-50 text-gray-800">
       {isSidebarOpen && isMobileView && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={toggleSidebar}></div>
       )}
@@ -279,6 +281,7 @@ const AdminLayout = ({ children, currentPage }) => {
         </footer>
       </div>
     </div>
+    </LoadingWrapper>
   );
 };
 

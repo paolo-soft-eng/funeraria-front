@@ -1,125 +1,230 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import Auth from './Auth';
-import ClientDashboard from './components/client/ClientDashboard';
-import ClientHome from './components/client/ClientHome';
-import ClientAbout from './components/client/ClientAbout';
-import ClientMenu from './components/client/ClientMenu';
-import ClientCart from './components/client/ClientCart';
-import ClientProfile from './components/client/ClientProfile';
-import ClientServices from './components/client/ClientServices';
-import ClientMessages from './components/client/ClientMessages';
-import { EmailProvider } from './components/EmailContext';
-import AdminDashboard from './components/admin/AdminDashboard';
-import AdminOrders from './components/admin/AdminOrders';
-import AdminItemList from './components/admin/AdminItemList';
-import AdminMessages from './components/admin/AdminMessages';
-import AdminSettings from './components/admin/AdminSettings';
-import AdminClients from './components/admin/AdminClients';
-import AdminAppointments from './components/admin/AdminAppointments';
-import AdminAnalytics from './components/admin/AdminAnalytics';
-import { AdminReport } from './components/admin/AdminReport';
-import AdminDocuments from './components/admin/AdminDocuments';
-import LandingPage from './components/LandingPage';
-import SuperAdmin from './components/superadmin/SuperAdmin';
-import SuperAdminReport from './components/superadmin/SuperAdminReport';
-import ErrorPage from './components/ErrorPage';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { EmailProvider } from './components/EmailContext';
+import LoadingScreen from './components/LoadingScreen';
+import LoadingWrapper from './components/LoadingWrapper';
 import ProtectedRoute from './components/ProtectedRoute';
-import ForgotPassword from './components/ForgotPassword';
-import ResetPassword from './components/ResetPassword';
+
+// Lazy load components for better performance
+const Auth = lazy(() => import('./Auth'));
+const ClientDashboard = lazy(() => import('./components/client/ClientDashboard'));
+const ClientHome = lazy(() => import('./components/client/ClientHome'));
+const ClientAbout = lazy(() => import('./components/client/ClientAbout'));
+const ClientMenu = lazy(() => import('./components/client/ClientMenu'));
+const ClientCart = lazy(() => import('./components/client/ClientCart'));
+const ClientProfile = lazy(() => import('./components/client/ClientProfile'));
+const ClientServices = lazy(() => import('./components/client/ClientServices'));
+const ClientMessages = lazy(() => import('./components/client/ClientMessages'));
+const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
+const AdminOrders = lazy(() => import('./components/admin/AdminOrders'));
+const AdminItemList = lazy(() => import('./components/admin/AdminItemList'));
+const AdminMessages = lazy(() => import('./components/admin/AdminMessages'));
+const AdminSettings = lazy(() => import('./components/admin/AdminSettings'));
+const AdminClients = lazy(() => import('./components/admin/AdminClients'));
+const AdminAppointments = lazy(() => import('./components/admin/AdminAppointments'));
+const AdminAnalytics = lazy(() => import('./components/admin/AdminAnalytics'));
+const AdminReport = lazy(() => import('./components/admin/AdminReport'));
+const AdminDocuments = lazy(() => import('./components/admin/AdminDocuments'));
+const LandingPage = lazy(() => import('./components/LandingPage'));
+const SuperAdmin = lazy(() => import('./components/superadmin/SuperAdmin'));
+const SuperAdminReport = lazy(() => import('./components/superadmin/SuperAdminReport'));
+const ErrorPage = lazy(() => import('./components/ErrorPage'));
+const ForgotPassword = lazy(() => import('./components/ForgotPassword'));
+const ResetPassword = lazy(() => import('./components/ResetPassword'));
 
 const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
 const App = () => {
   return (
     <GoogleOAuthProvider clientId={clientId}>
-        <EmailProvider>
-          <Router>
+      <EmailProvider>
+        <Router>
+          <Suspense fallback={<LoadingScreen />}>
             <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path='/' element={<LandingPage/>}/>
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/auth" element={
+                <LoadingWrapper>
+                  <Auth />
+                </LoadingWrapper>
+              } />
+              <Route path='/' element={
+                <LoadingWrapper>
+                  <LandingPage/>
+                </LoadingWrapper>
+              }/>
+              <Route path="/forgot-password" element={
+                <LoadingWrapper>
+                  <ForgotPassword />
+                </LoadingWrapper>
+              } />
+              <Route path="/reset-password" element={
+                <LoadingWrapper>
+                  <ResetPassword />
+                </LoadingWrapper>
+              } />
 
               <Route path="/dashboard-client" element={
                 <ProtectedRoute allowedRoles={['client']}>
-                  <ClientDashboard />
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientDashboard />
+                  </Suspense>
                 </ProtectedRoute>
               }>
                 <Route index element={<Navigate to="home" />} />
-                <Route path="home" element={<ClientHome />} />
-                <Route path="about" element={<ClientAbout />} />
-                <Route path="menu" element={<ClientMenu />} />
-                <Route path="cart" element={<ClientCart />} />
-                <Route path="settings" element={<ClientProfile />} />
-                <Route path="services" element={<ClientServices />} />
-                <Route path="messages" element={<ClientMessages />} />
+                <Route path="home" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientHome />
+                  </Suspense>
+                } />
+                <Route path="about" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientAbout />
+                  </Suspense>
+                } />
+                <Route path="menu" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientMenu />
+                  </Suspense>
+                } />
+                <Route path="cart" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientCart />
+                  </Suspense>
+                } />
+                <Route path="settings" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientProfile />
+                  </Suspense>
+                } />
+                <Route path="services" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientServices />
+                  </Suspense>
+                } />
+                <Route path="messages" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientMessages />
+                  </Suspense>
+                } />
               </Route>
 
               <Route path='/dashboard-admin/home' element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminDashboard/>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <LoadingWrapper>
+                      <AdminDashboard/>
+                    </LoadingWrapper>
+                  </Suspense>
                 </ProtectedRoute>
               } />
               <Route path='/dashboard-admin/settings' element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminSettings/>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <LoadingWrapper>
+                      <AdminSettings/>
+                    </LoadingWrapper>
+                  </Suspense>
                 </ProtectedRoute>
               } />
               <Route path='/dashboard-admin/orders' element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminOrders/>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <LoadingWrapper>
+                      <AdminOrders/>
+                    </LoadingWrapper>
+                  </Suspense>
                 </ProtectedRoute>
               } />
               <Route path='/dashboard-admin/itemlists' element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminItemList/>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <LoadingWrapper>
+                      <AdminItemList/>
+                    </LoadingWrapper>
+                  </Suspense>
                 </ProtectedRoute>
               } />
               <Route path='/dashboard-admin/clients' element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminClients/>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <LoadingWrapper>
+                      <AdminClients/>
+                    </LoadingWrapper>
+                  </Suspense>
                 </ProtectedRoute>
               } />
               <Route path='/dashboard-admin/messages' element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminMessages/>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <LoadingWrapper>
+                      <AdminMessages/>
+                    </LoadingWrapper>
+                  </Suspense>
                 </ProtectedRoute>
               } />
               <Route path='/dashboard-admin/appointments' element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminAppointments/>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <LoadingWrapper>
+                      <AdminAppointments/>
+                    </LoadingWrapper>
+                  </Suspense>
                 </ProtectedRoute>
               } />
               <Route path='/dashboard-admin/analytics' element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminAnalytics/>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <LoadingWrapper>
+                      <AdminAnalytics/>
+                    </LoadingWrapper>
+                  </Suspense>
                 </ProtectedRoute>
               } />
               <Route path='/dashboard-admin/reports' element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminReport/>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <LoadingWrapper>
+                      <AdminReport/>
+                    </LoadingWrapper>
+                  </Suspense>
                 </ProtectedRoute>
               } />
               <Route path='/dashboard-admin/documents' element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminDocuments/>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <LoadingWrapper>
+                      <AdminDocuments/>
+                    </LoadingWrapper>
+                  </Suspense>
                 </ProtectedRoute>
               } />
-              <Route path="*" element={<ErrorPage />} />
-              <Route path='/super-admin' element={<SuperAdmin/>}>
-              </Route>
-              <Route path='/super-admin/reports' element={<SuperAdminReport/>}>
-              </Route>
+              <Route path="*" element={
+                <Suspense fallback={<LoadingScreen />}>
+                  <LoadingWrapper>
+                    <ErrorPage />
+                  </LoadingWrapper>
+                </Suspense>
+              } />
+              <Route path='/super-admin' element={
+                <Suspense fallback={<LoadingScreen />}>
+                  <LoadingWrapper>
+                    <SuperAdmin/>
+                  </LoadingWrapper>
+                </Suspense>
+              } />
+              <Route path='/super-admin/reports' element={
+                <Suspense fallback={<LoadingScreen />}>
+                  <LoadingWrapper>
+                    <SuperAdminReport/>
+                  </LoadingWrapper>
+                </Suspense>
+              } />
             </Routes>
-
-          </Router>
-        </EmailProvider>
+          </Suspense>
+        </Router>
+      </EmailProvider>
     </GoogleOAuthProvider>
   );
 };
 
 export default App;
-
-  

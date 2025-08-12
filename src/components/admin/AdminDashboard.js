@@ -23,6 +23,7 @@ import {
     Calendar
 } from 'lucide-react';
 import { EmailContext } from '../EmailContext';
+import LoadingWrapper from '../LoadingWrapper';
 
 const AdminDashboard = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -235,7 +236,8 @@ const AdminDashboard = () => {
 
     if (!isLoggedIn) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <LoadingWrapper>
+                <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg">
                     <div className="text-center">
                         <svg className="mx-auto h-12 w-12 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -254,11 +256,13 @@ const AdminDashboard = () => {
                     </div>
                 </div>
             </div>
+            </LoadingWrapper>
         );
     }
 
     return (
-        <div className="flex h-screen bg-gray-50 text-gray-800">
+        <LoadingWrapper minLoadTime={1000}>
+            <div className="flex h-screen bg-gray-50 text-gray-800">
             {/* Overlay for mobile */}
             {isSidebarOpen && isMobileView && (
                 <div
@@ -736,6 +740,7 @@ const AdminDashboard = () => {
             {/* Child Routes */}
             <Outlet />
         </div>
+        </LoadingWrapper>
     );
 };
 
