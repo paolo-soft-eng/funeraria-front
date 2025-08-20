@@ -278,7 +278,7 @@ export default function FuneralManagementLanding() {
             <div className="lg:w-1/2">
               <div className="bg-gray-200 h-96 lg:h-[500px] rounded-2xl shadow-lg overflow-hidden">
                 <img
-                  src="/nin.jpg"
+                  src="/login_bg.jpg"
                   alt="Funeral service professionals"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                 />

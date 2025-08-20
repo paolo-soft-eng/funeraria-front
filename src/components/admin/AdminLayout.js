@@ -126,7 +126,6 @@ const AdminLayout = ({ children, currentPage }) => {
   };
 
   return (
-    <LoadingWrapper minLoadTime={1000}>
       <div className="flex h-screen bg-gray-50 text-gray-800">
       {isSidebarOpen && isMobileView && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={toggleSidebar}></div>
@@ -281,7 +280,6 @@ const AdminLayout = ({ children, currentPage }) => {
         </footer>
       </div>
     </div>
-    </LoadingWrapper>
   );
 };
 

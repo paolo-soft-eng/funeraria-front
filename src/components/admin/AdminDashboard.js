@@ -41,6 +41,9 @@ const AdminDashboard = () => {
         totalClients: 0,
         totalRevenue: 0,
         newMessages: 0,
+        current_month_orders: 0,
+        current_month_clients: 0,
+        current_month_revenue: 0,
         recent_messages: [],
         upcoming_orders: [],
         upcoming_appointments: []
@@ -55,15 +58,15 @@ const AdminDashboard = () => {
                 );
                 console.log('API Response:', response.data); // Log the response
                 if (response.data.success) {
-                    console.log('Upcoming Appointments:', response.data.data.upcoming_appointments); // Add this line to debug appointments
                     setDashboardStats({
                         totalOrders: response.data.data.total_orders || 0,
                         totalClients: response.data.data.total_clients || 0,
                         totalRevenue: response.data.data.total_revenue || 0,
                         newMessages: response.data.data.new_messages || 0,
-                        orders_percentage_change: response.data.data.orders_percentage_change || 0,
-                        clients_percentage_change: response.data.data.clients_percentage_change || 0,
-                        revenue_percentage_change: response.data.data.revenue_percentage_change || 0,
+                        current_month_orders: response.data.data.current_month_orders || 0,
+                        current_month_clients: response.data.data.current_month_clients || 0,
+                        current_month_revenue: response.data.data.current_month_revenue || 0,
+                        current_month_name: response.data.data.current_month_name || 'Current Month',
                         upcoming_orders: response.data.data.upcoming_orders || [],
                         upcoming_appointments: response.data.data.upcoming_appointments || [],
                         recent_messages: response.data.data.recent_messages || []
@@ -108,7 +111,6 @@ const AdminDashboard = () => {
             try {
                 const response = await axios.post('http://localhost/apii/components/fetchAdminProfile.php', { email });
                 setUserData(response.data.data);
-                console.log(response);
 
             } catch (error) {
                 console.error('Error fetching user data:', error);
@@ -222,7 +224,7 @@ const AdminDashboard = () => {
         { name: 'clients', icon: <Users size={20} />, label: 'Clients' },
         { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
         { name: 'documents', icon: <List size={20} />, label: 'Documents' },
-        { name: 'appointments', icon: <Users size={20} />, label: 'Appointments' }, 
+        { name: 'appointments', icon: <Users size={20} />, label: 'Appointments' },
         { name: 'analytics', icon: <BarChart2 size={20} />, label: 'Analytics' },
         { name: 'reports', icon: <Bug size={20} />, label: 'Reports' },
         { name: 'settings', icon: <Settings size={20} />, label: 'Settings' },
@@ -238,31 +240,30 @@ const AdminDashboard = () => {
         return (
             <LoadingWrapper>
                 <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg">
-                    <div className="text-center">
-                        <svg className="mx-auto h-12 w-12 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <h2 className="mt-4 text-xl font-semibold text-gray-900">Login Required</h2>
-                        <p className="mt-2 text-gray-600">Please log in to access the admin dashboard.</p>
-                        <div className="mt-6">
-                            <a
-                                href="/auth"
-                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                            >
-                                Go to Login
-                            </a>
+                    <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg">
+                        <div className="text-center">
+                            <svg className="mx-auto h-12 w-12 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <h2 className="mt-4 text-xl font-semibold text-gray-900">Login Required</h2>
+                            <p className="mt-2 text-gray-600">Please log in to access the admin dashboard.</p>
+                            <div className="mt-6">
+                                <a
+                                    href="/auth"
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                >
+                                    Go to Login
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
             </LoadingWrapper>
         );
     }
 
     return (
-        <LoadingWrapper minLoadTime={1000}>
-            <div className="flex h-screen bg-gray-50 text-gray-800">
+        <div className="flex h-screen bg-gray-50 text-gray-800">
             {/* Overlay for mobile */}
             {isSidebarOpen && isMobileView && (
                 <div
@@ -417,8 +418,8 @@ const AdminDashboard = () => {
                                         <ShoppingCart size={20} className="text-indigo-600" />
                                     </div>
                                 </div>
-                                <div className="mt-4 text-xs text-green-600 flex items-center">
-                                    <span>{dashboardStats.orders_percentage_change > 0 ? '+' : ''}{dashboardStats.orders_percentage_change}% from last month</span>
+                                <div className="mt-4 text-xs text-blue-600 flex items-center">
+                                    <span>{dashboardStats.current_month_orders} orders this {dashboardStats.current_month_name}</span>
                                 </div>
                             </div>
 
@@ -432,8 +433,8 @@ const AdminDashboard = () => {
                                         <Users size={20} className="text-blue-600" />
                                     </div>
                                 </div>
-                                <div className="mt-4 text-xs text-green-600 flex items-center">
-                                    <span>{dashboardStats.clients_percentage_change > 0 ? '+' : ''}{dashboardStats.clients_percentage_change}% from last month</span>
+                                <div className="mt-4 text-xs text-blue-600 flex items-center">
+                                    <span>{dashboardStats.current_month_clients} new clients this {dashboardStats.current_month_name}</span>
                                 </div>
                             </div>
 
@@ -455,15 +456,15 @@ const AdminDashboard = () => {
                             <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-emerald-500">
                                 <div className="flex justify-between items-center">
                                     <div>
-                                        <p className="text-sm text-gray-500 mb-1">Revenue</p>
+                                        <p className="text-sm text-gray-500 mb-1">Total Revenue</p>
                                         <h3 className="text-2xl font-bold">₱ {dashboardStats.totalRevenue.toFixed(2)}</h3>
                                     </div>
                                     <div className="bg-emerald-100 p-3 rounded-full">
                                         <Activity size={20} className="text-emerald-600" />
                                     </div>
                                 </div>
-                                <div className="mt-4 text-xs text-green-600 flex items-center">
-                                    <span>{dashboardStats.revenue_percentage_change > 0 ? '+' : ''}{dashboardStats.revenue_percentage_change}% from last month</span>
+                                <div className="mt-4 text-xs text-emerald-600 flex items-center">
+                                    <span>₱ {dashboardStats.current_month_revenue.toFixed(2)} earned this {dashboardStats.current_month_name}</span>
                                 </div>
                             </div>
                         </div>
@@ -542,13 +543,25 @@ const AdminDashboard = () => {
                                                             )}
                                                         </div>
                                                         <div className="flex-1">
-                                                            <div className="flex justify-between items-center mb-1">
+                                                            <div className="flex justify-between items-start mb-1">
                                                                 <h4 className="font-medium text-gray-800">
                                                                     {message.sender_username} ({message.sender_email})
                                                                 </h4>
-                                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                                                                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                                </span>
+                                                                <div className="flex flex-col items-end">
+                                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full mb-1">
+                                                                        {new Date(message.timestamp).toLocaleDateString('en-US', {
+                                                                            month: 'short',
+                                                                            day: 'numeric',
+                                                                            year: new Date(message.timestamp).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                                                                        })}
+                                                                    </span>
+                                                                    <span className="text-xs text-gray-500">
+                                                                        {new Date(message.timestamp).toLocaleTimeString([], {
+                                                                            hour: '2-digit',
+                                                                            minute: '2-digit'
+                                                                        })}
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                             <p className="text-gray-600 text-sm">
                                                                 {message.message}
@@ -570,7 +583,6 @@ const AdminDashboard = () => {
                                                 No recent messages found
                                             </div>
                                         )}
-
                                     </div>
                                     <div className="mt-4 text-center">
                                         <button
@@ -664,11 +676,10 @@ const AdminDashboard = () => {
                                                         <span>Client: {appointment.client_name}</span>
                                                     </div>
                                                     <div className="mt-3">
-                                                        <span className={`px-2 py-1 text-xs rounded-full ${
-                                                            appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                                                            appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
-                                                            'bg-gray-100 text-gray-800'
-                                                        }`}>
+                                                        <span className={`px-2 py-1 text-xs rounded-full ${appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                                                                appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
+                                                                    'bg-gray-100 text-gray-800'
+                                                            }`}>
                                                             {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                                                         </span>
                                                     </div>
@@ -740,7 +751,6 @@ const AdminDashboard = () => {
             {/* Child Routes */}
             <Outlet />
         </div>
-        </LoadingWrapper>
     );
 };
 

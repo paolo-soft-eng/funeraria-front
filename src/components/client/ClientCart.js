@@ -915,22 +915,22 @@ const ClientCart = () => {
         const now = new Date();
         const expiration = new Date(expirationDate);
         const diffInMinutes = Math.floor((expiration - now) / (1000 * 60));
-        
+
         if (diffInMinutes <= 0) {
             return 'Expired';
         }
-        
+
         if (diffInMinutes < 60) {
             return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''}`;
         }
-        
+
         const hours = Math.floor(diffInMinutes / 60);
         const minutes = diffInMinutes % 60;
-        
+
         if (minutes === 0) {
             return `${hours} hour${hours !== 1 ? 's' : ''}`;
         }
-        
+
         return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
     };
 
@@ -938,19 +938,19 @@ const ClientCart = () => {
         const now = new Date();
         const expiration = new Date(expirationDate);
         const diffInMinutes = Math.floor((expiration - now) / (1000 * 60));
-        
+
         if (diffInMinutes <= 0) {
             return 'text-red-600 font-semibold';
         }
-        
+
         if (diffInMinutes < 5) {
             return 'text-red-500';
         }
-        
+
         if (diffInMinutes < 15) {
             return 'text-orange-500';
         }
-        
+
         return 'text-gray-600';
     };
 
@@ -1070,9 +1070,11 @@ const ClientCart = () => {
                                                             <div className="text-sm text-gray-900">₱{(parseFloat(item.price) * parseInt(item.quantity)).toFixed(2)}</div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className={`text-sm ${getExpirationStyle(item.expiration_date)}`}>
-                                                                {formatExpirationTime(item.expiration_date)}
-                                                            </div>
+                                                            {!isOrderCart && (
+                                                                <div className={`text-sm ${getExpirationStyle(item.expiration_date)}`}>
+                                                                    {formatExpirationTime(item.expiration_date)}
+                                                                </div>
+                                                            )}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                             {editingItemId === item.id ? (
@@ -1182,7 +1184,14 @@ const ClientCart = () => {
 
                                                     <div className="font-medium text-gray-700">Expires In:</div>
                                                     <div className={`text-sm ${getExpirationStyle(item.expiration_date)}`}>
-                                                        {formatExpirationTime(item.expiration_date)}
+                                                        {!isOrderCart && (
+                                                            <> 
+                                                                <div className="font-medium text-gray-700">Expires In:</div>
+                                                                <div className={`text-sm ${getExpirationStyle(item.expiration_date)}`}>
+                                                                    {formatExpirationTime(item.expiration_date)}
+                                                                </div>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
 

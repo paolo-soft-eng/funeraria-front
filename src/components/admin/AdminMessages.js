@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import axios from 'axios';
-import { MessageSquare, Trash2, Send, ArrowLeft } from 'lucide-react';
+import { MessageSquare, Trash2, Send, ArrowLeft, X, ZoomIn, Image, Camera } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { EmailContext } from '../EmailContext';
 import { useNavigate } from 'react-router-dom';
@@ -16,7 +16,18 @@ const AdminMessages = () => {
   const [error, setError] = useState(null);
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [enlargedImage, setEnlargedImage] = useState(null);
+  
+  // New states for image handling
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [showCamera, setShowCamera] = useState(false);
+  
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  
   const { email } = useContext(EmailContext);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);
@@ -98,6 +109,33 @@ const AdminMessages = () => {
     }
   }, [selectedUser]);
 
+  // Close enlarged image when pressing Escape key
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape' && enlargedImage) {
+        setEnlargedImage(null);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [enlargedImage]);
+
+  // Camera management
+  useEffect(() => {
+    if (showCamera) {
+      startCamera();
+    }
+
+    return () => {
+      if (videoRef.current?.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [showCamera]);
+
   const fetchSenders = async () => {
     try {
       setLoading(true);
@@ -141,8 +179,172 @@ const AdminMessages = () => {
     setReplyText(e.target.value);
   };
 
+  // Image handling functions
+  const handleImageClick = (imageSrc) => {
+    setEnlargedImage(imageSrc);
+  };
+
+  const closeEnlargedImage = () => {
+    setEnlargedImage(null);
+  };
+
+  const handleFileInputClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      if (!videoRef.current) {
+        throw new Error("Video element not mounted yet");
+      }
+
+      if (videoRef.current.srcObject) {
+        videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+
+      videoRef.current.srcObject = stream;
+
+      await new Promise((resolve) => {
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current.play()
+            .then(resolve)
+            .catch(err => {
+              console.error("Play error:", err);
+              throw new Error("Could not play video stream");
+            });
+        };
+      });
+
+      setShowCamera(true);
+    } catch (err) {
+      console.error("Camera Error:", err);
+      setError(`Camera error: ${err.message}`);
+    }
+  };
+
+  const closeCamera = () => {
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach(track => {
+        track.stop();
+        stream.removeTrack(track);
+      });
+      videoRef.current.srcObject = null;
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && videoRef.current.readyState >= 2) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext('2d');
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(blob => {
+        if (!blob) return;
+
+        const file = new File([blob], `photo-${Date.now()}.jpg`, {
+          type: 'image/jpeg',
+        });
+
+        setSelectedFile(file);
+        setPreviewUrl(URL.createObjectURL(blob));
+        closeCamera();
+      }, 'image/jpeg', 0.95);
+    }
+  };
+
+  const sendImageMessage = async () => {
+    if (!selectedFile || !selectedUser) return;
+
+    try {
+      setLoading(true);
+
+      // Upload image first
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+
+      const uploadResponse = await fetch('http://localhost/apii/components/upload.php', {
+        method: 'POST',
+        body: formData
+      });
+
+      const uploadData = await uploadResponse.json();
+
+      if (uploadData.status !== 'success') {
+        throw new Error(uploadData.message || 'Failed to upload image');
+      }
+
+      const imageUrl = uploadData.imageUrl;
+
+      // Send message with image
+      const response = await axios.post(API_URL, {
+        action: 'reply',
+        userId: selectedUser.user_id,
+        message: replyText || 'Image message',
+        adminEmail: email,
+        imageUrl: imageUrl
+      });
+
+      if (response.data.success) {
+        fetchUserMessages(selectedUser.user_id);
+        setReplyText('');
+        setSelectedFile(null);
+        setPreviewUrl(null);
+
+        // Send message via WebSocket
+        if (socket && isConnected) {
+          socket.send(JSON.stringify({
+            type: 'message',
+            senderId: 'admin',
+            receiverId: selectedUser.user_id,
+            message: replyText || 'Image message',
+            imageUrl: imageUrl,
+            isAdmin: true,
+            timestamp: new Date().toISOString()
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Error sending image message:', err);
+      setError('Failed to send image message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleReplySubmit = async (e) => {
     e.preventDefault();
+
+    if (selectedFile) {
+      // If there's an image, send image message
+      await sendImageMessage();
+      return;
+    }
 
     if (!replyText.trim()) return;
 
@@ -151,7 +353,7 @@ const AdminMessages = () => {
         action: 'reply',
         userId: selectedUser.user_id,
         message: replyText,
-        adminEmail: email // Add the admin's email to the request
+        adminEmail: email
       });
 
       if (response.data.success) {
@@ -197,6 +399,8 @@ const AdminMessages = () => {
   const handleBackToList = () => {
     setSelectedUser(null);
     setMessages([]);
+    setSelectedFile(null);
+    setPreviewUrl(null);
     fetchSenders(); // Refresh senders list
   };
 
@@ -363,11 +567,19 @@ const AdminMessages = () => {
                           </div>
                           <p className="whitespace-pre-line">{msg.message}</p>
                           {msg.image_path && (
-                            <img
-                              src={`http://localhost/apii/components/${msg.image_path}`}
-                              alt="Attached"
-                              className="mt-2 w-60 h-auto rounded"
-                            />
+                            <div className="relative mt-2 group">
+                              <img
+                                src={`${msg.image_path}`}
+                                alt="Attached"
+                                className="w-60 h-auto rounded cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => handleImageClick(msg.image_path)}
+                              />
+                              {/* Hover overlay with zoom icon */}
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
+                                   onClick={() => handleImageClick(msg.image_path)}>
+                                <ZoomIn size={24} className="text-white" />
+                              </div>
+                            </div>
                           )}
                           <div
                             className={`text-xs mt-1 ${isAdminMsg ? "text-indigo-200" : "text-gray-500"
@@ -383,20 +595,71 @@ const AdminMessages = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Reply Form */}
+              {/* Reply Form with Image Support */}
               <form onSubmit={handleReplySubmit} className="p-4 border-t">
-                <div className="flex">
+                {/* Image Preview */}
+                {previewUrl && (
+                  <div className="mb-4 relative">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="max-h-32 rounded border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewUrl(null);
+                        setSelectedFile(null);
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center space-x-2">
+                  {/* Camera Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowCamera(true)}
+                    className="p-2 rounded-full hover:bg-gray-200"
+                  >
+                    <Camera size={20} className="text-gray-600" />
+                  </button>
+
+                  {/* File Input Button */}
+                  <button
+                    type="button"
+                    onClick={handleFileInputClick}
+                    className="p-2 rounded-full hover:bg-gray-200"
+                  >
+                    <Image size={20} className="text-gray-600" />
+                  </button>
+
+                  {/* Hidden File Input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+
+                  {/* Text Input */}
                   <input
                     type="text"
                     value={replyText}
                     onChange={handleReplyChange}
                     placeholder="Type your reply..."
-                    className="flex-1 border rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 border rounded-l-lg px-4 py-2"
                   />
+
+                  {/* Send Button */}
                   <button
                     type="submit"
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-r-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    disabled={!replyText.trim()}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-r-lg"
+                    disabled={!replyText.trim() && !selectedFile}
                   >
                     <Send size={20} />
                   </button>
@@ -405,6 +668,71 @@ const AdminMessages = () => {
             </div>
           )}
         </div>
+
+        {/* Camera Modal */}
+        {showCamera && (
+          <div className="fixed inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center z-50">
+            <div className="relative w-full max-w-2xl mx-4">
+              <div className="aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover"
+                  style={{ transform: 'scaleX(-1)' }}
+                />
+              </div>
+
+              <canvas ref={canvasRef} className="hidden" />
+
+              <div className="flex justify-center space-x-6 mt-6">
+                <button
+                  onClick={capturePhoto}
+                  className="bg-white rounded-full p-4 hover:bg-gray-200 transition"
+                >
+                  <Camera size={28} className="text-gray-800" />
+                </button>
+                <button
+                  onClick={closeCamera}
+                  className="bg-red-500 text-white rounded-full px-6 py-2 hover:bg-red-600 transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Image Enlargement Modal */}
+        {enlargedImage && (
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div className="relative max-w-full max-h-full">
+              {/* Close button */}
+              <button
+                onClick={closeEnlargedImage}
+                className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors mt-4"
+                title="Close (ESC)"
+              >
+                <X size={32} />
+              </button>
+              
+              {/* Enlarged image */}
+              <img
+                src={enlargedImage}
+                alt="Enlarged view"
+                className="max-w-[70vw] max-h-[70vh] object-contain rounded-lg shadow-2xl"
+                onClick={closeEnlargedImage}
+              />
+              
+              {/* Click outside overlay */}
+              <div 
+                className="absolute inset-0 -z-10"
+                onClick={closeEnlargedImage}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

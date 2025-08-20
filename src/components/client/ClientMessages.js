@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Info, Phone, Video, Image, Camera, Mic, Smile, Send, Copy, Trash, CornerUpLeft, Menu } from 'lucide-react';
+import { Info, Phone, Video, Image, Camera, Mic, Smile, Send, Copy, Trash, CornerUpLeft, Menu, X, ZoomIn } from 'lucide-react';
 import { EmailContext } from '../EmailContext';
 
 export default function ClientMessages() {
@@ -18,6 +18,10 @@ export default function ClientMessages() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [messageCount, setMessageCount] = useState(0);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  // New state for image enlargement
+  const [enlargedImage, setEnlargedImage] = useState(null);
+  
   const { email } = useContext(EmailContext);
 
   const [socket, setSocket] = useState(null);
@@ -37,6 +41,29 @@ export default function ClientMessages() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Image enlargement functions
+  const handleImageClick = (imageSrc) => {
+    setEnlargedImage(imageSrc);
+  };
+
+  const closeEnlargedImage = () => {
+    setEnlargedImage(null);
+  };
+
+  // Close enlarged image when pressing Escape key
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape' && enlargedImage) {
+        setEnlargedImage(null);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [enlargedImage]);
+
   // Get user ID from email
   const getUserId = async () => {
     if (!email) {
@@ -51,6 +78,7 @@ export default function ClientMessages() {
         throw new Error('Failed to retrieve user ID');
       }
       const userIdData = await userIdResponse.json();
+      console.log('User ID response:', userIdData); // Debug log
       if (userIdData.status !== 'success') {
         throw new Error('Failed to retrieve user ID');
       }
@@ -84,58 +112,67 @@ export default function ClientMessages() {
   };
 
   // Fetch messages from API
-  const fetchMessages = async () => {
-    if (!email) {
-      setError('Email is missing from context');
+const fetchMessages = async () => {
+  if (!email) {
+    setError('Email is missing from context');
+    setLoading(false);
+    return;
+  }
+
+  if (!selectedAdmin) {
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError(null);
+
+    const currentUserId = userId || await getUserId();
+    if (!currentUserId) {
+      setError('Failed to retrieve user ID');
       setLoading(false);
       return;
     }
 
-    if (!selectedAdmin) {
-      return;
+    // Use the correct parameter names
+    const apiUrl = `${API_BASE_URL}?sender_id=${currentUserId}&admin_id=${selectedAdmin.id}`;
+    console.log('Fetching messages from:', apiUrl); // Debug log
+    
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    try {
-      setLoading(true);
-      setError(null);
+    const data = await response.json();
+    console.log('Messages response:', data); // Debug log
+    // In your fetchMessages function, add:
+console.log('Current user ID:', currentUserId);
+console.log('Selected admin ID:', selectedAdmin?.id);
+console.log('API URL:', apiUrl);
 
-      const currentUserId = userId || await getUserId();
-      if (!currentUserId) {
-        setError('Failed to retrieve user ID');
-        setLoading(false);
-        return;
-      }
+    if (data.status === 'success') {
+      // Clear processedMessageIds when loading a new conversation
+      processedMessageIds.clear();
 
-      const apiUrl = `${API_BASE_URL}?sender_id=${currentUserId}&admin_id=${selectedAdmin.id}`;
-      const response = await fetch(apiUrl);
+      // Ensure each message has a unique ID
+      const messagesWithIds = data.messages.map(msg => ({
+        ...msg,
+        // Use the database ID if available, otherwise generate one
+        id: msg.id || `db_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }));
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.status === 'success') {
-        // Clear processedMessageIds when loading a new conversation
-        processedMessageIds.clear();
-
-        // Ensure each message has a unique ID
-        const messagesWithIds = data.messages.map(msg => ({
-          ...msg,
-          // Use the database ID if available, otherwise generate one
-          id: msg.id || `db_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        }));
-
-        setMessages(messagesWithIds);
-      } else {
-        setError(data.message || 'Failed to fetch messages');
-      }
-    } catch (error) {
-      setError(`Failed to fetch messages: ${error.message}`);
-    } finally {
-      setLoading(false);
+      setMessages(messagesWithIds);
+    } else {
+      setError(data.message || 'Failed to fetch messages');
     }
-  };
+  } catch (error) {
+    console.error('Failed to fetch messages:', error);
+    setError(`Failed to fetch messages: ${error.message}`);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Fetch admin messages
   const fetchAdminMessages = async () => {
@@ -299,9 +336,6 @@ export default function ClientMessages() {
     }
   };
 
-  const handleImageClick = () => {
-    fileInputRef.current.click();
-  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -572,31 +606,39 @@ export default function ClientMessages() {
   };
 
   // Update the handleAdminClick function
-  const handleAdminClick = (admin) => {
-    setSelectedAdmin(admin);
-    setMessages([]);
-    processedMessageIds.clear(); // Add this line
-    setShowSidebar(false);
-    markMessagesAsRead(admin.id);
-    if (userId) {
-      countMessages(admin.id, userId);
-    }
+const handleAdminClick = (admin) => {
+  setSelectedAdmin(admin);
+  setMessages([]);
+  processedMessageIds.clear();
+  setShowSidebar(false);
+  markMessagesAsRead(admin.id);
+  if (userId) {
+    countMessages(admin.id, userId);
+  }
+  
+  // Force a refresh of messages
+  setTimeout(() => {
+    fetchMessages();
+  }, 100);
+};
+
+ useEffect(() => {
+  if (selectedAdmin && userId) {
+    fetchMessages();
+  }
+}, [selectedAdmin, userId]);
+
+// Add this useEffect to handle initial setup
+useEffect(() => {
+  const initializeComponent = async () => {
+    await getUserId();
+    await fetchAdmins();
   };
 
-  useEffect(() => {
-    if (selectedAdmin && userId) {
-      fetchMessages();
-    }
-  }, [selectedAdmin, userId]);
-
-  useEffect(() => {
-    const initializeComponent = async () => {
-      await getUserId();
-      await fetchAdmins();
-    };
-
+  if (email) {
     initializeComponent();
-  }, [email]);
+  }
+}, [email]);
 
   useEffect(() => {
     if (selectedAdmin && userId) {
@@ -891,11 +933,25 @@ export default function ClientMessages() {
                       >
                         {msg.sender === 'me' ? 'You' : selectedAdmin.username}
                         {msg.imageUrl && (
-                          <img
-                            src={msg.imageUrl}
-                            alt="Message attachment"
-                            className="mt-2 w-full h-auto rounded"
-                          />
+                          <div className="relative mt-2 group">
+                            <img
+                              src={msg.imageUrl}
+                              alt="Message attachment"
+                              className="w-60 h-auto rounded cursor-pointer hover:opacity-90 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleImageClick(msg.imageUrl);
+                              }}
+                            />
+                            {/* Hover overlay with zoom icon */}
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   handleImageClick(msg.imageUrl);
+                                 }}>
+                              <ZoomIn size={24} className="text-white" />
+                            </div>
+                          </div>
                         )}
                         <p className="whitespace-pre-wrap">{msg.text}</p>
                         <div className="flex items-center justify-end mt-1">
@@ -1002,6 +1058,36 @@ export default function ClientMessages() {
           </div>
         </div>
       </div>
+
+      {/* Image Enlargement Modal */}
+      {enlargedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-full max-h-full">
+            {/* Close button */}
+            <button
+              onClick={closeEnlargedImage}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors mt-4"
+              title="Close (ESC)"
+            >
+              <X size={32} />
+            </button>
+            
+            {/* Enlarged image */}
+            <img
+              src={enlargedImage}
+              alt="Enlarged view"
+              className="max-w-[70vw] max-h-[70vh] object-contain rounded-lg shadow-2xl"
+              onClick={closeEnlargedImage}
+            />
+            
+            {/* Click outside overlay */}
+            <div 
+              className="absolute inset-0 -z-10"
+              onClick={closeEnlargedImage}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

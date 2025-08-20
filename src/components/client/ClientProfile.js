@@ -363,40 +363,42 @@ const ClientProfile = () => {
     }
   };
 
-  const handleDocumentUpload = async (e) => {
-    e.preventDefault();
-    if (!documentFile || !documentDetails.documentName || !documentDetails.documentType) {
-      showMessage('All fields are required, including the file', 'error');
-      return;
+  // Fixed handleDocumentUpload function for ClientProfile.js
+const handleDocumentUpload = async (e) => {
+  e.preventDefault();
+  if (!documentFile || !documentDetails.documentName || !documentDetails.documentType) {
+    showMessage('All fields are required, including the file', 'error');
+    return;
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('user_id', userData.id);
+    formData.append('document', documentFile); // Match the PHP $_FILES key
+    formData.append('document_name', documentDetails.documentName);
+    formData.append('document_type', documentDetails.documentType);
+
+    // Fix: Use the correct endpoint URL (remove the extra /documents.php)
+    const response = await fetch('http://localhost/apii/components/documents.php', {
+      method: 'POST',
+      body: formData // Don't set Content-Type header, let browser set it for FormData
+    });
+
+    const data = await response.json();
+    if (data.status === 'success') {
+      showMessage('Document uploaded successfully!', 'success');
+      setIsDocumentModalOpen(false);
+      setDocumentFile(null);
+      setDocumentDetails({ documentName: '', documentType: '' });
+      loadDocuments(); // Refresh the documents list
+    } else {
+      showMessage(data.message || 'Failed to upload document', 'error');
     }
-
-    try {
-      const formData = new FormData();
-      formData.append('user_id', userData.id); // Ensure user_id is included
-      formData.append('document', documentFile); // The file itself
-      formData.append('document_name', documentDetails.documentName); // Document name
-      formData.append('document_type', documentDetails.documentType); // Document type
-
-      const response = await fetch(`${API_BASE_URL}/documents.php`, {
-        method: 'POST',
-        body: formData
-      });
-
-      const data = await response.json();
-      if (data.status === 'success') {
-        showMessage('Document uploaded successfully!', 'success');
-        setIsDocumentModalOpen(false);
-        setDocumentFile(null);
-        setDocumentDetails({ documentName: '', documentType: '' });
-        loadDocuments(); // Refresh the documents list
-      } else {
-        showMessage(data.message || 'Failed to upload document', 'error');
-      }
-    } catch (err) {
-      console.error("Error uploading document:", err);
-      showMessage('Failed to upload document. Please try again.', 'error');
-    }
-  };
+  } catch (err) {
+    console.error("Error uploading document:", err);
+    showMessage('Failed to upload document. Please try again.', 'error');
+  }
+};
 
   // Delete document
   const handleDeleteDocument = async (documentId) => {

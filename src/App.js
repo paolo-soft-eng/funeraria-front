@@ -6,7 +6,6 @@ import LoadingScreen from './components/LoadingScreen';
 import LoadingWrapper from './components/LoadingWrapper';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Lazy load components for better performance
 const Auth = lazy(() => import('./Auth'));
 const ClientDashboard = lazy(() => import('./components/client/ClientDashboard'));
 const ClientHome = lazy(() => import('./components/client/ClientHome'));

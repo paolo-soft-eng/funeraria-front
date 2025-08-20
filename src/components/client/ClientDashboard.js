@@ -27,6 +27,7 @@ const ClientDashboard = () => {
   const [isMobileView, setIsMobileView] = useState(false);
   const [currentPage, setCurrentPage] = useState('Client Dashboard');
   const [profileImage, setProfileImage] = useState(null);
+  const [username, setUsername] = useState('');
   const navigate = useNavigate();
   const {email} = useContext(EmailContext);
   const location = useLocation();
@@ -51,7 +52,6 @@ const ClientDashboard = () => {
   }, []);
 
   useEffect(() => {
-    // Update current page title based on the current path
     const path = location.pathname.split('/').pop();
     const navItem = mainNavItems.find(item => item.name === path);
     if (navItem) {
@@ -63,7 +63,6 @@ const ClientDashboard = () => {
     }
   }, [location.pathname]);
 
-  // Fetch profile image when email is available
   useEffect(() => {
     if (email) {
       fetchProfileImage();
@@ -73,8 +72,13 @@ const ClientDashboard = () => {
   const fetchProfileImage = async () => {
     try {
       const response = await axios.get(`http://localhost/apii/components/client_picture.php?email=${email}`);
-      if (response.data.success && response.data.image_path) {
-        setProfileImage(response.data.image_path);
+      if (response.data && response.data.success) {
+        if (response.data.image_path) {
+          setProfileImage(response.data.image_path);
+        }
+        if (response.data.username) {
+          setUsername(response.data.username);
+        }
       }
     } catch (error) {
       console.error('Error fetching profile image:', error);
@@ -130,7 +134,6 @@ const ClientDashboard = () => {
 
 
   return (
-    <LoadingWrapper>
       <div className="flex h-screen bg-gray-50 text-gray-800">
       {isSidebarOpen && isMobileView && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={toggleSidebar}></div>
@@ -173,7 +176,7 @@ const ClientDashboard = () => {
             )}
             {isSidebarOpen && (
               <div className="ml-3">
-                <p className="font-medium">Client User</p>
+                <p className="font-medium">{username || 'Client User'}</p>
                 <p className="text-xs text-white truncate max-w-[180px]">{email}</p>
               </div>
             )}
@@ -279,11 +282,7 @@ const ClientDashboard = () => {
 
         <main className="flex-1 overflow-auto">
           <div>
-            <LoadingWrapper key={location.pathname} minLoadTime={1000
-              
-            }>
               <Outlet />
-            </LoadingWrapper>
           </div>
         </main>
 
@@ -309,7 +308,6 @@ const ClientDashboard = () => {
         </footer>
       </div>
     </div>
-    </LoadingWrapper>
   );
 };
 

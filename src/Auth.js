@@ -177,7 +177,7 @@ const Auth = () => {
             {/* Visual panel */}
             <div className="relative hidden overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10 lg:flex">
               <img
-                src="/nin.jpg"
+                src="/login_bg.jpg"
                 alt="Quiet chapel with soft light"
                 className="absolute inset-0 h-full w-full object-cover"
               />
