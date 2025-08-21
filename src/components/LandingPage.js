@@ -115,48 +115,58 @@ export default function FuneralManagementLanding() {
     <div className="min-h-screen bg-gray-100 text-gray-800 font-sans">
       {/* Navigation */}
       <nav className="bg-gray-900/95 backdrop-blur-sm text-white py-4 px-6 shadow-lg relative z-50">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center">
-            <Heart className="h-8 w-8 text-gray-400 mr-3" />
-            <div>
-              <h1 className="text-xl font-semibold">Funeraria Gomez</h1>
-              <p className="text-xs text-gray-300">Funeral Management Services</p>
-            </div>
-          </div>
-
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-6">
-            <a href="#" className="hover:text-gray-300 transition-colors duration-300">Home</a>
-            <a href="#services" className="hover:text-gray-300 transition-colors duration-300">Services</a>
-            <a href="#about" className="hover:text-gray-300 transition-colors duration-300">About</a>
-            <a href="#testimonials" className="hover:text-gray-300 transition-colors duration-300">Testimonials</a>
-            <a href="#contact" className="hover:text-gray-300 transition-colors duration-300">Contact</a>
-          </div>
-
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="focus:outline-none"
-            >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+      <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="flex items-center">
+          <Heart className="h-8 w-8 text-gray-400 mr-3" />
+          <div>
+            <h1 className="text-xl font-semibold">Gomez Funeraria</h1>
+            <p className="text-xs text-gray-300">Funeral Management Services</p>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden mt-4 pt-2 border-t border-gray-700">
-            <div className="flex flex-col space-y-3 px-2">
-              <a href="#" className="py-2 hover:text-gray-300 transition-colors duration-300">Home</a>
-              <a href="#services" className="py-2 hover:text-gray-300 transition-colors duration-300">Services</a>
-              <a href="#about" className="py-2 hover:text-gray-300 transition-colors duration-300">About</a>
-              <a href="#testimonials" className="py-2 hover:text-gray-300 transition-colors duration-300">Testimonials</a>
-              <a href="#contact" className="py-2 hover:text-gray-300 transition-colors duration-300">Contact</a>
-            </div>
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex space-x-6">
+          {['Home', 'Services', 'About', 'Testimonials', 'Contact'].map((item) => (
+            <a
+              key={item}
+              href={`#${item.toLowerCase() === 'home' ? '' : item.toLowerCase()}`}
+              className="relative pb-1 cursor-pointer group hover:text-gray-300 transition-colors duration-900"
+            >
+              {item}
+              <span className="absolute bottom-0 left-0 w-0 h-[2px] bg-gray-300 transition-all group-hover:w-full"></span>
+            </a>
+          ))}
+        </div>
+
+        {/* Mobile menu button */}
+        <div className="md:hidden">
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="focus:outline-none"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Navigation */}
+      {mobileMenuOpen && (
+        <div className="md:hidden mt-4 pt-2 border-t border-gray-700">
+          <div className="flex flex-col space-y-3 px-2">
+            {['Home', 'Services', 'About', 'Testimonials', 'Contact'].map((item) => (
+              <a
+                key={item}
+                href={`#${item.toLowerCase() === 'home' ? '' : item.toLowerCase()}`}
+                className="py-2 hover:text-gray-300 transition-colors duration-300"
+              >
+                {item}
+              </a>
+            ))}
           </div>
-        )}
-      </nav>
+        </div>
+      )}
+    </nav>
 
       {/* Hero Section with Video Background */}
       <section className="relative h-screen overflow-hidden">

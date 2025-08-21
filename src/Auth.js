@@ -57,7 +57,6 @@ const Auth = () => {
     try {
       console.log("Form Data:", formData);
       const response = await axios.post(url, formData);
-      console.log("Response Data:", response.data);
 
       if (response && response.data) {
         if (response.data.message === "Login successful") {
@@ -338,7 +337,7 @@ const Auth = () => {
                       Remember me
                     </label>
                     <div className="text-sm">
-                      <a href="/forgot-password" className="font-medium text-emerald-300 hover:text-emerald-200 transition-colors">
+                      <a href="/forgot-password" className="font-medium text-gray-100 hover:text-gray-200 transition-colors">
                         Forgot password?
                       </a>
                     </div>
@@ -348,7 +347,7 @@ const Auth = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-emerald-400 px-4 py-3 font-medium text-slate-900 shadow-lg transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="group relative inline-flex w-full items-center justify-center overflow-hidden rounded-xl bg-gray-700 px-4 py-3 font-medium text-gray-100 shadow-lg transition hover:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isLoading ? (
                     <>

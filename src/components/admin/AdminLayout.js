@@ -139,7 +139,7 @@ const AdminLayout = ({ children, currentPage }) => {
           <div className="flex items-center justify-between p-4">
             <Link to="/dashboard-admin/home" className="flex items-center">
               {isSidebarOpen ? (
-                <h1 className="text-xl font-bold">Funeraria Gomez</h1>
+                <h1 className="text-xl font-bold">Gomez Funeraria</h1>
               ) : (
                 <span className="text-2xl font-bold">FG</span>
               )}
@@ -262,7 +262,7 @@ const AdminLayout = ({ children, currentPage }) => {
           <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center">
             <div className="mb-3 sm:mb-0">
               <p className="text-sm text-gray-600">
-                &copy; 2025 Funeraria Gomez. All rights reserved.
+                &copy; 2025 Gome Funeraria. All rights reserved.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-4">

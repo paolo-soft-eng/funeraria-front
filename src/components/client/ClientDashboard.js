@@ -148,7 +148,7 @@ const ClientDashboard = () => {
           <div className="flex items-center justify-between p-4">
             <Link to="/dashboard-client/home" className="flex items-center">
               {isSidebarOpen ? (
-                <h1 className="text-xl font-bold">Funeraria Gomez</h1>
+                <h1 className="text-xl font-bold">Gomez Funeraria</h1>
               ) : (
                 <span className="text-2xl font-bold">FG</span>
               )}
