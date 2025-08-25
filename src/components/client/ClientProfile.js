@@ -76,7 +76,7 @@ const ClientProfile = () => {
     { id: 'documents', label: 'Documents', icon: <FileText size={18} /> },
     { id: 'appointments', label: 'Appointments', icon: <Calendar size={18} /> },
     { id: 'password', label: 'Password', icon: <Lock size={18} /> },
-    {id: 'report bug', label: 'Report Bug', icon: <Bug size={18} />},
+    { id: 'report bug', label: 'Report Bug', icon: <Bug size={18} /> },
     { id: 'help', label: 'Help', icon: <HelpCircle size={18} /> }
   ];
 
@@ -197,7 +197,7 @@ const ClientProfile = () => {
 
   const handleProfilePicture = (profilePicture) => {
     if (!profilePicture) {
-      return `${IMAGE_BASE_URL}uploads/default.jpg`;
+      return `${IMAGE_BASE_URL}uploads/profile/default.jpg`;
     }
 
     // Check if the URL is already absolute
@@ -364,41 +364,41 @@ const ClientProfile = () => {
   };
 
   // Fixed handleDocumentUpload function for ClientProfile.js
-const handleDocumentUpload = async (e) => {
-  e.preventDefault();
-  if (!documentFile || !documentDetails.documentName || !documentDetails.documentType) {
-    showMessage('All fields are required, including the file', 'error');
-    return;
-  }
-
-  try {
-    const formData = new FormData();
-    formData.append('user_id', userData.id);
-    formData.append('document', documentFile); // Match the PHP $_FILES key
-    formData.append('document_name', documentDetails.documentName);
-    formData.append('document_type', documentDetails.documentType);
-
-    // Fix: Use the correct endpoint URL (remove the extra /documents.php)
-    const response = await fetch('http://localhost/apii/components/documents.php', {
-      method: 'POST',
-      body: formData // Don't set Content-Type header, let browser set it for FormData
-    });
-
-    const data = await response.json();
-    if (data.status === 'success') {
-      showMessage('Document uploaded successfully!', 'success');
-      setIsDocumentModalOpen(false);
-      setDocumentFile(null);
-      setDocumentDetails({ documentName: '', documentType: '' });
-      loadDocuments(); // Refresh the documents list
-    } else {
-      showMessage(data.message || 'Failed to upload document', 'error');
+  const handleDocumentUpload = async (e) => {
+    e.preventDefault();
+    if (!documentFile || !documentDetails.documentName || !documentDetails.documentType) {
+      showMessage('All fields are required, including the file', 'error');
+      return;
     }
-  } catch (err) {
-    console.error("Error uploading document:", err);
-    showMessage('Failed to upload document. Please try again.', 'error');
-  }
-};
+
+    try {
+      const formData = new FormData();
+      formData.append('user_id', userData.id);
+      formData.append('document', documentFile); // Match the PHP $_FILES key
+      formData.append('document_name', documentDetails.documentName);
+      formData.append('document_type', documentDetails.documentType);
+
+      // Fix: Use the correct endpoint URL (remove the extra /documents.php)
+      const response = await fetch('http://localhost/apii/components/documents.php', {
+        method: 'POST',
+        body: formData // Don't set Content-Type header, let browser set it for FormData
+      });
+
+      const data = await response.json();
+      if (data.status === 'success') {
+        showMessage('Document uploaded successfully!', 'success');
+        setIsDocumentModalOpen(false);
+        setDocumentFile(null);
+        setDocumentDetails({ documentName: '', documentType: '' });
+        loadDocuments(); // Refresh the documents list
+      } else {
+        showMessage(data.message || 'Failed to upload document', 'error');
+      }
+    } catch (err) {
+      console.error("Error uploading document:", err);
+      showMessage('Failed to upload document. Please try again.', 'error');
+    }
+  };
 
   // Delete document
   const handleDeleteDocument = async (documentId) => {
@@ -477,43 +477,58 @@ const handleDocumentUpload = async (e) => {
   };
 
   const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    if (passwordData.newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters long');
-      return;
-    }
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError('Passwords do not match');
-      return;
-    }
+  e.preventDefault();
+  
+  // Clear previous errors
+  setPasswordError('');
+  
+  // Validate new password length (at least 8 characters)
+  if (passwordData.newPassword.length < 8) {
+    setPasswordError('Password must be at least 8 characters long');
+    return;
+  }
+  
+  // Validate new password contains at least one number
+  const hasNumber = /\d/.test(passwordData.newPassword);
+  if (!hasNumber) {
+    setPasswordError('Password must contain at least one number');
+    return;
+  }
+  
+  // Check if passwords match
+  if (passwordData.newPassword !== passwordData.confirmPassword) {
+    setPasswordError('Passwords do not match');
+    return;
+  }
 
-    try {
-      const response = await fetch(API_BASE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'reset_password',
-          user_id: userData.id,
-          current_password: passwordData.currentPassword,
-          new_password: passwordData.newPassword,
-        }),
-      });
+  try {
+    const response = await fetch(API_BASE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'reset_password',
+        user_id: userData.id,
+        current_password: passwordData.currentPassword,
+        new_password: passwordData.newPassword,
+      }),
+    });
 
-      const data = await response.json();
-      if (data.status === 'success') {
-        setIsResetModalOpen(false);
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        showMessage('Password changed successfully!', 'success');
-      } else {
-        setPasswordError(data.message || 'Failed to change password');
-      }
-    } catch (err) {
-      console.error("Error changing password:", err);
-      setPasswordError('Failed to change password. Please try again.');
+    const data = await response.json();
+    console.log(data);
+    if (data.status === 'success') {
+      setIsResetModalOpen(false);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      showMessage('Password changed successfully!', 'success');
+    } else {
+      setPasswordError(data.message || 'Failed to change password');
     }
-  };
+  } catch (err) {
+    console.error("Error changing password:", err);
+    setPasswordError('Failed to change password. Please try again.');
+  }
+};
 
   const handleProfilePictureUpload = async (e) => {
     const file = e.target.files[0];
@@ -552,7 +567,7 @@ const handleDocumentUpload = async (e) => {
     e.preventDefault();
     setIsBugSubmitting(true);
     setBugReportStatus(null);
-  
+
     try {
       const response = await fetch('http://localhost/apii/components/report.php', {
         method: 'POST',
@@ -718,13 +733,25 @@ const handleDocumentUpload = async (e) => {
                     <div className="flex flex-col sm:flex-row items-center mb-6">
                       <div className="relative group mb-4 sm:mb-0 sm:mr-6">
                         <div className="h-24 w-24 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                          <img
-                            src={handleProfilePicture(userData.profile_picture)}
-                            alt="Profile"
-                            className="h-full w-full object-cover"
-                            onError={(e) => {
-                              e.target.src = `${IMAGE_BASE_URL}uploads/default.jpg`;
-                            }}
+                          {userData.profile_picture &&
+                            userData.profile_picture !== `${IMAGE_BASE_URL}uploads/profile/default.jpg` &&
+                            userData.profile_picture !== 'uploads/default.jpg' ? (
+                            <img
+                              src={handleProfilePicture(userData.profile_picture)}
+                              alt="Profile"
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                // Hide the image and show the icon instead
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'block';
+                              }}
+                            />
+                          ) : null}
+                          <User
+                            size={32}
+                            className={`text-blue-600 ${userData.profile_picture &&
+                              userData.profile_picture !== `${IMAGE_BASE_URL}uploads/profile/default.jpg` &&
+                              userData.profile_picture !== 'uploads/profile/default.jpg' ? 'hidden' : 'block'}`}
                           />
                         </div>
                         <label className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black bg-opacity-30 rounded-full cursor-pointer transition-opacity">
@@ -982,10 +1009,10 @@ const handleDocumentUpload = async (e) => {
                               {new Date(appointment.appointment_date).toLocaleDateString()} at {appointment.appointment_time}
                             </p>
                             <span className={`inline-block mt-2 px-2 py-1 text-xs rounded-full ${appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                                appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
-                                  appointment.status === 'unfinished' ? 'bg-yellow-100 text-yellow-800' :
-                                    appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                      'bg-gray-100 text-gray-800'
+                              appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
+                                appointment.status === 'unfinished' ? 'bg-yellow-100 text-yellow-800' :
+                                  appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-800'
                               }`}>
                               {appointment.status}
                             </span>
@@ -1197,11 +1224,23 @@ const handleDocumentUpload = async (e) => {
                     <input
                       type="password"
                       value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      onChange={(e) => {
+                        setPasswordData({ ...passwordData, newPassword: e.target.value });
+                        // Clear error when user starts typing
+                        if (passwordError) setPasswordError('');
+                      }}
                       className="w-full p-2 border border-gray-300 rounded-md"
                       required
-                      minLength="6"
+                      minLength="8"
                     />
+                    <div className="mt-1 text-xs text-gray-500">
+                      <p className={passwordData.newPassword.length >= 8 ? 'text-green-600' : 'text-gray-500'}>
+                        ✓ At least 8 characters
+                      </p>
+                      <p className={/\d/.test(passwordData.newPassword) ? 'text-green-600' : 'text-gray-500'}>
+                        ✓ Contains at least one number
+                      </p>
+                    </div>
                   </div>
 
                   <div className="mb-6">

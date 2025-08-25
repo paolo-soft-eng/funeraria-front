@@ -9,7 +9,14 @@ const ClientServices = () => {
   const [selectedService, setSelectedService] = useState(null);
   const [userId, setUserId] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [notification, setNotification] = useState(null);
   const { email } = useContext(EmailContext);
+
+  // Notification function
+  const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
 
   useEffect(() => {
     if (email) {
@@ -30,15 +37,15 @@ const ClientServices = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await fetchServices();
       setServices(data || []); // Ensure we always have an array
-      
+
     } catch (error) {
       console.error('Error fetching services:', error);
       setError(error.message);
       setServices([]); // Set empty array on error
-      
+
     } finally {
       setLoading(false);
     }
@@ -57,9 +64,9 @@ const ClientServices = () => {
       high: 'bg-indigo-50 text-indigo-600'
     };
 
-    const colorClass = inclusionsCount <= 3 ? colors.low : 
-                      inclusionsCount <= 6 ? colors.medium : 
-                      colors.high;
+    const colorClass = inclusionsCount <= 3 ? colors.low :
+      inclusionsCount <= 6 ? colors.medium :
+        colors.high;
 
     return (
       <div className="flex justify-center mb-4">
@@ -90,6 +97,28 @@ const ClientServices = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      {/* Notification Component */}
+      {notification && (
+        <div className="fixed top-4 right-4 z-50 animate-fade-in">
+          <div className={`px-4 py-3 rounded-lg shadow-lg ${
+            notification.type === 'success' ? 'bg-green-500 text-white' :
+            notification.type === 'error' ? 'bg-red-500 text-white' :
+            notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+            'bg-blue-500 text-white'
+          }`}>
+            <div className="flex items-center justify-between">
+              <span>{notification.message}</span>
+              <button 
+                onClick={() => setNotification(null)}
+                className="ml-4 text-white hover:text-gray-200"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
@@ -151,15 +180,16 @@ const ClientServices = () => {
           service={selectedService}
           onClose={() => setSelectedService(null)}
           refetchServices={fetchServicesData}
+          showNotification={showNotification}
         />
       )}
     </div>
   );
 };
 
-const ServiceDetail = ({ service, onClose, refetchServices }) => {
+const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) => {
   const [showOrderForm, setShowOrderForm] = useState(false);
-  const {email} = useContext(EmailContext);
+  const { email } = useContext(EmailContext);
   const [formData, setFormData] = useState({
     service_id: service.id,
     customer_name: '',
@@ -202,13 +232,14 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
         setFlowers(flowerData);
       } catch (err) {
         console.error("Failed to load service items:", err);
+        showNotification("Failed to load service items", "error");
       } finally {
         setLoadingItems(false);
       }
     };
 
     fetchServiceItems();
-  }, [service.id]);
+  }, [service.id, showNotification]);
 
   const handleCasketSelect = (casket) => {
     setSelectedCaskets(prev => {
@@ -245,6 +276,7 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
       };
       await placeOrder(orderData);
       setOrderStatus({ type: 'success', message: 'Order placed successfully!' });
+      showNotification('Order placed successfully!', 'success');
       setFormData({
         ...formData,
         customer_name: '',
@@ -262,6 +294,7 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
       }, 3000);
     } catch (error) {
       setOrderStatus({ type: 'error', message: 'Failed to place order. Please try again.' });
+      showNotification('Failed to place order. Please try again.', 'error');
     }
   };
 
@@ -317,11 +350,10 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
                       <h3 className="text-xl font-semibold text-gray-900 mb-4">Casket Options</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {caskets.map((casket) => (
-                          <div 
-                            key={casket.id} 
-                            className={`bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-200 ${
-                              selectedCaskets.some(c => c.id === casket.id) ? 'ring-2 ring-gray-900' : 'hover:shadow-md'
-                            }`}
+                          <div
+                            key={casket.id}
+                            className={`bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-200 ${selectedCaskets.some(c => c.id === casket.id) ? 'ring-2 ring-gray-900' : 'hover:shadow-md'
+                              }`}
                             onClick={() => service.name?.toLowerCase().includes('customized') && handleCasketSelect(casket)}
                           >
                             {casket.image && (
@@ -344,11 +376,10 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
                                 <>
                                   <p className="text-gray-900 font-semibold mt-2">₱{parseFloat(casket.price).toFixed(2)}</p>
                                   <div className="mt-2">
-                                    <span className={`inline-block px-3 py-1 rounded-full text-sm ${
-                                      selectedCaskets.some(c => c.id === casket.id)
+                                    <span className={`inline-block px-3 py-1 rounded-full text-sm ${selectedCaskets.some(c => c.id === casket.id)
                                         ? 'bg-gray-900 text-white'
                                         : 'bg-gray-100 text-gray-700'
-                                    }`}>
+                                      }`}>
                                       {selectedCaskets.some(c => c.id === casket.id) ? 'Selected' : 'Click to select'}
                                     </span>
                                   </div>
@@ -366,11 +397,10 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
                       <h3 className="text-xl font-semibold text-gray-900 mb-4">Flower Options</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {flowers.map((flower) => (
-                          <div 
-                            key={flower.id} 
-                            className={`bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-200 ${
-                              selectedFlowers.some(f => f.id === flower.id) ? 'ring-2 ring-gray-900' : 'hover:shadow-md'
-                            }`}
+                          <div
+                            key={flower.id}
+                            className={`bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-200 ${selectedFlowers.some(f => f.id === flower.id) ? 'ring-2 ring-gray-900' : 'hover:shadow-md'
+                              }`}
                             onClick={() => service.name?.toLowerCase().includes('customized') && handleFlowerSelect(flower)}
                           >
                             {flower.image && (
@@ -393,11 +423,10 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
                                 <>
                                   <p className="text-gray-900 font-semibold mt-2">₱{parseFloat(flower.price).toFixed(2)}</p>
                                   <div className="mt-2">
-                                    <span className={`inline-block px-3 py-1 rounded-full text-sm ${
-                                      selectedFlowers.some(f => f.id === flower.id)
+                                    <span className={`inline-block px-3 py-1 rounded-full text-sm ${selectedFlowers.some(f => f.id === flower.id)
                                         ? 'bg-gray-900 text-white'
                                         : 'bg-gray-100 text-gray-700'
-                                    }`}>
+                                      }`}>
                                       {selectedFlowers.some(f => f.id === flower.id) ? 'Selected' : 'Click to select'}
                                     </span>
                                   </div>
@@ -434,13 +463,12 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
           ) : (
             <div className="max-w-2xl mx-auto">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Place Order for {service.name}</h3>
-
+              
               {orderStatus && (
-                <div className={`p-4 mb-6 rounded-lg ${
-                  orderStatus.type === 'success' ? 'bg-green-50 text-green-700' :
-                  orderStatus.type === 'error' ? 'bg-red-50 text-red-700' :
-                  'bg-blue-50 text-blue-700'
-                }`}>
+                <div className={`p-4 mb-6 rounded-lg ${orderStatus.type === 'success' ? 'bg-green-50 text-green-700' :
+                    orderStatus.type === 'error' ? 'bg-red-50 text-red-700' :
+                      'bg-blue-50 text-blue-700'
+                  }`}>
                   {orderStatus.message}
                 </div>
               )}
@@ -461,7 +489,7 @@ const ServiceDetail = ({ service, onClose, refetchServices }) => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1" >Email Address</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                   <input
                     type="email"
                     name="email"

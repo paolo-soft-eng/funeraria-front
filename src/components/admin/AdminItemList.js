@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import AdminLayout from "./AdminLayout"; // Import the layout component
-import { EmailContext } from '../EmailContext';
-import { useNavigate } from 'react-router-dom';
+import { EmailContext } from "../EmailContext";
+import { useNavigate } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const AdminItemList = () => {
   const [items, setItems] = useState([]);
@@ -12,11 +14,10 @@ const AdminItemList = () => {
     details: "",
     price: "",
     stock: "",
-    image: ""
+    image: "",
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState({ text: "", type: "" });
   const { email } = useContext(EmailContext);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);
@@ -24,26 +25,29 @@ const AdminItemList = () => {
 
   useEffect(() => {
     if (email) {
-      // Fetch user ID based on email
-      fetch(`http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`)
-        .then(response => response.json())
-        .then(data => {
+      fetch(
+        `http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(
+          email
+        )}`
+      )
+        .then((response) => response.json())
+        .then((data) => {
           if (data.userId) {
             setUserId(data.userId);
             setIsLoggedIn(true);
           } else {
             setIsLoggedIn(false);
-            navigate('/auth');
+            navigate("/auth");
           }
         })
-        .catch(error => {
-          console.error('Error fetching user ID:', error);
+        .catch((error) => {
+          console.error("Error fetching user ID:", error);
           setIsLoggedIn(false);
-          navigate('/auth');
+          navigate("/auth");
         });
     } else {
       setIsLoggedIn(false);
-      navigate('/auth');
+      navigate("/auth");
     }
   }, [email, navigate]);
 
@@ -54,10 +58,12 @@ const AdminItemList = () => {
   const fetchItems = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get("http://localhost/apii/components/itemlist.php");
+      const response = await axios.get(
+        "http://localhost/apii/components/itemlist.php"
+      );
       setItems(response.data);
     } catch (error) {
-      setMessage({ text: "Error fetching items", type: "error" });
+      toast.error("Error fetching items ❌");
       console.error("Error fetching items:", error);
     } finally {
       setIsLoading(false);
@@ -90,9 +96,9 @@ const AdminItemList = () => {
 
       fetchItems();
       resetForm();
-      setMessage({ text: "Item added successfully", type: "success" });
+      toast.success("Item added successfully ✅");
     } catch (error) {
-      setMessage({ text: "Error adding item", type: "error" });
+      toast.error("Error adding item ❌");
       console.error("Error adding item:", error);
     } finally {
       setIsLoading(false);
@@ -101,44 +107,41 @@ const AdminItemList = () => {
 
   const updateItem = async () => {
     try {
-        setIsLoading(true);
+      setIsLoading(true);
 
-        const formDataToSend = new FormData();
-        formDataToSend.append("id", formData.id);
-        formDataToSend.append("name", formData.name);
-        formDataToSend.append("details", formData.details);
-        formDataToSend.append("price", formData.price);
-        formDataToSend.append("stock", formData.stock);
+      const formDataToSend = new FormData();
+      formDataToSend.append("id", formData.id);
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("details", formData.details);
+      formDataToSend.append("price", formData.price);
+      formDataToSend.append("stock", formData.stock);
 
-        if (formData.image) {
-            formDataToSend.append("image", formData.image);
-        }
+      if (formData.image) {
+        formDataToSend.append("image", formData.image);
+      }
 
-        const response = await axios({
-            method: 'POST',
-            url: "http://localhost/apii/components/itemlist.php?_method=PUT",
-            data: formDataToSend,
-            headers: { "Content-Type": "multipart/form-data" }
-        });
+      const response = await axios({
+        method: "POST",
+        url: "http://localhost/apii/components/itemlist.php?_method=PUT",
+        data: formDataToSend,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-        if (response.data.message === "No changes made") {
-            setMessage({ text: "No changes made", type: "info" });
-        } else {
-            setMessage({ text: "Item updated successfully", type: "success" });
-
-            setItems(prevItems =>
-                prevItems.map(item =>
-                    item.id === response.data.item.id ? response.data.item : item
-                )
-            );
-            resetForm();
-        }
-
+      if (response.data.message === "No changes made") {
+        toast.info("No changes made ⚠️");
+      } else {
+        toast.success("Item updated successfully ✅");
+        setItems((prevItems) =>
+          prevItems.map((item) =>
+            item.id === response.data.item.id ? response.data.item : item
+          )
+        );
+        resetForm();
+      }
     } catch (error) {
-        setMessage({ text: "Error updating item", type: "error" });
-        console.error("Error updating item:", error);
+      toast.info("No changes made ⚠️");
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -146,11 +149,13 @@ const AdminItemList = () => {
     if (window.confirm("Are you sure you want to delete this item?")) {
       try {
         setIsLoading(true);
-        await axios.delete(`http://localhost/apii/components/itemlist.php?id=${id}`);
+        await axios.delete(
+          `http://localhost/apii/components/itemlist.php?id=${id}`
+        );
         fetchItems();
-        setMessage({ text: "Item deleted successfully", type: "success" });
+        toast.success("Item deleted successfully 🗑️");
       } catch (error) {
-        setMessage({ text: "Error deleting item", type: "error" });
+        toast.error("Error deleting item ❌");
         console.error("Error deleting item:", error);
       } finally {
         setIsLoading(false);
@@ -186,7 +191,14 @@ const AdminItemList = () => {
   };
 
   const resetForm = () => {
-    setFormData({ id: "", name: "", details: "", price: "", stock: "", image: null });
+    setFormData({
+      id: "",
+      name: "",
+      details: "",
+      price: "",
+      stock: "",
+      image: null,
+    });
     setImagePreview(null);
   };
 
@@ -197,7 +209,7 @@ const AdminItemList = () => {
       details: item.details,
       price: item.price,
       stock: item.stock,
-      image: null
+      image: null,
     });
 
     if (item.image_path) {
@@ -212,11 +224,25 @@ const AdminItemList = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg">
           <div className="text-center">
-            <svg className="mx-auto h-12 w-12 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <svg
+              className="mx-auto h-12 w-12 text-yellow-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
             </svg>
-            <h2 className="mt-4 text-xl font-semibold text-gray-900">Login Required</h2>
-            <p className="mt-2 text-gray-600">Please log in to access the admin dashboard.</p>
+            <h2 className="mt-4 text-xl font-semibold text-gray-900">
+              Login Required
+            </h2>
+            <p className="mt-2 text-gray-600">
+              Please log in to access the admin dashboard.
+            </p>
             <div className="mt-6">
               <a
                 href="/auth"
@@ -232,24 +258,12 @@ const AdminItemList = () => {
   }
 
   return (
-    <AdminLayout currentPage = "itemlists">
+    <AdminLayout currentPage="itemlists">
       <div className="container mx-auto px-4 py-6">
         <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">Manage Items</h1>
-
-          {message.text && (
-            <div
-              className={`mb-4 p-3 rounded-md ${
-                message.type === "success"
-                  ? "bg-green-100 text-green-700"
-                  : message.type === "info"
-                  ? "bg-blue-100 text-blue-700"
-                  : "bg-red-100 text-red-700"
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
+            Manage Items
+          </h1>
 
           <h2 className="text-xl font-semibold mb-4">
             {formData.id ? "Update Item" : "Add New Item"}
@@ -258,7 +272,9 @@ const AdminItemList = () => {
             <input type="hidden" name="id" value={formData.id} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name:</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name:
+                </label>
                 <input
                   type="text"
                   name="name"
@@ -269,7 +285,9 @@ const AdminItemList = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Details:</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Details:
+                </label>
                 <input
                   type="text"
                   name="details"
@@ -280,7 +298,9 @@ const AdminItemList = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price:</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Price:
+                </label>
                 <input
                   type="number"
                   name="price"
@@ -293,7 +313,9 @@ const AdminItemList = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Stock:</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Stock:
+                </label>
                 <input
                   type="number"
                   name="stock"
@@ -307,7 +329,9 @@ const AdminItemList = () => {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Image:</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Image:
+              </label>
               <div className="flex items-start space-x-4">
                 <div className="flex-1">
                   <input
@@ -318,7 +342,9 @@ const AdminItemList = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
                   />
                   <p className="mt-1 text-sm text-gray-500">
-                    {formData.id && !formData.image && imagePreview ? "Leave empty to keep current image" : "Upload a services image"}
+                    {formData.id && !formData.image && imagePreview
+                      ? "Leave empty to keep current image"
+                      : "Upload a services image"}
                   </p>
                 </div>
                 {imagePreview && (
@@ -349,7 +375,11 @@ const AdminItemList = () => {
                 disabled={isLoading}
                 className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
               >
-                {isLoading ? "Processing..." : formData.id ? "Update Item" : "Add Item"}
+                {isLoading
+                  ? "Processing..."
+                  : formData.id
+                  ? "Update Item"
+                  : "Add Item"}
               </button>
               {formData.id && (
                 <button
@@ -378,12 +408,24 @@ const AdminItemList = () => {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Image</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Name</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Details</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Price</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Stock</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">Actions</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                      Image
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                      Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                      Details
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                      Price
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                      Stock
+                    </th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -398,14 +440,24 @@ const AdminItemList = () => {
                           />
                         ) : (
                           <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded-md">
-                            <span className="text-gray-400 text-xs">No image</span>
+                            <span className="text-gray-400 text-xs">
+                              No image
+                            </span>
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{item.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{item.details}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">₱{parseFloat(item.price).toFixed(2)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-800">{item.stock}</td>
+                      <td className="px-4 py-3 text-sm text-gray-800">
+                        {item.name}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {item.details}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-800">
+                        ₱{parseFloat(item.price).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-800">
+                        {item.stock}
+                      </td>
                       <td className="px-4 py-3 text-sm text-right">
                         <button
                           onClick={() => editItem(item)}
@@ -428,6 +480,17 @@ const AdminItemList = () => {
           )}
         </div>
       </div>
+
+      {/* Toast notifications */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+      />
     </AdminLayout>
   );
 };

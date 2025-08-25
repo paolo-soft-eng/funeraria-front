@@ -32,6 +32,7 @@ const AdminDashboard = () => {
     const [userData, setUserData] = useState(null);
     const navigate = useNavigate();
     const dropdownRef = useRef(null);
+    const [notification, setNotification] = useState(null);
     const { email } = useContext(EmailContext);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userId, setUserId] = useState(null);
@@ -146,6 +147,11 @@ const AdminDashboard = () => {
         }
     }, [email, navigate]);
 
+      const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };
@@ -161,6 +167,7 @@ const AdminDashboard = () => {
         setIsDropdownOpen(false);
         navigate(path);
     };
+    
 
     const handleOrders = () => {
         navigate("/dashboard-admin/orders");
@@ -187,14 +194,17 @@ const AdminDashboard = () => {
 
         if (userConfirmed) {
             try {
+                showNotification('Logging out...', 'info');
                 await axios.post('http://localhost/apii/config/logout.php');
                 localStorage.removeItem('userEmail');
                 localStorage.removeItem('userRole');
-
-                navigate('/');
+                showNotification('Successfully logged out!', 'success');
+                setTimeout(() => {
+          navigate('/');
+        }, 1000);
             } catch (error) {
                 console.error('Error logging out:', error);
-                alert('Failed to log out. Please try again.');
+                 showNotification('Failed to log out. Please try again.', 'error');
             }
         }
     };
@@ -264,6 +274,39 @@ const AdminDashboard = () => {
 
     return (
         <div className="flex h-screen bg-gray-50 text-gray-800">
+            {notification && (
+                <div className="fixed top-4 right-4 z-50 animate-fade-in">
+                    <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${
+                        notification.type === 'success' ? 'bg-green-500 text-white' :
+                        notification.type === 'error' ? 'bg-red-500 text-white' :
+                        notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+                        'bg-blue-500 text-white'
+                    }`}>
+                        {notification.type === 'success' && (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        )}
+                        {notification.type === 'error' && (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        )}
+                        {notification.type === 'info' && (
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        )}
+                        <span className="font-medium">{notification.message}</span>
+                        <button 
+                            onClick={() => setNotification(null)}
+                            className="ml-2 text-white hover:text-gray-200"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
             {/* Overlay for mobile */}
             {isSidebarOpen && isMobileView && (
                 <div
@@ -545,7 +588,7 @@ const AdminDashboard = () => {
                                                         <div className="flex-1">
                                                             <div className="flex justify-between items-start mb-1">
                                                                 <h4 className="font-medium text-gray-800">
-                                                                    {message.sender_username} ({message.sender_email})
+                                                                    {message.sender_username} 
                                                                 </h4>
                                                                 <div className="flex flex-col items-end">
                                                                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full mb-1">
@@ -750,6 +793,23 @@ const AdminDashboard = () => {
 
             {/* Child Routes */}
             <Outlet />
+
+             <style>{`
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
         </div>
     );
 };

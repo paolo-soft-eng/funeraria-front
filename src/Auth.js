@@ -5,6 +5,7 @@ import { EmailContext } from './components/EmailContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
+import toast, { Toaster } from 'react-hot-toast';
 
 const Auth = () => {
   const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
@@ -43,11 +44,12 @@ const Auth = () => {
 
     if (formData.email === 'super@gmail.com' && formData.password === 'super12345') {
       navigate('/super-admin');
+      return;
     }
 
     // Check if passwords match
     if (!isLogin && formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
+      toast.error("Passwords do not match");
       setIsLoading(false);
       return;
     }
@@ -67,40 +69,58 @@ const Auth = () => {
           const userRole = response.data.user.role;
 
           if (userRole === 'admin') {
-            alert('Login successful as admin');
-            navigate('/dashboard-admin/home');
+            toast.success('Login successful as admin', {
+              duration: 2000,
+              position: 'top-right',
+            });
+            setTimeout(() => navigate('/dashboard-admin/home'), 1000);
           } else if (userRole === 'client') {
-            alert('Login successful as client');
-            navigate('/dashboard-client');
+            toast.success('Login successful as client', {
+              duration: 2000,
+              position: 'top-right',
+            });
+            setTimeout(() => navigate('/dashboard-client'), 1000);
           } else if (userRole === 'superadmin') {
-            alert('Login successful as super admin');
-            navigate('/super-admin');
+            toast.success('Login successful as super admin', {
+              duration: 2000,
+              position: 'top-right',
+            });
+            setTimeout(() => navigate('/super-admin'), 1000);
           } else {
             // Default case if role is undefined or not recognized
-            alert('Login successful');
-            navigate('/dashboard-client');
+            toast.success('Login successful', {
+              duration: 2000,
+              position: 'top-right',
+            });
+            setTimeout(() => navigate('/dashboard-client'), 1000);
           }
         } else if (response.data.message === "Registration successful") {
-          alert("Registration successful");
+          toast.success("Registration successful", {
+            duration: 3000,
+            position: 'top-right',
+          });
           setIsLogin(true); // Switch to login form after successful registration
         } else {
-          alert(response.data.message);
+          toast.error(response.data.message);
         }
       } else {
-        alert('Error: Unexpected response format');
+        toast.error('Error: Unexpected response format');
       }
     } catch (error) {
       console.error("Error:", error);
       if (error.response) {
         if (error.response.status === 403 && error.response.data.status === 'disabled') {
-          alert('Your account has been disabled. Please contact the administrator.');
+          toast.error('Your account has been disabled. Please contact the administrator.', {
+            duration: 4000,
+            position: 'top-right',
+          });
         } else if (error.response.data) {
-          alert('Error: ' + error.response.data.message);
+          toast.error('Error: ' + error.response.data.message);
         } else {
-          alert('Error: ' + error.message);
+          toast.error('Error: ' + error.message);
         }
       } else {
-        alert('Error: ' + error.message);
+        toast.error('Error: ' + error.message);
       }
     } finally {
       setIsLoading(false);
@@ -129,26 +149,66 @@ const Auth = () => {
         googleData
       );
 
-      if (response.data.message === "Login successful" || response.data.message === "Registration successful") {
+      if (response.data.message === "Login successful" || response.data.message === "Registration and login successful") {
         setEmail(email);
         // Store user role in localStorage
         localStorage.setItem('userRole', response.data.user?.role || 'client');
 
         const userRole = response.data.user?.role || 'client';
+        const isNewUser = response.data.isNewUser || false;
 
+        // Show different messages for new vs existing users
+        const loginMessage = isNewUser ? 'Welcome! Account created successfully' : 'Welcome back!';
+        
         if (userRole === 'admin') {
-          navigate('/dashboard-admin/home');
+          toast.success(`${loginMessage} - Logged in as admin`, {
+            duration: 5000,
+            position: 'top-right',
+            icon: '👨‍💼',
+          });
+          setTimeout(() => navigate('/dashboard-admin/home'), 1000);
         } else if (userRole === 'superadmin') {
-          navigate('/super-admin');
+          toast.success(`${loginMessage} - Logged in as super admin`, {
+            duration: 5000,
+            position: 'top-right',
+            icon: '🔑',
+          });
+          setTimeout(() => navigate('/super-admin'), 1000);
         } else {
-          navigate('/dashboard-client');
+          toast.success(`${loginMessage} - Logged in as client`, {
+            duration: 5000,
+            position: 'top-right',
+            icon: isNewUser ? '🎉' : '👤',
+          });
+          setTimeout(() => navigate('/dashboard-client'), 1000);
         }
       } else {
-        alert(response.data.message || "Google authentication failed");
+        toast.error(response.data.message || "Google authentication failed");
       }
     } catch (error) {
       console.error("Google auth error:", error);
-      alert("Google authentication failed. Please try again.");
+      
+      if (error.response) {
+        if (error.response.status === 403 && error.response.data.status === 'disabled') {
+          // Account disabled
+          toast.error('Your account has been disabled. Please contact the administrator.', {
+            duration: 5000,
+            position: 'top-right',
+            icon: '🚫',
+          });
+        } else {
+          // Other errors
+          toast.error(error.response.data?.message || 'Google authentication failed. Please try again.', {
+            duration: 5000,
+            position: 'top-right',
+          });
+        }
+      } else {
+        toast.error("Google authentication failed. Please try again.", {
+          duration: 5000,
+          position: 'top-right',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -157,7 +217,10 @@ const Auth = () => {
   const handleGoogleFailure = (error) => {
     if (error.error !== 'idpiframe_initialization_failed') {
       console.error('Google login failed:', error);
-      alert('Google login failed. Please try again.');
+      toast.error('Google login failed. Please try again.', {
+        duration: 3000,
+        position: 'top-right',
+      });
     }
   };
 
@@ -167,6 +230,51 @@ const Auth = () => {
         className="relative min-h-screen overflow-hidden text-slate-100"
         style={{ background: 'linear-gradient(135deg, #2c3e50 0%, #bdc3c7 100%)' }}
       >
+        {/* Toast Container */}
+        <Toaster
+          position="top-right"
+          reverseOrder={false}
+          gutter={8}
+          containerClassName=""
+          containerStyle={{}}
+          toastOptions={{
+            // Define default options
+            className: '',
+            duration: 3000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+              fontSize: '14px',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            },
+            // Default options for specific types
+            success: {
+              duration: 4000,
+              theme: {
+                primary: '#10b981',
+                secondary: '#ffffff',
+              },
+              style: {
+                background: '#10b981',
+                color: '#ffffff',
+              },
+            },
+            error: {
+              duration: 4000,
+              theme: {
+                primary: '#ef4444',
+                secondary: '#ffffff',
+              },
+              style: {
+                background: '#ef4444',
+                color: '#ffffff',
+              },
+            },
+          }}
+        />
+
         {/* Ambient shapes */}
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-amber-500/10 blur-3xl" />

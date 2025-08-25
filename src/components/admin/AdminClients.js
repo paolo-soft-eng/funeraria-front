@@ -4,11 +4,13 @@ import AdminLayout from './AdminLayout';
 import { EmailContext } from '../EmailContext';
 import { useNavigate } from 'react-router-dom';
 import { FaTable, FaThLarge } from 'react-icons/fa';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const AdminClients = () => {
   const [clients, setClients] = useState([]);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [clientToDelete, setClientToDelete] = useState(null);
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
   const { email } = useContext(EmailContext);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);
@@ -16,7 +18,7 @@ const AdminClients = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const navigate = useNavigate();
 
-  // Add mobile detection
+  // Mobile detection
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
@@ -25,23 +27,16 @@ const AdminClients = () => {
         setViewMode('card');
       }
     };
-
-    // Initial check
     handleResize();
-
-    // Add event listener
     window.addEventListener('resize', handleResize);
-
-    // Cleanup
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Add login validation
+  // Login validation
   useEffect(() => {
     if (email) {
-      // Fetch user ID based on email
       fetch(`http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`)
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
           if (data.userId) {
             setUserId(data.userId);
@@ -51,8 +46,7 @@ const AdminClients = () => {
             navigate('/auth');
           }
         })
-        .catch(error => {
-          console.error('Error fetching user ID:', error);
+        .catch(() => {
           setIsLoggedIn(false);
           navigate('/auth');
         });
@@ -70,72 +64,73 @@ const AdminClients = () => {
 
   const fetchClients = () => {
     axios.get('http://localhost/apii/components/fetchClients.php')
-      .then(response => {
-        // Check if response is an array (successful GET) or an object (error)
-        if (Array.isArray(response.data)) {
-          setClients(response.data);
+      .then(res => {
+        if (Array.isArray(res.data)) {
+          setClients(res.data);
         } else {
-          console.error('Error fetching clients:', response.data.message);
-          setClients([]); // Set empty array on error
+          setClients([]);
+          toast.error('Failed to fetch clients ❌');
         }
       })
-      .catch(error => {
-        console.error('Error fetching clients:', error);
-        setClients([]); // Set empty array on network error
+      .catch(() => {
+        setClients([]);
+        toast.error('Network error while fetching clients 🚨');
       });
   };
 
-  const confirmDelete = (client) => {
-    setClientToDelete(client);
-    setShowDeleteModal(true);
+  const confirmAction = (client, action) => {
+    setSelectedClient({ ...client, action });
+    setShowActionModal(true);
   };
 
-  const handleDelete = () => {
-    if (!clientToDelete) return;
+  const handleConfirmAction = () => {
+    if (!selectedClient) return;
 
-    axios.post('http://localhost/apii/components/fetchClients.php', {
-      id: clientToDelete.id
+    axios.post("http://localhost/apii/components/fetchClients.php", {
+      id: selectedClient.id,
+      action: selectedClient.action
     })
-      .then(response => {
-        if (response.data.success) {
-          // Remove client from state to update UI immediately
-          setClients(clients.filter(client => client.id !== clientToDelete.id));
-          setShowDeleteModal(false);
-          setClientToDelete(null);
+      .then(res => {
+        if (res.data.success) {
+          setClients(clients.map(c =>
+            c.id === selectedClient.id
+              ? { ...c, status: selectedClient.action === "disable" ? "disabled" : "active" }
+              : c
+          ));
+          setShowActionModal(false);
+          toast.success(
+            selectedClient.action === "disable"
+              ? `Client "${selectedClient.username}" disabled 🚫`
+              : `Client "${selectedClient.username}" enabled ✅`
+          );
+          setSelectedClient(null);
         } else {
-          console.error('Error deleting client:', response.data.message);
-          alert('Failed to delete client: ' + response.data.message);
+          toast.error("Failed to update client ❌");
         }
       })
-      .catch(error => {
-        console.error('Error deleting client:', error);
-        alert('Failed to delete client. Please try again.');
+      .catch(() => {
+        toast.error("Network error while updating client 🚨");
       });
   };
 
-  const cancelDelete = () => {
-    setShowDeleteModal(false);
-    setClientToDelete(null);
+  const cancelAction = () => {
+    setShowActionModal(false);
+    setSelectedClient(null);
   };
 
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg">
-          <div className="text-center">
-            <svg className="mx-auto h-12 w-12 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <h2 className="mt-4 text-xl font-semibold text-gray-900">Login Required</h2>
-            <p className="mt-2 text-gray-600">Please log in to access the admin dashboard.</p>
-            <div className="mt-6">
-              <a
-                href="/auth"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Go to Login
-              </a>
-            </div>
+        <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-lg text-center">
+          <h2 className="mt-4 text-xl font-semibold text-gray-900">Login Required</h2>
+          <p className="mt-2 text-gray-600">Please log in to access the admin dashboard.</p>
+          <div className="mt-6">
+            <a
+              href="/auth"
+              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition"
+            >
+              Go to Login
+            </a>
           </div>
         </div>
       </div>
@@ -147,7 +142,7 @@ const AdminClients = () => {
       <div className="p-4 md:p-6">
         <div className="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Client Management</h1>
+            <h1 className="text-lg font-bold text-gray-900">Client Management</h1>
             {!isMobile && (
               <div className="flex space-x-2">
                 <button
@@ -166,42 +161,56 @@ const AdminClients = () => {
             )}
           </div>
 
+          {/* Table View */}
           {viewMode === 'table' ? (
             <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border border-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full text-sm text-left border">
+                <thead className="bg-gray-200 text-gray-600 text-xs uppercase">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Firstname</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lastname</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telephone</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emergency Contact</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-2">ID</th>
+                    <th className="px-4 py-2">Username</th>
+                    <th className="px-4 py-2">Name</th>
+                    <th className="px-4 py-2">Email</th>
+                    <th className="px-4 py-2">Telephone</th>
+                    <th className="px-4 py-2">Address</th>
+                    <th className="px-4 py-2">Emergency Contact</th>
+                    <th className="px-4 py-2">Created At</th>
+                    <th className="px-4 py-2">Status</th>
+                    <th className="px-4 py-2">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody>
                   {clients.map(client => (
-                    <tr key={client.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{client.id}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.username}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.first_name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.last_name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.telephone}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.address}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{client.emergency_contact}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(client.created_at).toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                        <button 
-                          className="bg-red-500 text-white py-1 px-2 rounded hover:bg-red-600 transition"
-                          onClick={() => confirmDelete(client)}
-                        >
-                          Delete
-                        </button>
+                    <tr key={client.id} className="border-b">
+                      <td className="px-4 py-2">{client.id}</td>
+                      <td className="px-4 py-2">{client.username}</td>
+                      <td className="px-4 py-2">{client.first_name} {client.last_name}</td>
+                      <td className="px-4 py-2">{client.email}</td>
+                      <td className="px-4 py-2">{client.telephone}</td>
+                      <td className="px-4 py-2">{client.address}</td>
+                      <td className="px-4 py-2">{client.emergency_contact}</td>
+                      <td className="px-4 py-2">{client.created_at}</td>
+                      <td className="px-4 py-2">
+                        <span className={`px-2 py-1 rounded text-white text-xs ${client.status === "disabled" ? "bg-red-500" : "bg-green-500"}`}>
+                          {client.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2">
+                        {client.status === "disabled" ? (
+                          <button
+                            onClick={() => confirmAction(client, "enable")}
+                            className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                          >
+                            Enable
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => confirmAction(client, "disable")}
+                            className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                          >
+                            Disable
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -209,58 +218,36 @@ const AdminClients = () => {
               </table>
             </div>
           ) : (
+            /* Card View */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {clients.map(client => (
-                <div key={client.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{client.username}</h3>
-                      <p className="text-sm text-gray-500">ID: {client.id}</p>
-                    </div>
+                <div key={client.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                  <h3 className="text-lg font-semibold">{client.username}</h3>
+                  <p className="text-sm text-gray-500">ID: {client.id}</p>
+                  <div className="mt-3 space-y-2 text-sm text-gray-600">
+                    <p><span className="font-medium">Name:</span> {client.first_name} {client.last_name}</p>
+                    <p><span className="font-medium">Email:</span> {client.email}</p>
+                    <p><span className="font-medium">Phone:</span> {client.telephone}</p>
+                    <p><span className="font-medium">Address:</span> {client.address}</p>
+                    <p><span className="font-medium">Emergency:</span> {client.emergency_contact}</p>
+                    <p><span className="font-medium">Created:</span> {new Date(client.created_at).toLocaleString()}</p>
                   </div>
-
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Name:</span>
-                      <span>{client.first_name} {client.last_name}</span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Email:</span>
-                      <span className="text-sm">{client.email}</span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Phone:</span>
-                      <span>{client.telephone}</span>
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Address:</span> {client.address}
-                      </p>
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Emergency Contact:</span> {client.emergency_contact}
-                      </p>
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium">Created:</span> {new Date(client.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-
                   <div className="mt-4 flex justify-end">
-                    <button 
-                      className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600 transition"
-                      onClick={() => confirmDelete(client)}
-                    >
-                      Delete
-                    </button>
+                    {client.status === "disabled" ? (
+                      <button
+                        className="bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700 transition"
+                        onClick={() => confirmAction(client, "enable")}
+                      >
+                        Enable
+                      </button>
+                    ) : (
+                      <button
+                        className="bg-red-600 text-white py-1 px-3 rounded hover:bg-red-700 transition"
+                        onClick={() => confirmAction(client, "disable")}
+                      >
+                        Disable
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -275,32 +262,42 @@ const AdminClients = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
+      {/* Action Confirmation Modal */}
+      {showActionModal && selectedClient && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
-            <p className="mb-6">
-              Are you sure you want to delete the client: <span className="font-semibold">{clientToDelete?.username}</span>?
-              This action cannot be undone.
+            <h2 className="text-lg font-bold mb-4">
+              {selectedClient.action === "disable" ? "Disable Client" : "Enable Client"}
+            </h2>
+            <p className="mb-6 text-sm">
+              Are you sure you want to{" "}
+              <span className="font-bold">{selectedClient.action}</span>{" "}
+              client <span className="font-semibold">{selectedClient.username}</span>?
             </p>
             <div className="flex justify-end space-x-3">
-              <button 
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition"
-                onClick={cancelDelete}
+              <button
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition text-sm"
+                onClick={cancelAction}
               >
                 Cancel
               </button>
-              <button 
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                onClick={handleDelete}
+              <button
+                className={`px-4 py-2 rounded text-white text-sm ${
+                  selectedClient.action === "disable"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-green-600 hover:bg-green-700"
+                }`}
+                onClick={handleConfirmAction}
               >
-                Delete
+                {selectedClient.action === "disable" ? "Disable" : "Enable"}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Toast notifications */}
+      <ToastContainer position="top-right" autoClose={3000} />
     </AdminLayout>
   );
 };

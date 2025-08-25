@@ -61,9 +61,9 @@ const AdminAppointments = () => {
 
             const data = await response.json();
             console.log(response);
-            
+
             console.log(data);
-            
+
             if (data.status === 'success') {
                 fetchAppointments(); // Refresh the list
             } else {
@@ -105,7 +105,11 @@ const AdminAppointments = () => {
                 )}
 
                 {loading ? (
-                    <div className="text-center py-4">Loading appointments...</div>
+                    <div className="text-center py-4 text-sm text-gray-600">Loading appointments...</div>
+                ) : appointments.length === 0 ? (
+                    <div className="text-center py-6 text-gray-500 text-sm italic">
+                        No appointments yet
+                    </div>
                 ) : viewMode === 'table' ? (
                     <div className="bg-white rounded-lg shadow overflow-hidden">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -129,16 +133,14 @@ const AdminAppointments = () => {
                                             <div className="text-sm text-gray-900">
                                                 {new Date(appointment.appointment_date).toLocaleDateString()}
                                             </div>
-                                            <div className="text-sm text-gray-500">
-                                                {appointment.appointment_time}
-                                            </div>
+                                            <div className="text-sm text-gray-500">{appointment.appointment_time}</div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {appointment.purpose}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                ${appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
+                                ${appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
                                                     appointment.status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
                                                         'bg-blue-100 text-blue-800'}`}>
                                                 {appointment.status}
@@ -169,7 +171,7 @@ const AdminAppointments = () => {
                                         <p className="text-sm text-gray-500">{appointment.user_email}</p>
                                     </div>
                                     <span className={`px-3 py-1 text-xs font-semibold rounded-full 
-                                        ${appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
+                        ${appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
                                             appointment.status === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
                                                 'bg-blue-100 text-blue-800'}`}>
                                         {appointment.status}
@@ -208,6 +210,7 @@ const AdminAppointments = () => {
                         ))}
                     </div>
                 )}
+
             </div>
         </AdminLayout>
     )

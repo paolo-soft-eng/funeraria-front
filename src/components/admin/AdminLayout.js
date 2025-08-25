@@ -25,10 +25,16 @@ const AdminLayout = ({ children, currentPage }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
+  const [notification, setNotification] = useState(null);
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const { email } = useContext(EmailContext);
+
+   const showNotification = (message, type = 'info') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
 
   useEffect(() => {
     const checkIfMobile = () => {
@@ -83,17 +89,22 @@ const AdminLayout = ({ children, currentPage }) => {
 
     if (userConfirmed) {
       try {
+        showNotification('Logging out...', 'info');
         await axios.post('http://localhost/apii/config/logout.php');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userRole');
-        navigate('/');
+        showNotification('Successfully logged out!', 'success');
+        
+        // Delay navigation to show success message
+        setTimeout(() => {
+          navigate('/');
+        }, 1000);
       } catch (error) {
         console.error('Error logging out:', error);
-        alert('Failed to log out. Please try again.');
+        showNotification('Failed to log out. Please try again.', 'error');
       }
     }
   };
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -127,6 +138,39 @@ const AdminLayout = ({ children, currentPage }) => {
 
   return (
       <div className="flex h-screen bg-gray-50 text-gray-800">
+        {notification && (
+                <div className="fixed top-4 right-4 z-50 animate-fade-in">
+                  <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${
+                    notification.type === 'success' ? 'bg-green-500 text-white' :
+                    notification.type === 'error' ? 'bg-red-500 text-white' :
+                    notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+                    'bg-blue-500 text-white'
+                  }`}>
+                    {notification.type === 'success' && (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    )}
+                    {notification.type === 'error' && (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                      </svg>
+                    )}
+                    {notification.type === 'info' && (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                    )}
+                    <span className="font-medium">{notification.message}</span>
+                    <button 
+                      onClick={() => setNotification(null)}
+                      className="ml-2 text-white hover:text-gray-200"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
       {isSidebarOpen && isMobileView && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={toggleSidebar}></div>
       )}
@@ -279,6 +323,22 @@ const AdminLayout = ({ children, currentPage }) => {
           </div>
         </footer>
       </div>
+      <style>{`
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import { Calendar, FileText, Users, MessageSquare, Clock, MapPin, ChevronRight, X } from 'lucide-react';
 import {EmailContext} from '../EmailContext'
+import axios from 'axios';
 
 const ClientHome = () => {
     const {email} = useContext(EmailContext);
@@ -15,6 +16,8 @@ const ClientHome = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userId, setUserId] = useState(null);
+    const [username, setUsername] = useState('');
+    const [profileImage, setProfileImage] = useState(null);
 
     // Add login validation
     useEffect(() => {
@@ -161,6 +164,27 @@ const ClientHome = () => {
         setSelectedOrder(null);
     };
 
+     useEffect(() => {
+        const fetchProfileImage = async () => {
+            if (!email) return; // Don't fetch if no email
+            
+            try {
+                const response = await axios.get(`http://localhost/apii/components/client_picture.php?email=${email}`);
+                
+                if (response.data && response.data.success) {
+                    console.log('Username:', response.data.username);
+                    if (response.data.username) {
+                        setUsername(response.data.username);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching username:', error);
+            }
+        };
+
+        fetchProfileImage();
+    }, [email]);
+
     if (!isLoggedIn) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -207,7 +231,7 @@ const ClientHome = () => {
             
             {/* Welcome Section */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome, {firstName}</h2>
+                <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome, {username||firstName || email}</h2>
                 <p className="text-gray-600">We're here to help you through this difficult time. Below you'll find all your funeral arrangements and resources.</p>
             </div>
             
