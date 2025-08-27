@@ -546,36 +546,36 @@ const AdminDocuments = () => {
                                         </div>
                                     </div>
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-2 sm:space-y-0">
-    <button
-        onClick={() => printDocument(currentDocument)}
-        className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
-    >
-        🖨️ Print
-    </button>
-    <button
-        onClick={() => {
-            const link = document.createElement('a');
-            link.href = getDocumentUrl(currentDocument);
-            link.download = currentDocument.document_name;
-            link.click();
-        }}
-        className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-    >
-        ⬇️ Download
-    </button>
-    <button
-        onClick={() => {
-            setIsDocumentViewerOpen(false);
-            setCurrentDocument(null);
-            setPreviewUrl('');
-        }}
-        className="w-full sm:w-auto inline-flex items-center justify-center p-2 border border-transparent rounded-full shadow-sm text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-    >
-        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-    </button>
-</div>
+                                        <button
+                                            onClick={() => printDocument(currentDocument)}
+                                            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors"
+                                        >
+                                            🖨️ Print
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const link = document.createElement('a');
+                                                link.href = getDocumentUrl(currentDocument);
+                                                link.download = currentDocument.document_name;
+                                                link.click();
+                                            }}
+                                            className="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                                        >
+                                            ⬇️ Download
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setIsDocumentViewerOpen(false);
+                                                setCurrentDocument(null);
+                                                setPreviewUrl('');
+                                            }}
+                                            className="w-full sm:w-auto inline-flex items-center justify-center p-2 border border-transparent rounded-full shadow-sm text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                                        >
+                                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
 
                                 </div>
 
