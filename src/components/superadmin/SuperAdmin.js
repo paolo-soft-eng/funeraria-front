@@ -314,7 +314,7 @@ const SuperAdmin = () => {
         await axios.post('http://localhost/apii/config/logout.php');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userRole');
-        navigate('/');
+        navigate('/auth');
       } catch (error) {
         console.error('Error logging out:', error);
         alert('Failed to log out. Please try again.');
