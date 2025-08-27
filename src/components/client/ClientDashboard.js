@@ -12,9 +12,10 @@ import {
   MessageSquare,
   User,
   LogOut,
-  HelpCircle,
+  Settings,
   X,
-  Bell
+  Bell,
+  Settings2
 } from 'lucide-react';
 
 import LoadingWrapper from '../LoadingWrapper';
@@ -142,7 +143,7 @@ const ClientDashboard = () => {
     { name: 'menu', icon: <BookOpen size={20} />, label: 'Menu List' },
     { name: 'cart', icon: <ShoppingCart size={20} />, label: 'Cart' },
     { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
-    { name: 'settings', icon: <HelpCircle size={20} />, label: 'Settings' }
+    { name: 'settings', icon: <Settings size={20} />, label: 'Settings' }
   ];
 
   return (
@@ -309,7 +310,7 @@ const ClientDashboard = () => {
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setIsDropdownOpen(false)}
                     >
-                      <User size={16} className="mr-2" />
+                      <Settings size={16} className="mr-2" />
                       <span>Settings</span>
                     </Link>
                     <div className="border-t border-gray-100 my-1"></div>
