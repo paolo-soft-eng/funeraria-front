@@ -15,7 +15,11 @@ import {
   Bell,
   Bug,
   BarChart2,
-  Settings
+  Settings,
+  Calendar,
+  LogOutIcon,
+  Paperclip,
+  FileText
 } from 'lucide-react';
 import axios from 'axios';
 import { EmailContext } from '../EmailContext';
@@ -97,7 +101,7 @@ const AdminLayout = ({ children, currentPage }) => {
         
         // Delay navigation to show success message
         setTimeout(() => {
-          navigate('/');
+          navigate('/auth');
         }, 1000);
       } catch (error) {
         console.error('Error logging out:', error);
@@ -124,8 +128,8 @@ const AdminLayout = ({ children, currentPage }) => {
     { name: 'orders', icon: <ShoppingCart size={20} />, label: 'Orders' },
     { name: 'clients', icon: <Users size={20} />, label: 'Clients' },
     { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
-    { name: 'documents', icon: <List size={20} />, label: 'Documents' },
-    { name: 'appointments', icon: <Users size={20} />, label: 'Appointments' },
+    { name: 'documents', icon: <FileText size={20} />, label: 'Documents' },
+    { name: 'appointments', icon: <Calendar size={20} />, label: 'Appointments' },
     { name: 'analytics', icon: <BarChart2 size={20} />, label: 'Analytics' },
     { name: 'reports', icon: <Bug size={20} />, label: 'Reports' },
     { name: 'settings', icon: <Settings size={20} />, label: 'Settings' },
@@ -236,7 +240,7 @@ const AdminLayout = ({ children, currentPage }) => {
               className={`flex items-center text-indigo-200 hover:text-white transition-colors ${isSidebarOpen ? 'justify-start w-full' : 'justify-center w-full'
                 }`}
             >
-              <LogOut size={20} className={isSidebarOpen ? 'mr-3' : ''} />
+              <LogOutIcon size={20} className={isSidebarOpen ? 'mr-3' : ''} />
               {isSidebarOpen && <span>Logout</span>}
             </button>
           </div>

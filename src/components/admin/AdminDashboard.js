@@ -15,12 +15,17 @@ import {
     Bell,
     Edit,
     Bug,
+    FileText,
     Clock,
     MapPin,
     Activity,
+    Calendar1,
     Settings,
     BarChart2,
-    Calendar
+    Calendar,
+    Paperclip,
+    LucideLogOut,
+    LogOutIcon
 } from 'lucide-react';
 import { EmailContext } from '../EmailContext';
 import LoadingWrapper from '../LoadingWrapper';
@@ -57,7 +62,6 @@ const AdminDashboard = () => {
                     'http://localhost/apii/components/fetchDashboardStats.php',
                     { email } // Send the email from context
                 );
-                console.log('API Response:', response.data); // Log the response
                 if (response.data.success) {
                     setDashboardStats({
                         totalOrders: response.data.data.total_orders || 0,
@@ -147,10 +151,10 @@ const AdminDashboard = () => {
         }
     }, [email, navigate]);
 
-      const showNotification = (message, type = 'info') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
-  };
+    const showNotification = (message, type = 'info') => {
+        setNotification({ message, type });
+        setTimeout(() => setNotification(null), 3000);
+    };
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
@@ -167,7 +171,7 @@ const AdminDashboard = () => {
         setIsDropdownOpen(false);
         navigate(path);
     };
-    
+
 
     const handleOrders = () => {
         navigate("/dashboard-admin/orders");
@@ -200,11 +204,11 @@ const AdminDashboard = () => {
                 localStorage.removeItem('userRole');
                 showNotification('Successfully logged out!', 'success');
                 setTimeout(() => {
-          navigate('/');
-        }, 1000);
+                    navigate('/auth');
+                }, 1000);
             } catch (error) {
                 console.error('Error logging out:', error);
-                 showNotification('Failed to log out. Please try again.', 'error');
+                showNotification('Failed to log out. Please try again.', 'error');
             }
         }
     };
@@ -233,8 +237,8 @@ const AdminDashboard = () => {
         { name: 'orders', icon: <ShoppingCart size={20} />, label: 'Orders' },
         { name: 'clients', icon: <Users size={20} />, label: 'Clients' },
         { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
-        { name: 'documents', icon: <List size={20} />, label: 'Documents' },
-        { name: 'appointments', icon: <Users size={20} />, label: 'Appointments' },
+        { name: 'documents', icon: <FileText size={20} />, label: 'Documents' },
+        { name: 'appointments', icon: <Calendar size={20} />, label: 'Appointments' },
         { name: 'analytics', icon: <BarChart2 size={20} />, label: 'Analytics' },
         { name: 'reports', icon: <Bug size={20} />, label: 'Reports' },
         { name: 'settings', icon: <Settings size={20} />, label: 'Settings' },
@@ -276,12 +280,11 @@ const AdminDashboard = () => {
         <div className="flex h-screen bg-gray-50 text-gray-800">
             {notification && (
                 <div className="fixed top-4 right-4 z-50 animate-fade-in">
-                    <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${
-                        notification.type === 'success' ? 'bg-green-500 text-white' :
-                        notification.type === 'error' ? 'bg-red-500 text-white' :
-                        notification.type === 'warning' ? 'bg-yellow-500 text-white' :
-                        'bg-blue-500 text-white'
-                    }`}>
+                    <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${notification.type === 'success' ? 'bg-green-500 text-white' :
+                            notification.type === 'error' ? 'bg-red-500 text-white' :
+                                notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+                                    'bg-blue-500 text-white'
+                        }`}>
                         {notification.type === 'success' && (
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
@@ -298,7 +301,7 @@ const AdminDashboard = () => {
                             </svg>
                         )}
                         <span className="font-medium">{notification.message}</span>
-                        <button 
+                        <button
                             onClick={() => setNotification(null)}
                             className="ml-2 text-white hover:text-gray-200"
                         >
@@ -379,7 +382,7 @@ const AdminDashboard = () => {
                             className={`flex items-center text-indigo-200 hover:text-white transition-colors ${isSidebarOpen ? 'justify-start w-full' : 'justify-center w-full'
                                 }`}
                         >
-                            <LogOut size={20} className={isSidebarOpen ? 'mr-3' : ''} />
+                            <LogOutIcon size={20} className={isSidebarOpen ? 'mr-3' : ''} />
                             {isSidebarOpen && <span>Logout</span>}
                         </button>
                     </div>
@@ -576,50 +579,63 @@ const AdminDashboard = () => {
                                     <div className="space-y-4">
                                         {dashboardStats.recent_messages.length > 0 ? (
                                             dashboardStats.recent_messages.map((message) => (
-                                                <div key={message.id} className="p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition bg-white shadow-sm">
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
-                                                            {message.sender_image_path ? (
-                                                                <img src={`http://localhost/apii/components/${message.sender_image_path}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
-                                                            ) : (
-                                                                <User size={20} />
-                                                            )}
+                                                <div
+                                                    key={message.id}
+                                                    className="p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition bg-white shadow-sm flex items-start gap-3"
+                                                >
+                                                    {/* Avatar */}
+                                                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+                                                        {message.sender_image_path ? (
+                                                            <img
+                                                                src={`http://localhost/apii/components/${message.sender_image_path}`}
+                                                                alt="Profile"
+                                                                className="rounded-full w-10 h-10 object-cover"
+                                                            />
+                                                        ) : (
+                                                            <User size={20} />
+                                                        )}
+                                                    </div>
+
+                                                    {/* Message content */}
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between items-start mb-1">
+                                                            <h4 className="font-medium text-gray-800">
+                                                                {message.sender_username}
+                                                            </h4>
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                                                                    {new Date(message.timestamp).toLocaleDateString("en-US", {
+                                                                        month: "short",
+                                                                        day: "numeric",
+                                                                        year:
+                                                                            new Date(message.timestamp).getFullYear() !==
+                                                                                new Date().getFullYear()
+                                                                                ? "numeric"
+                                                                                : undefined,
+                                                                    })}
+                                                                </span>
+                                                                <span className="text-xs text-gray-500">
+                                                                    {new Date(message.timestamp).toLocaleTimeString([], {
+                                                                        hour: "2-digit",
+                                                                        minute: "2-digit",
+                                                                    })}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex-1">
-                                                            <div className="flex justify-between items-start mb-1">
-                                                                <h4 className="font-medium text-gray-800">
-                                                                    {message.sender_username} 
-                                                                </h4>
-                                                                <div className="flex flex-col items-end">
-                                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full mb-1">
-                                                                        {new Date(message.timestamp).toLocaleDateString('en-US', {
-                                                                            month: 'short',
-                                                                            day: 'numeric',
-                                                                            year: new Date(message.timestamp).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-                                                                        })}
-                                                                    </span>
-                                                                    <span className="text-xs text-gray-500">
-                                                                        {new Date(message.timestamp).toLocaleTimeString([], {
-                                                                            hour: '2-digit',
-                                                                            minute: '2-digit'
-                                                                        })}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            <p className="text-gray-600 text-sm">
-                                                                {message.message}
-                                                            </p>
-                                                            <div className="mt-3 flex justify-end">
-                                                                <button
-                                                                    className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-                                                                    onClick={() => handleMessage()}
-                                                                >
-                                                                    Reply
-                                                                </button>
-                                                            </div>
+
+                                                        <p className="text-gray-600 text-sm">{message.message}</p>
+
+                                                        <div className="mt-3 flex justify-end">
+                                                            <button
+                                                                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                                                                onClick={() => handleMessage()}
+                                                            >
+                                                                Reply
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
+
                                             ))
                                         ) : (
                                             <div className="p-4 text-center text-gray-500">
@@ -720,8 +736,8 @@ const AdminDashboard = () => {
                                                     </div>
                                                     <div className="mt-3">
                                                         <span className={`px-2 py-1 text-xs rounded-full ${appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                                                                appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
-                                                                    'bg-gray-100 text-gray-800'
+                                                            appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
+                                                                'bg-gray-100 text-gray-800'
                                                             }`}>
                                                             {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                                                         </span>
@@ -794,7 +810,7 @@ const AdminDashboard = () => {
             {/* Child Routes */}
             <Outlet />
 
-             <style>{`
+            <style>{`
         .animate-fade-in {
           animation: fadeIn 0.3s ease-in-out;
         }
