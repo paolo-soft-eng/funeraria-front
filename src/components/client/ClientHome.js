@@ -71,11 +71,12 @@ const ClientHome = () => {
                 // Transform appointments data
                 const transformedAppointments = data.appointments.map(apt => ({
                     id: apt.id,
-                    date: apt.appointment_date,
+                    date: apt.appointment_date_formatted,
                     time: apt.appointment_time,
                     type: apt.purpose,
                     location: 'Main Office', // Default location
-                    status: apt.status
+                    status: apt.status,
+                    datetimeRaw: apt.appointment_datetime_raw // Keep raw datetime for filtering
                 }));
 
                 // Transform orders data
@@ -118,13 +119,15 @@ const ClientHome = () => {
 
     // Filter appointments based on status and date
     const filteredAppointments = upcomingAppointments.filter(apt => {
-        const appointmentDate = new Date(`${apt.date}T${apt.time}`);
+        if (!apt.datetimeRaw) return false;
+        
+        const appointmentDate = new Date(apt.datetimeRaw);
         const now = new Date();
         
         if (appointmentFilter === 'upcoming') {
-            return appointmentDate >= now;
+            return appointmentDate >= now && apt.status !== 'finished';
         } else if (appointmentFilter === 'past') {
-            return appointmentDate < now;
+            return appointmentDate < now || apt.status === 'finished';
         }
         return true;
     });
@@ -164,7 +167,7 @@ const ClientHome = () => {
         setSelectedOrder(null);
     };
 
-     useEffect(() => {
+    useEffect(() => {
         const fetchProfileImage = async () => {
             if (!email) return; // Don't fetch if no email
             
@@ -266,7 +269,7 @@ const ClientHome = () => {
                                         <h3 className="font-medium text-gray-800">{appointment.type}</h3>
                                         <div className="flex items-center text-sm text-gray-500 mt-1">
                                             <Clock className="mr-1 h-4 w-4" />
-                                            <span>{appointment.date} at {appointment.time}</span>
+                                            <span>{appointment.date}</span>
                                         </div>
                                         <div className="flex items-center text-sm text-gray-500 mt-1">
                                             <MapPin className="mr-1 h-4 w-4" />
