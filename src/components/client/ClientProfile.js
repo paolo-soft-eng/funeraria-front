@@ -141,7 +141,6 @@ const ClientProfile = () => {
             address: data.data.address || '',
             emergencyContact: data.data.emergency_contact || ''
           });
-          console.log("User data loaded:", data.data); // Add this line
           
         } else {
           throw new Error(data.message || 'Failed to load user data');
@@ -1112,7 +1111,6 @@ const ClientProfile = () => {
                           </svg>
                         </button>
                       </div>
-
                       <form onSubmit={handleRescheduleAppointment}>
                         <div className="space-y-4">
                           <div>
