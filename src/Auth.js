@@ -344,7 +344,7 @@ const Auth = () => {
                         name="username"
                         value={formData.username}
                         onChange={handleChange}
-                        className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-3 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
+                        className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
                         
                         required
                       />
@@ -366,8 +366,7 @@ const Auth = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-3 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
-                      
+                      className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
                       required
                     />
                   </div>
@@ -387,7 +386,7 @@ const Auth = () => {
                         name="telephone"
                         value={formData.telephone}
                         onChange={handleChange}
-                        className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-3 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
+                        className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
                         placeholder="Phone number"
                         required
                       />
@@ -408,7 +407,7 @@ const Auth = () => {
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-3 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
+                      className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
                       placeholder="••••••••"
                       required
                     />
@@ -429,7 +428,7 @@ const Auth = () => {
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleChange}
-                        className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-3 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
+                        className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
                         placeholder="Re-enter password"
                         required
                       />

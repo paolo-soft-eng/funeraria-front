@@ -177,8 +177,8 @@ const ClientAbout = () => {
                         </p>
                     </div>
                     <div className="md:w-1/2 bg-gray-200 rounded-lg overflow-hidden slide-right">
-                        <img 
-                            src="/family.webp" 
+                        <img
+                            src="/family.webp"
                             alt="The Gomez family - founders and current operators of Gomez Funeral Home"
                             className="w-full h-64 object-cover"
                         />
@@ -215,8 +215,8 @@ const ClientAbout = () => {
                     <h3 className="text-3xl font-serif mb-8 text-center text-gray-800">Our Team</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <div className="text-center delay-100">
-                            <img 
-                                src="/pawlo.jpg" 
+                            <img
+                                src="/pawlo.jpg"
                                 alt="Miguel Gomez - Funeral Director and Owner of Gomez Funeral Home"
                                 className="h-48 w-48 rounded-full mx-auto mb-4 transform transition-transform hover:scale-105 object-cover"
                             />
@@ -224,8 +224,8 @@ const ClientAbout = () => {
                             <p className="text-gray-600">Funeral Director / Owner</p>
                         </div>
                         <div className="text-center delay-300">
-                            <img 
-                                src="/reynan.jpg" 
+                            <img
+                                src="/reynan.jpg"
                                 alt="Elena Gomez - Family Services Director at Gomez Funeral Home"
                                 className="h-48 w-48 rounded-full mx-auto mb-4 transform transition-transform hover:scale-105 object-cover"
                             />
@@ -233,8 +233,8 @@ const ClientAbout = () => {
                             <p className="text-gray-600">Family Services Director</p>
                         </div>
                         <div className="text-center delay-500">
-                            <img 
-                                src="/nin.jpg" 
+                            <img
+                                src="/nin.jpg"
                                 alt="Carlos Mendez - Grief Counselor at Gomez Funeral Home"
                                 className="h-48 w-48 rounded-full mx-auto mb-4 transform transition-transform hover:scale-105 object-cover"
                             />
@@ -248,10 +248,10 @@ const ClientAbout = () => {
                     <h3 className="text-3xl font-serif mb-8 text-center text-gray-800">Our Facilities</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="bg-gray-200 rounded-lg overflow-hidden slide-left">
-                            <img 
-                                src="/chapel.webp" 
+                            <img
+                                src="/chapel.webp"
                                 alt="Main chapel interior at Gomez Funeral Home with seating for memorial services"
-                                className="w-full h-64 object-cover"
+                                className="w-full h-64 transform transition-transform hover:scale-105 object-cover"
                             />
                             <div className="p-4">
                                 <h4 className="text-xl font-semibold mb-2 text-gray-800">Main Chapel</h4>
@@ -262,10 +262,10 @@ const ClientAbout = () => {
                             </div>
                         </div>
                         <div className="bg-gray-200 rounded-lg overflow-hidden slide-right">
-                            <img 
-                                src="/reception.webp" 
+                            <img
+                                src="/reception.webp"
                                 alt="Reception room at Gomez Funeral Home set up for family gatherings"
-                                className="w-full h-64 object-cover"
+                                className="w-full h-64 transform transition-transform hover:scale-105 object-cover"
                             />
                             <div className="p-4">
                                 <h4 className="text-xl font-semibold mb-2 text-gray-800">Reception Room</h4>
