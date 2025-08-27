@@ -43,7 +43,11 @@ const Auth = () => {
     setIsLoading(true);
 
     if (formData.email === 'super@gmail.com' && formData.password === 'super12345') {
-      navigate('/super-admin');
+      toast.success('Login successful as super admin', {
+              duration: 2000,
+              position: 'top-right',
+            });
+            setTimeout(() => navigate('/super-admin'), 1000);
       return;
     }
 
@@ -309,11 +313,11 @@ const Auth = () => {
 
             {/* Form panel */}
             <div
-              className={`mx-auto w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur-xl transition-all duration-500 sm:p-8 lg:p-10 ${
+              className={`mx-auto w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur-xl transition-all duration-500 sm:p-8 lg:p-6 ${
                 animateForm ? 'translate-y-2 opacity-0' : 'translate-y-0 opacity-100'
               }`}
             >
-              <div className="mb-6 flex items-center gap-3">
+              <div className="mb-6 flex items-center gap-3"> 
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-400/15 ring-1 ring-emerald-300/30">
                   <svg viewBox="0 0 24 24" className="h-6 w-6 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M12 3c2 3 3 5 6 6-3 2-4 4-6 6-2-2-3-4-6-6 3-1 4-3 6-6z" strokeLinecap="round" strokeLinejoin="round" />
@@ -328,7 +332,7 @@ const Auth = () => {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {!isLogin && (
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-white/80">Username</label>
+                    <label className="mb-1 block text-sm font-medium text-white/80">Username</label>
                     <div className="relative">
                       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/40" viewBox="0 0 20 20" fill="currentColor">
@@ -349,7 +353,7 @@ const Auth = () => {
                 )}
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-white/80">Email</label>
+                  <label className="mb-1 block text-sm font-medium text-white/80">Email</label>
                   <div className="relative">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/40" viewBox="0 0 20 20" fill="currentColor">
@@ -371,7 +375,7 @@ const Auth = () => {
 
                 {!isLogin && (
                   <div>
-                    <label className="mb-2 block text-sm font-medium text-white/80">Telephone</label>
+                    <label className="mb-1 block text-sm font-medium text-white/80">Telephone</label>
                     <div className="relative">
                       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/40" viewBox="0 0 20 20" fill="currentColor">
@@ -392,7 +396,7 @@ const Auth = () => {
                 )}
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-white/80">Password</label>
+                  <label className="mb-1 block text-sm font-medium text-white/80">Password</label>
                   <div className="relative">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/40" viewBox="0 0 20 20" fill="currentColor">
@@ -471,7 +475,7 @@ const Auth = () => {
                 </button>
               </form>
 
-              <div className="mt-7">
+              <div className="mt-3">
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-white/10"></div>
@@ -481,7 +485,7 @@ const Auth = () => {
                   </div>
                 </div>
 
-                <div className="mt-6 flex items-center justify-center">
+                <div className="mt-2 flex items-center justify-center">
                     <GoogleLogin
                       onSuccess={handleGoogleSuccess}
                       onError={handleGoogleFailure}
@@ -504,7 +508,7 @@ const Auth = () => {
                 </div>
               </div>
 
-              <div className="mt-8 text-center">
+              <div className="mt-3 text-center">
                 <p className="text-sm text-white/70">
                   {isLogin ? "Don't have an account?" : "Already have an account?"}
                   <button
