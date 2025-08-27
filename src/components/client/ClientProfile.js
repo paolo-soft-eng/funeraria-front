@@ -141,6 +141,8 @@ const ClientProfile = () => {
             address: data.data.address || '',
             emergencyContact: data.data.emergency_contact || ''
           });
+          console.log("User data loaded:", data.data); // Add this line
+          
         } else {
           throw new Error(data.message || 'Failed to load user data');
         }
@@ -477,58 +479,58 @@ const ClientProfile = () => {
   };
 
   const handlePasswordSubmit = async (e) => {
-  e.preventDefault();
-  
-  // Clear previous errors
-  setPasswordError('');
-  
-  // Validate new password length (at least 8 characters)
-  if (passwordData.newPassword.length < 8) {
-    setPasswordError('Password must be at least 8 characters long');
-    return;
-  }
-  
-  // Validate new password contains at least one number
-  const hasNumber = /\d/.test(passwordData.newPassword);
-  if (!hasNumber) {
-    setPasswordError('Password must contain at least one number');
-    return;
-  }
-  
-  // Check if passwords match
-  if (passwordData.newPassword !== passwordData.confirmPassword) {
-    setPasswordError('Passwords do not match');
-    return;
-  }
+    e.preventDefault();
 
-  try {
-    const response = await fetch(API_BASE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'reset_password',
-        user_id: userData.id,
-        current_password: passwordData.currentPassword,
-        new_password: passwordData.newPassword,
-      }),
-    });
+    // Clear previous errors
+    setPasswordError('');
 
-    const data = await response.json();
-    console.log(data);
-    if (data.status === 'success') {
-      setIsResetModalOpen(false);
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      showMessage('Password changed successfully!', 'success');
-    } else {
-      setPasswordError(data.message || 'Failed to change password');
+    // Validate new password length (at least 8 characters)
+    if (passwordData.newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters long');
+      return;
     }
-  } catch (err) {
-    console.error("Error changing password:", err);
-    setPasswordError('Failed to change password. Please try again.');
-  }
-};
+
+    // Validate new password contains at least one number
+    const hasNumber = /\d/.test(passwordData.newPassword);
+    if (!hasNumber) {
+      setPasswordError('Password must contain at least one number');
+      return;
+    }
+
+    // Check if passwords match
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    try {
+      const response = await fetch(API_BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'reset_password',
+          user_id: userData.id,
+          current_password: passwordData.currentPassword,
+          new_password: passwordData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+      console.log(data);
+      if (data.status === 'success') {
+        setIsResetModalOpen(false);
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        showMessage('Password changed successfully!', 'success');
+      } else {
+        setPasswordError(data.message || 'Failed to change password');
+      }
+    } catch (err) {
+      console.error("Error changing password:", err);
+      setPasswordError('Failed to change password. Please try again.');
+    }
+  };
 
   const handleProfilePictureUpload = async (e) => {
     const file = e.target.files[0];
@@ -546,6 +548,8 @@ const ClientProfile = () => {
         const data = await response.json();
         if (data.status === 'success' && data.image_path) {
           const fullImagePath = handleProfilePicture(data.image_path);
+          console.log("Full image path:", fullImagePath);
+          
 
           setUserData({
             ...userData,
@@ -558,6 +562,38 @@ const ClientProfile = () => {
       } catch (err) {
         console.error("Error uploading profile picture:", err);
         showMessage('Failed to upload profile picture. Please try again.', 'error');
+      }
+    }
+  };
+
+  const handleDeleteProfilePicture = async () => {
+    if (window.confirm("Are you sure you want to delete your profile picture?")) {
+      try {
+        const response = await fetch(API_BASE_URL, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'delete_profile_picture',
+            user_id: userData.id,
+          }),
+        });
+
+        const data = await response.json();
+        if (data.status === 'success') {
+          // Update the user data with default profile picture
+          setUserData({
+            ...userData,
+            profile_picture: `${IMAGE_BASE_URL}uploads/default.png`
+          });
+          showMessage('Profile picture deleted successfully!', 'success');
+        } else {
+          showMessage(data.message || 'Failed to delete profile picture', 'error');
+        }
+      } catch (err) {
+        console.error("Error deleting profile picture:", err);
+        showMessage('Failed to delete profile picture. Please try again.', 'error');
       }
     }
   };
@@ -733,25 +769,23 @@ const ClientProfile = () => {
                     <div className="flex flex-col sm:flex-row items-center mb-6">
                       <div className="relative group mb-4 sm:mb-0 sm:mr-6">
                         <div className="h-24 w-24 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                          {userData.profile_picture &&
-                            userData.profile_picture !== `${IMAGE_BASE_URL}uploads/profile/default.jpg` &&
-                            userData.profile_picture !== 'uploads/default.jpg' ? (
+                          {userData.profile_picture && (
                             <img
                               src={handleProfilePicture(userData.profile_picture)}
                               alt="Profile"
                               className="h-full w-full object-cover"
                               onError={(e) => {
-                                // Hide the image and show the icon instead
+                                // If image fails to load, show default
                                 e.target.style.display = 'none';
                                 e.target.nextSibling.style.display = 'block';
                               }}
                             />
-                          ) : null}
+                          )}
                           <User
                             size={32}
                             className={`text-blue-600 ${userData.profile_picture &&
-                              userData.profile_picture !== `${IMAGE_BASE_URL}uploads/profile/default.jpg` &&
-                              userData.profile_picture !== 'uploads/profile/default.jpg' ? 'hidden' : 'block'}`}
+                              userData.profile_picture !== `${IMAGE_BASE_URL}uploads/default.png` &&
+                              userData.profile_picture !== 'uploads/default.png' ? 'hidden' : 'block'}`}
                           />
                         </div>
                         <label className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black bg-opacity-30 rounded-full cursor-pointer transition-opacity">
@@ -770,6 +804,16 @@ const ClientProfile = () => {
                       <div>
                         <h3 className="text-lg font-medium mb-1">Profile Picture</h3>
                         <p className="text-sm text-gray-500 mb-3">Upload a clear photo of yourself</p>
+                        {userData.profile_picture &&
+                          userData.profile_picture !== `${IMAGE_BASE_URL}uploads/default.png` &&
+                          userData.profile_picture !== 'uploads/default.png' && (
+                            <button
+                              onClick={handleDeleteProfilePicture}
+                              className="px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 w-full sm:w-auto transition-colors"
+                            >
+                              Delete Picture
+                            </button>
+                          )}
                       </div>
                     </div>
 
@@ -1025,7 +1069,7 @@ const ClientProfile = () => {
                                     setSelectedAppointment(appointment);
                                     setIsRescheduleModalOpen(true);
                                   }}
-                                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                  className="text-green-600 hover:text-green-500 text-sm font-medium"
                                 >
                                   Reschedule
                                 </button>
