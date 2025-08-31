@@ -306,7 +306,7 @@ const Auth = () => {
                 <div className="mt-6 flex flex-wrap gap-2">
                   <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/80">Secure access</span>
                   <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/80">Role‑based dashboards</span>
-                  <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/80">Streamlined scheduling</span>
+                  <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/80">Compassionate support</span>
                 </div>
               </div>
             </div>

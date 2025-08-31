@@ -18,6 +18,8 @@ const ClientHome = () => {
     const [userId, setUserId] = useState(null);
     const [username, setUsername] = useState('');
     const [profileImage, setProfileImage] = useState(null);
+    const [selectedResource, setSelectedResource] = useState(null);
+    const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
 
     // Add login validation
     useEffect(() => {
@@ -76,7 +78,7 @@ const ClientHome = () => {
                     type: apt.purpose,
                     location: 'Main Office', // Default location
                     status: apt.status,
-                    datetimeRaw: apt.appointment_datetime_raw // Keep raw datetime for filtering
+                    datetimeRaw: apt.appointment_datetime_raw 
                 }));
 
                 // Transform orders data
@@ -142,21 +144,6 @@ const ClientHome = () => {
         return true;
     });
 
-    const griefResources = [
-        {
-            title: 'Coping with Loss',
-            type: 'Article'
-        },
-        {
-            title: 'Local Support Groups',
-            type: 'Directory'
-        },
-        {
-            title: 'Grief Counseling',
-            type: 'Service'
-        }
-    ];
-
     const handleOrderDetails = (order) => {
         setSelectedOrder(order);
         setIsModalOpen(true);
@@ -165,6 +152,80 @@ const ClientHome = () => {
     const closeModal = () => {
         setIsModalOpen(false);
         setSelectedOrder(null);
+    };
+
+    const griefResources = [
+        {
+            title: 'Coping with Loss',
+            type: 'Article',
+            content: (
+                <div className="space-y-4">
+                    <p className="text-gray-700">
+                        Losing a loved one is one of the most challenging experiences in life. It's important to allow yourself to feel your emotions and seek support when needed.
+                    </p>
+                    <h4 className="font-semibold text-gray-800">Tips for Coping:</h4>
+                    <ul className="list-disc list-inside text-gray-600">
+                        <li>Allow yourself to grieve in your own way and time.</li>
+                        <li>Talk to friends, family, or a counselor about your feelings.</li>
+                        <li>Take care of your physical health with proper nutrition and rest.</li>
+                        <li>Consider joining a support group to connect with others who understand.</li>
+                    </ul>
+                    <p className="text-gray-700">
+                        If you need immediate help, please contact our 24/7 support line at <strong>1-800-GRIEF-HELP</strong>.
+                    </p>
+                </div>
+            )
+        },
+        {
+            title: 'Local Support Groups',
+            type: 'Directory',
+            content: (
+                <div className="space-y-4">
+                    <p className="text-gray-700">
+                        Local support groups provide a safe space to share your feelings and connect with others who are also grieving.
+                    </p>
+                    <h4 className="font-semibold text-gray-800">Available Groups:</h4>
+                    <ul className="list-disc list-inside text-gray-600">
+                        <li><strong>Manila Grief Support:</strong> Meets every Tuesday at 6 PM, St. Mary's Church.</li>
+                        <li><strong>Cebu Bereavement Circle:</strong> Meets every Thursday at 5 PM, Cebu Community Center.</li>
+                        <li><strong>Davao Healing Hearts:</strong> Meets every Saturday at 10 AM, Davao City Hall.</li>
+                    </ul>
+                    <p className="text-gray-700">
+                        For more information, visit our <a href="#" className="text-blue-600 hover:underline">website</a>.
+                    </p>
+                </div>
+            )
+        },
+        {
+            title: 'Grief Counseling',
+            type: 'Service',
+            content: (
+                <div className="space-y-4">
+                    <p className="text-gray-700">
+                        Professional grief counseling can help you process your emotions and find healthy ways to cope with loss.
+                    </p>
+                    <h4 className="font-semibold text-gray-800">Our Counseling Services:</h4>
+                    <ul className="list-disc list-inside text-gray-600">
+                        <li>One-on-one sessions with licensed counselors.</li>
+                        <li>Family counseling for collective healing.</li>
+                        <li>Online counseling for remote support.</li>
+                    </ul>
+                    <p className="text-gray-700">
+                        To schedule a session, call us at <strong>1-800-GRIEF-CARE</strong> or email <strong>support@gomezfuneraria.com</strong>.
+                    </p>
+                </div>
+            )
+        }
+    ];
+
+    const handleResourceClick = (resource) => {
+        setSelectedResource(resource);
+        setIsResourceModalOpen(true);
+    };
+
+    const closeResourceModal = () => {
+        setIsResourceModalOpen(false);
+        setSelectedResource(null);
     };
 
     useEffect(() => {
@@ -511,32 +572,67 @@ const ClientHome = () => {
             
             {/* Grief Resources */}
             <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-gray-700 flex items-center">
-                        <Users className="mr-2 h-5 w-5 text-purple-500" />
-                        Grief Support Resources
-                    </h2>
-                    <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                        View All
+        <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-700 flex items-center">
+                <Users className="mr-2 h-5 w-5 text-purple-500" />
+                Grief Support Resources
+            </h2>
+            <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                View All
+            </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {griefResources.map((resource, index) => (
+                <div
+                    key={index}
+                    className="border border-purple-300 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => handleResourceClick(resource)}
+                >
+                    <div className="flex items-center mb-2">
+                        <MessageSquare className="h-5 w-5 text-purple-400 mr-2" />
+                        <h3 className="font-medium text-gray-800">{resource.title}</h3>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-3">{resource.type}</p>
+                    <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        Explore Resource
                     </button>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {griefResources.map((resource, index) => (
-                        <div key={index} className="border border-purple-300 rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-center mb-2">
-                                <MessageSquare className="h-5 w-5 text-purple-400 mr-2" />
-                                <h3 className="font-medium text-gray-800">{resource.title}</h3>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-3">{resource.type}</p>
-                            <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                Explore Resource
-                            </button>
-                        </div>
-                    ))}
+            ))}
+        </div>
+    </div>
+
+    {/* Resource Modal */}
+    {isResourceModalOpen && selectedResource && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+                        <MessageSquare className="mr-2 h-5 w-5 text-purple-500" />
+                        {selectedResource.title}
+                    </h3>
+                    <button
+                        onClick={closeResourceModal}
+                        className="text-gray-500 hover:text-gray-700"
+                    >
+                        <X className="h-6 w-6" />
+                    </button>
+                </div>
+                <div className="space-y-4">
+                    {selectedResource.content}
+                </div>
+                <div className="mt-6 flex justify-end">
+                    <button
+                        onClick={closeResourceModal}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                    >
+                        Close
+                    </button>
                 </div>
             </div>
         </div>
+    )}
+</div>
     );
 };
 

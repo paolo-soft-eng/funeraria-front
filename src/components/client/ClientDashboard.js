@@ -114,7 +114,7 @@ const ClientDashboard = () => {
         
         // Delay navigation to show success message
         setTimeout(() => {
-          navigate('/');
+          navigate('/auth');
         }, 1000);
       } catch (error) {
         console.error('Error logging out:', error);
