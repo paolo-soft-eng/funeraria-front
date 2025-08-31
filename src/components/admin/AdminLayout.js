@@ -31,6 +31,7 @@ const AdminLayout = ({ children, currentPage }) => {
   const [isMobileView, setIsMobileView] = useState(false);
   const [notification, setNotification] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [isValidatingAdmin, setIsValidatingAdmin] = useState(true);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const { email } = useContext(EmailContext);
@@ -38,6 +39,35 @@ const AdminLayout = ({ children, currentPage }) => {
    const showNotification = (message, type = 'info') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
+  };
+
+  // Admin validation function
+  const validateAdminAccess = async () => {
+    if (!email) {
+      showNotification('Access denied: No email found', 'error');
+      setTimeout(() => navigate('/auth'), 1500);
+      return false;
+    }
+
+    try {
+      const response = await axios.post('http://localhost/apii/components/getUserId.php', { 
+        email: email 
+      });
+      
+      if (response.data.success && response.data.isAdmin) {
+        setIsValidatingAdmin(false);
+        return true;
+      } else {
+        showNotification('Access denied: Admin privileges required', 'error');
+        setTimeout(() => navigate('/auth'), 1500);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error validating admin access:', error);
+      showNotification('Access denied: Unable to verify admin status', 'error');
+      setTimeout(() => navigate('/auth'), 1500);
+      return false;
+    }
   };
 
   useEffect(() => {
@@ -59,18 +89,25 @@ const AdminLayout = ({ children, currentPage }) => {
   }, []);
 
   useEffect(() => {
-    // Fetch user data including profile picture
+    // Validate admin access first
+    validateAdminAccess();
+  }, [email, navigate]);
+
+  useEffect(() => {
+    // Fetch user data including profile picture only after admin validation
     const fetchUserData = async () => {
-      try {
-        const response = await axios.post('http://localhost/apii/components/fetchAdminProfile.php', { email });
-        setUserData(response.data.data);
-      } catch (error) {
-        console.error('Error fetching user data:', error);
+      if (!isValidatingAdmin && email) {
+        try {
+          const response = await axios.post('http://localhost/apii/components/fetchAdminProfile.php', { email });
+          setUserData(response.data.data);
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
       }
     };
 
     fetchUserData();
-  }, [email]);
+  }, [email, isValidatingAdmin]);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -109,6 +146,7 @@ const AdminLayout = ({ children, currentPage }) => {
       }
     }
   };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -139,6 +177,8 @@ const AdminLayout = ({ children, currentPage }) => {
     const page = mainNavItems.find(item => item.name === currentPage);
     return page ? page.label : '';
   };
+
+
 
   return (
       <div className="flex h-screen bg-gray-50 text-gray-800">
@@ -304,7 +344,18 @@ const AdminLayout = ({ children, currentPage }) => {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto">
+          {isValidatingAdmin ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Validating admin access...</p>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
+        </main>
 
         <footer className="bg-white border-t border-gray-200 py-4 px-6 mt-auto">
           <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center">

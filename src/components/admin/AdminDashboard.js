@@ -41,6 +41,7 @@ const AdminDashboard = () => {
     const { email } = useContext(EmailContext);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userId, setUserId] = useState(null);
+    const [isValidatingAdmin, setIsValidatingAdmin] = useState(true);
 
     const [dashboardStats, setDashboardStats] = useState({
         totalOrders: 0,
@@ -55,32 +56,68 @@ const AdminDashboard = () => {
         upcoming_appointments: []
     });
 
+    // Admin validation function
+    const validateAdminAccess = async () => {
+        if (!email) {
+            showNotification('Access denied: No email found', 'error');
+            setTimeout(() => navigate('/auth'), 1500);
+            return false;
+        }
+
+        try {
+            const response = await axios.post('http://localhost/apii/components/getUserId.php', { 
+                email: email 
+            });
+            
+            if (response.data.success && response.data.isAdmin) {
+                setIsValidatingAdmin(false);
+                return true;
+            } else {
+                showNotification('Access denied: Admin privileges required', 'error');
+                setTimeout(() => navigate('/auth'), 1500);
+                return false;
+            }
+        } catch (error) {
+            console.error('Error validating admin access:', error);
+            showNotification('Access denied: Unable to verify admin status', 'error');
+            setTimeout(() => navigate('/auth'), 1500);
+            return false;
+        }
+    };
+
+    useEffect(() => {
+        // Validate admin access first
+        validateAdminAccess();
+    }, [email, navigate]);
+
     useEffect(() => {
         const fetchDashboardStats = async () => {
-            try {
-                const response = await axios.post(
-                    'http://localhost/apii/components/fetchDashboardStats.php',
-                    { email } // Send the email from context
-                );
-                if (response.data.success) {
-                    setDashboardStats({
-                        totalOrders: response.data.data.total_orders || 0,
-                        totalClients: response.data.data.total_clients || 0,
-                        totalRevenue: response.data.data.total_revenue || 0,
-                        newMessages: response.data.data.new_messages || 0,
-                        current_month_orders: response.data.data.current_month_orders || 0,
-                        current_month_clients: response.data.data.current_month_clients || 0,
-                        current_month_revenue: response.data.data.current_month_revenue || 0,
-                        current_month_name: response.data.data.current_month_name || 'Current Month',
-                        upcoming_orders: response.data.data.upcoming_orders || [],
-                        upcoming_appointments: response.data.data.upcoming_appointments || [],
-                        recent_messages: response.data.data.recent_messages || []
-                    });
-                } else {
-                    console.error('Failed to fetch dashboard stats:', response.data.error);
+            if (!isValidatingAdmin && email) {
+                try {
+                    const response = await axios.post(
+                        'http://localhost/apii/components/fetchDashboardStats.php',
+                        { email } // Send the email from context
+                    );
+                    if (response.data.success) {
+                        setDashboardStats({
+                            totalOrders: response.data.data.total_orders || 0,
+                            totalClients: response.data.data.total_clients || 0,
+                            totalRevenue: response.data.data.total_revenue || 0,
+                            newMessages: response.data.data.new_messages || 0,
+                            current_month_orders: response.data.data.current_month_orders || 0,
+                            current_month_clients: response.data.data.current_month_clients || 0,
+                            current_month_revenue: response.data.data.current_month_revenue || 0,
+                            current_month_name: response.data.data.current_month_name || 'Current Month',
+                            upcoming_orders: response.data.data.upcoming_orders || [],
+                            upcoming_appointments: response.data.data.upcoming_appointments || [],
+                            recent_messages: response.data.data.recent_messages || []
+                        });
+                    } else {
+                        console.error('Failed to fetch dashboard stats:', response.data.error);
+                    }
+                } catch (error) {
+                    console.error('Error fetching dashboard stats:', error);
                 }
-            } catch (error) {
-                console.error('Error fetching dashboard stats:', error);
             }
         };
 
@@ -89,7 +126,7 @@ const AdminDashboard = () => {
         const intervalId = setInterval(fetchDashboardStats, 5 * 60 * 1000);
 
         return () => clearInterval(intervalId);
-    }, [email]); // Add email to dependency array
+    }, [email, isValidatingAdmin]); // Add isValidatingAdmin to dependency array
 
     // Check if mobile view on initial load and window resize
     useEffect(() => {
@@ -111,23 +148,25 @@ const AdminDashboard = () => {
     }, []);
 
     useEffect(() => {
-        // Fetch user data including profile picture
+        // Fetch user data including profile picture only after admin validation
         const fetchUserData = async () => {
-            try {
-                const response = await axios.post('http://localhost/apii/components/fetchAdminProfile.php', { email });
-                setUserData(response.data.data);
+            if (!isValidatingAdmin && email) {
+                try {
+                    const response = await axios.post('http://localhost/apii/components/fetchAdminProfile.php', { email });
+                    setUserData(response.data.data);
 
-            } catch (error) {
-                console.error('Error fetching user data:', error);
+                } catch (error) {
+                    console.error('Error fetching user data:', error);
+                }
             }
         };
 
         fetchUserData();
-    }, [email]);
+    }, [email, isValidatingAdmin]);
 
-    // Add login validation
+    // Add login validation - only run after admin validation passes
     useEffect(() => {
-        if (email) {
+        if (!isValidatingAdmin && email) {
             // Fetch user ID based on email
             fetch(`http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`)
                 .then(response => response.json())
@@ -145,11 +184,11 @@ const AdminDashboard = () => {
                     setIsLoggedIn(false);
                     navigate('/auth');
                 });
-        } else {
+        } else if (!isValidatingAdmin && !email) {
             setIsLoggedIn(false);
             navigate('/auth');
         }
-    }, [email, navigate]);
+    }, [email, navigate, isValidatingAdmin]);
 
     const showNotification = (message, type = 'info') => {
         setNotification({ message, type });
@@ -250,7 +289,7 @@ const AdminDashboard = () => {
         { id: 2, type: 'Message', description: 'New message received from Client B', time: '20 mins ago' }
     ];
 
-    if (!isLoggedIn) {
+    if (!isLoggedIn && !isValidatingAdmin) {
         return (
             <LoadingWrapper>
                 <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -451,337 +490,346 @@ const AdminDashboard = () => {
 
                 {/* Main Content Area */}
                 <main className="flex-1 overflow-auto">
-                    <div className="container mx-auto px-4 py-6">
-                        {/* Stats Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-indigo-500">
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Total Orders</p>
-                                        <h3 className="text-2xl font-bold">{dashboardStats.totalOrders}</h3>
-                                    </div>
-                                    <div className="bg-indigo-100 p-3 rounded-full">
-                                        <ShoppingCart size={20} className="text-indigo-600" />
-                                    </div>
-                                </div>
-                                <div className="mt-4 text-xs text-blue-600 flex items-center">
-                                    <span>{dashboardStats.current_month_orders} orders this {dashboardStats.current_month_name}</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Total Clients</p>
-                                        <h3 className="text-2xl font-bold">{dashboardStats.totalClients}</h3>
-                                    </div>
-                                    <div className="bg-blue-100 p-3 rounded-full">
-                                        <Users size={20} className="text-blue-600" />
-                                    </div>
-                                </div>
-                                <div className="mt-4 text-xs text-blue-600 flex items-center">
-                                    <span>{dashboardStats.current_month_clients} new clients this {dashboardStats.current_month_name}</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-amber-500">
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">New Messages</p>
-                                        <h3 className="text-2xl font-bold">{dashboardStats.newMessages}</h3>
-                                    </div>
-                                    <div className="bg-amber-100 p-3 rounded-full">
-                                        <MessageSquare size={20} className="text-amber-600" />
-                                    </div>
-                                </div>
-                                <div className="mt-4 text-xs text-amber-600 flex items-center">
-                                    <span>{dashboardStats.newMessages} unread messages</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-emerald-500">
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <p className="text-sm text-gray-500 mb-1">Total Revenue</p>
-                                        <h3 className="text-2xl font-bold">₱ {dashboardStats.totalRevenue.toFixed(2)}</h3>
-                                    </div>
-                                    <div className="bg-emerald-100 p-3 rounded-full">
-                                        <Activity size={20} className="text-emerald-600" />
-                                    </div>
-                                </div>
-                                <div className="mt-4 text-xs text-emerald-600 flex items-center">
-                                    <span>₱ {dashboardStats.current_month_revenue.toFixed(2)} earned this {dashboardStats.current_month_name}</span>
-                                </div>
+                    {isValidatingAdmin ? (
+                        <div className="flex items-center justify-center h-full">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+                                <p className="text-gray-600">Validating admin access...</p>
                             </div>
                         </div>
-
-                        {/* Main Content Grid */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* User Profile Card */}
-                            <div className="bg-white rounded-lg shadow-sm p-6">
-                                <div className="flex flex-col items-center mb-6">
-                                    <div className="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
-                                        {userData && userData.profileImage ? (
-                                            <img src={`http://localhost/apii/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-24 h-24 object-cover" />
-                                        ) : (
-                                            <User size={48} />
-                                        )}
+                    ) : (
+                        <div className="container mx-auto px-4 py-6">
+                            {/* Stats Cards */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                                <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-indigo-500">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="text-sm text-gray-500 mb-1">Total Orders</p>
+                                            <h3 className="text-2xl font-bold">{dashboardStats.totalOrders}</h3>
+                                        </div>
+                                        <div className="bg-indigo-100 p-3 rounded-full">
+                                            <ShoppingCart size={20} className="text-indigo-600" />
+                                        </div>
                                     </div>
-                                    <h2 className="text-xl font-bold">{userData ? userData.username : 'Admin User'}</h2>
-                                    <p className="text-gray-500 text-sm">{email || 'Loading...'}</p>
-                                    <div className="mt-4 flex space-x-2">
-                                        <button className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-200 transition-colors" onClick={handleEditProfile}>
-                                            Edit Profile
-                                        </button>
-                                        <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors" onClick={handleEditProfile}>
-                                            Settings
-                                        </button>
+                                    <div className="mt-4 text-xs text-blue-600 flex items-center">
+                                        <span>{dashboardStats.current_month_orders} orders this {dashboardStats.current_month_name}</span>
                                     </div>
                                 </div>
 
-                                {/* Recent Activities */}
-                                <div>
-                                    <h3 className="font-medium text-gray-800 mb-4 flex items-center">
-                                        <Activity size={18} className="mr-2" />
-                                        Recent Activities
-                                    </h3>
-                                    <div className="space-y-3">
-                                        {activities.map((activity) => (
-                                            <div
-                                                key={activity.id}
-                                                className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                                            >
-                                                <div className="flex justify-between items-start">
-                                                    <h4 className="font-medium text-gray-800 text-sm">
-                                                        {activity.type}
-                                                    </h4>
-                                                    <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
-                                                        {activity.time}
-                                                    </span>
-                                                </div>
-                                                <p className="text-gray-600 mt-1 text-sm">
-                                                    {activity.description}
-                                                </p>
-                                            </div>
-                                        ))}
+                                <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-blue-500">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="text-sm text-gray-500 mb-1">Total Clients</p>
+                                            <h3 className="text-2xl font-bold">{dashboardStats.totalClients}</h3>
+                                        </div>
+                                        <div className="bg-blue-100 p-3 rounded-full">
+                                            <Users size={20} className="text-blue-600" />
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 text-xs text-blue-600 flex items-center">
+                                        <span>{dashboardStats.current_month_clients} new clients this {dashboardStats.current_month_name}</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-amber-500">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="text-sm text-gray-500 mb-1">New Messages</p>
+                                            <h3 className="text-2xl font-bold">{dashboardStats.newMessages}</h3>
+                                        </div>
+                                        <div className="bg-amber-100 p-3 rounded-full">
+                                            <MessageSquare size={20} className="text-amber-600" />
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 text-xs text-amber-600 flex items-center">
+                                        <span>{dashboardStats.newMessages} unread messages</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-sm p-6 border-l-4 border-emerald-500">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <p className="text-sm text-gray-500 mb-1">Total Revenue</p>
+                                            <h3 className="text-2xl font-bold">₱ {dashboardStats.totalRevenue.toFixed(2)}</h3>
+                                        </div>
+                                        <div className="bg-emerald-100 p-3 rounded-full">
+                                            <Activity size={20} className="text-emerald-600" />
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 text-xs text-emerald-600 flex items-center">
+                                        <span>₱ {dashboardStats.current_month_revenue.toFixed(2)} earned this {dashboardStats.current_month_name}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Main Content Area */}
-                            <div className="lg:col-span-2 space-y-6">
-                                {/* Messages Section */}
+                            {/* Main Content Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                {/* User Profile Card */}
                                 <div className="bg-white rounded-lg shadow-sm p-6">
-                                    <h3 className="text-lg font-semibold mb-4 flex items-center">
-                                        <MessageSquare size={18} className="mr-2 text-indigo-600" />
-                                        Recent Messages
-                                    </h3>
-                                    <div className="space-y-4">
-                                        {dashboardStats.recent_messages.length > 0 ? (
-                                            dashboardStats.recent_messages.map((message) => (
-                                                <div
-                                                    key={message.id}
-                                                    className="p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition bg-white shadow-sm flex items-start gap-3"
-                                                >
-                                                    {/* Avatar */}
-                                                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
-                                                        {message.sender_image_path ? (
-                                                            <img
-                                                                src={`http://localhost/apii/components/${message.sender_image_path}`}
-                                                                alt="Profile"
-                                                                className="rounded-full w-10 h-10 object-cover"
-                                                            />
-                                                        ) : (
-                                                            <User size={20} />
-                                                        )}
-                                                    </div>
+                                    <div className="flex flex-col items-center mb-6">
+                                        <div className="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
+                                            {userData && userData.profileImage ? (
+                                                <img src={`http://localhost/apii/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-24 h-24 object-cover" />
+                                            ) : (
+                                                <User size={48} />
+                                            )}
+                                        </div>
+                                        <h2 className="text-xl font-bold">{userData ? userData.username : 'Admin User'}</h2>
+                                        <p className="text-gray-500 text-sm">{email || 'Loading...'}</p>
+                                        <div className="mt-4 flex space-x-2">
+                                            <button className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-200 transition-colors" onClick={handleEditProfile}>
+                                                Edit Profile
+                                            </button>
+                                            <button className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors" onClick={handleEditProfile}>
+                                                Settings
+                                            </button>
+                                        </div>
+                                    </div>
 
-                                                    {/* Message content */}
-                                                    <div className="flex-1">
-                                                        <div className="flex justify-between items-start mb-1">
-                                                            <h4 className="font-medium text-gray-800">
-                                                                {message.sender_username}
-                                                            </h4>
-                                                            <div className="flex flex-col items-end">
-                                                                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                                                                    {new Date(message.timestamp).toLocaleDateString("en-US", {
-                                                                        month: "short",
-                                                                        day: "numeric",
-                                                                        year:
-                                                                            new Date(message.timestamp).getFullYear() !==
-                                                                                new Date().getFullYear()
-                                                                                ? "numeric"
-                                                                                : undefined,
-                                                                    })}
-                                                                </span>
-                                                                <span className="text-xs text-gray-500">
-                                                                    {new Date(message.timestamp).toLocaleTimeString([], {
-                                                                        hour: "2-digit",
-                                                                        minute: "2-digit",
-                                                                    })}
-                                                                </span>
+                                    {/* Recent Activities */}
+                                    <div>
+                                        <h3 className="font-medium text-gray-800 mb-4 flex items-center">
+                                            <Activity size={18} className="mr-2" />
+                                            Recent Activities
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {activities.map((activity) => (
+                                                <div
+                                                    key={activity.id}
+                                                    className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                                                >
+                                                    <div className="flex justify-between items-start">
+                                                        <h4 className="font-medium text-gray-800 text-sm">
+                                                            {activity.type}
+                                                        </h4>
+                                                        <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
+                                                            {activity.time}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-gray-600 mt-1 text-sm">
+                                                        {activity.description}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Main Content Area */}
+                                <div className="lg:col-span-2 space-y-6">
+                                    {/* Messages Section */}
+                                    <div className="bg-white rounded-lg shadow-sm p-6">
+                                        <h3 className="text-lg font-semibold mb-4 flex items-center">
+                                            <MessageSquare size={18} className="mr-2 text-indigo-600" />
+                                            Recent Messages
+                                        </h3>
+                                        <div className="space-y-4">
+                                            {dashboardStats.recent_messages.length > 0 ? (
+                                                dashboardStats.recent_messages.map((message) => (
+                                                    <div
+                                                        key={message.id}
+                                                        className="p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition bg-white shadow-sm flex items-start gap-3"
+                                                    >
+                                                        {/* Avatar */}
+                                                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+                                                            {message.sender_image_path ? (
+                                                                <img
+                                                                    src={`http://localhost/apii/components/${message.sender_image_path}`}
+                                                                    alt="Profile"
+                                                                    className="rounded-full w-10 h-10 object-cover"
+                                                                />
+                                                            ) : (
+                                                                <User size={20} />
+                                                            )}
+                                                        </div>
+
+                                                        {/* Message content */}
+                                                        <div className="flex-1">
+                                                            <div className="flex justify-between items-start mb-1">
+                                                                <h4 className="font-medium text-gray-800">
+                                                                    {message.sender_username}
+                                                                </h4>
+                                                                <div className="flex flex-col items-end">
+                                                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                                                                        {new Date(message.timestamp).toLocaleDateString("en-US", {
+                                                                            month: "short",
+                                                                            day: "numeric",
+                                                                            year:
+                                                                                new Date(message.timestamp).getFullYear() !==
+                                                                                    new Date().getFullYear()
+                                                                                    ? "numeric"
+                                                                                    : undefined,
+                                                                        })}
+                                                                    </span>
+                                                                    <span className="text-xs text-gray-500">
+                                                                        {new Date(message.timestamp).toLocaleTimeString([], {
+                                                                            hour: "2-digit",
+                                                                            minute: "2-digit",
+                                                                        })}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            <p className="text-gray-600 text-sm">{message.message}</p>
+
+                                                            <div className="mt-3 flex justify-end">
+                                                                <button
+                                                                    className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+                                                                    onClick={() => handleMessage()}
+                                                                >
+                                                                    Reply
+                                                                </button>
                                                             </div>
                                                         </div>
-
-                                                        <p className="text-gray-600 text-sm">{message.message}</p>
-
-                                                        <div className="mt-3 flex justify-end">
-                                                            <button
-                                                                className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-                                                                onClick={() => handleMessage()}
-                                                            >
-                                                                Reply
-                                                            </button>
-                                                        </div>
                                                     </div>
-                                                </div>
 
-                                            ))
-                                        ) : (
-                                            <div className="p-4 text-center text-gray-500">
-                                                No recent messages found
-                                            </div>
-                                        )}
+                                                ))
+                                            ) : (
+                                                <div className="p-4 text-center text-gray-500">
+                                                    No recent messages found
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="mt-4 text-center">
+                                            <button
+                                                className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                                                onClick={handleMessage}
+                                            >
+                                                View All Messages
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="mt-4 text-center">
-                                        <button
-                                            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                                            onClick={handleMessage}
-                                        >
-                                            View All Messages
-                                        </button>
-                                    </div>
-                                </div>
 
 
-                                {/* Upcoming Orders */}
-                                <div className="bg-white rounded-lg shadow-sm p-6">
-                                    <h3 className="text-xl font-semibold mb-6 flex items-center text-gray-800">
-                                        <Clock size={20} className="mr-2 text-indigo-600" />
-                                        Upcoming Orders
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {dashboardStats.upcoming_orders && dashboardStats.upcoming_orders.map((order) => (
-                                            <div key={order.id} className="p-5 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-lg transition-shadow duration-300">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs bg-indigo-100 text-indigo-800 px-4 py-1 rounded-full whitespace-nowrap min-w-[140px] text-center mb-3 self-end">
-                                                        {new Date(order.delivery_date).toLocaleDateString('en-US', {
-                                                            month: 'long',
-                                                            day: 'numeric',
-                                                            year: 'numeric'
-                                                        })}
-                                                    </span>
-                                                    {/* Show either order items or service name, but not both */}
-                                                    {order.order_items ? (
-                                                        <h6 className="font-medium text-gray-800">Order Items: {order.order_items}</h6>
-                                                    ) : order.service_name ? (
-                                                        <p className="text-sm text-gray-600">
-                                                            <span className="font-medium">Service: </span>
-                                                            {order.service_name}
-                                                        </p>
-                                                    ) : null}
-                                                </div>
-                                                <p className="text-gray-600 text-sm mt-3 flex items-center">
-                                                    <MapPin size={16} className="mr-2 text-gray-400" />
-                                                    <span>{order.address}</span>
-                                                </p>
-                                                <div className="mt-4 flex items-center text-sm text-gray-500">
-                                                    <User size={16} className="mr-2" />
-                                                    <span>Client: {order.client_name} family</span>
-                                                </div>
-                                                <div className="mt-3 text-sm">
-                                                    <span className="font-medium">Amount: </span>
-                                                    <span className="font-semibold text-gray-900">₱{typeof order.total_amount === 'number' ? order.total_amount.toFixed(2) : parseFloat(order.total_amount).toFixed(2)}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="mt-6 text-center">
-                                        <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-2 px-4 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors duration-300" onClick={handleOrders}>
-                                            View All Orders
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Upcoming Appointments */}
-                                <div className="bg-white rounded-lg shadow-sm p-6">
-                                    <h3 className="text-xl font-semibold mb-6 flex items-center text-gray-800">
-                                        <Calendar size={20} className="mr-2 text-indigo-600" />
-                                        Upcoming Appointments
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {dashboardStats.upcoming_appointments && dashboardStats.upcoming_appointments.length > 0 ? (
-                                            dashboardStats.upcoming_appointments.map((appointment) => (
-                                                <div key={appointment.id} className="p-5 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-lg transition-shadow duration-300">
+                                    {/* Upcoming Orders */}
+                                    <div className="bg-white rounded-lg shadow-sm p-6">
+                                        <h3 className="text-xl font-semibold mb-6 flex items-center text-gray-800">
+                                            <Clock size={20} className="mr-2 text-indigo-600" />
+                                            Upcoming Orders
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {dashboardStats.upcoming_orders && dashboardStats.upcoming_orders.map((order) => (
+                                                <div key={order.id} className="p-5 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-lg transition-shadow duration-300">
                                                     <div className="flex flex-col">
                                                         <span className="text-xs bg-indigo-100 text-indigo-800 px-4 py-1 rounded-full whitespace-nowrap min-w-[140px] text-center mb-3 self-end">
-                                                            {new Date(appointment.appointment_date).toLocaleDateString('en-US', {
+                                                            {new Date(order.delivery_date).toLocaleDateString('en-US', {
                                                                 month: 'long',
                                                                 day: 'numeric',
                                                                 year: 'numeric'
                                                             })}
                                                         </span>
-                                                        <p className="text-sm text-gray-600">
-                                                            <span className="font-medium">Purpose: </span>
-                                                            {appointment.purpose}
-                                                        </p>
+                                                        {/* Show either order items or service name, but not both */}
+                                                        {order.order_items ? (
+                                                            <h6 className="font-medium text-gray-800">Order Items: {order.order_items}</h6>
+                                                        ) : order.service_name ? (
+                                                            <p className="text-sm text-gray-600">
+                                                                <span className="font-medium">Service: </span>
+                                                                {order.service_name}
+                                                            </p>
+                                                        ) : null}
                                                     </div>
+                                                    <p className="text-gray-600 text-sm mt-3 flex items-center">
+                                                        <MapPin size={16} className="mr-2 text-gray-400" />
+                                                        <span>{order.address}</span>
+                                                    </p>
                                                     <div className="mt-4 flex items-center text-sm text-gray-500">
-                                                        <Clock size={16} className="mr-2" />
-                                                        <span>{appointment.appointment_time}</span>
-                                                    </div>
-                                                    <div className="mt-3 flex items-center text-sm text-gray-500">
                                                         <User size={16} className="mr-2" />
-                                                        <span>Client: {appointment.client_name}</span>
+                                                        <span>Client: {order.client_name} family</span>
                                                     </div>
-                                                    <div className="mt-3">
-                                                        <span className={`px-2 py-1 text-xs rounded-full ${appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                                                            appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
-                                                                'bg-gray-100 text-gray-800'
-                                                            }`}>
-                                                            {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                                                        </span>
+                                                    <div className="mt-3 text-sm">
+                                                        <span className="font-medium">Amount: </span>
+                                                        <span className="font-semibold text-gray-900">₱{typeof order.total_amount === 'number' ? order.total_amount.toFixed(2) : parseFloat(order.total_amount).toFixed(2)}</span>
                                                     </div>
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <div className="col-span-2 text-center text-gray-500 py-4">
-                                                No upcoming appointments found
-                                            </div>
-                                        )}
+                                            ))}
+                                        </div>
+                                        <div className="mt-6 text-center">
+                                            <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-2 px-4 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors duration-300" onClick={handleOrders}>
+                                                View All Orders
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="mt-6 text-center">
-                                        <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-2 px-4 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors duration-300" onClick={() => navigate('/dashboard-admin/appointments')}>
-                                            View All Appointments
-                                        </button>
-                                    </div>
-                                </div>
 
-                                {/* Quick Actions */}
-                                <div className="bg-white rounded-lg shadow-sm p-6">
-                                    <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                                        <button className="p-4 bg-indigo-50 rounded-lg text-center hover:bg-indigo-100 transition-colors flex flex-col items-center" onClick={handleOrders}>
-                                            <ShoppingCart size={24} className="text-indigo-600 mb-2" />
-                                            <span className="text-sm font-medium text-gray-800">New Order</span>
-                                        </button>
-                                        <button className="p-4 bg-blue-50 rounded-lg text-center hover:bg-blue-100 transition-colors flex flex-col items-center" onClick={handleClient}>
-                                            <Users size={24} className="text-blue-600 mb-2" />
-                                            <span className="text-sm font-medium text-gray-800">Clients</span>
-                                        </button>
-                                        <button className="p-4 bg-amber-50 rounded-lg text-center hover:bg-amber-100 transition-colors flex flex-col items-center" onClick={handleMessage}>
-                                            <MessageSquare size={24} className="text-amber-600 mb-2" />
-                                            <span className="text-sm font-medium text-gray-800">Send Message</span>
-                                        </button>
-                                        <button className="p-4 bg-emerald-50 rounded-lg text-center hover:bg-emerald-100 transition-colors flex flex-col items-center" onClick={handleItems}>
-                                            <Edit size={24} className="text-emerald-600 mb-2" />
-                                            <span className="text-sm font-medium text-gray-800">Edit Items</span>
-                                        </button>
+                                    {/* Upcoming Appointments */}
+                                    <div className="bg-white rounded-lg shadow-sm p-6">
+                                        <h3 className="text-xl font-semibold mb-6 flex items-center text-gray-800">
+                                            <Calendar size={20} className="mr-2 text-indigo-600" />
+                                            Upcoming Appointments
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {dashboardStats.upcoming_appointments && dashboardStats.upcoming_appointments.length > 0 ? (
+                                                dashboardStats.upcoming_appointments.map((appointment) => (
+                                                    <div key={appointment.id} className="p-5 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-lg transition-shadow duration-300">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs bg-indigo-100 text-indigo-800 px-4 py-1 rounded-full whitespace-nowrap min-w-[140px] text-center mb-3 self-end">
+                                                                {new Date(appointment.appointment_date).toLocaleDateString('en-US', {
+                                                                    month: 'long',
+                                                                    day: 'numeric',
+                                                                    year: 'numeric'
+                                                                })}
+                                                            </span>
+                                                            <p className="text-sm text-gray-600">
+                                                                <span className="font-medium">Purpose: </span>
+                                                                {appointment.purpose}
+                                                            </p>
+                                                        </div>
+                                                        <div className="mt-4 flex items-center text-sm text-gray-500">
+                                                            <Clock size={16} className="mr-2" />
+                                                            <span>{appointment.appointment_time}</span>
+                                                        </div>
+                                                        <div className="mt-3 flex items-center text-sm text-gray-500">
+                                                            <User size={16} className="mr-2" />
+                                                            <span>Client: {appointment.client_name}</span>
+                                                        </div>
+                                                        <div className="mt-3">
+                                                            <span className={`px-2 py-1 text-xs rounded-full ${appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                                                                appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
+                                                                    'bg-gray-100 text-gray-800'
+                                                                }`}>
+                                                                {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="col-span-2 text-center text-gray-500 py-4">
+                                                    No upcoming appointments found
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="mt-6 text-center">
+                                            <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-2 px-4 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors duration-300" onClick={() => navigate('/dashboard-admin/appointments')}>
+                                                View All Appointments
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Quick Actions */}
+                                    <div className="bg-white rounded-lg shadow-sm p-6">
+                                        <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                            <button className="p-4 bg-indigo-50 rounded-lg text-center hover:bg-indigo-100 transition-colors flex flex-col items-center" onClick={handleOrders}>
+                                                <ShoppingCart size={24} className="text-indigo-600 mb-2" />
+                                                <span className="text-sm font-medium text-gray-800">New Order</span>
+                                            </button>
+                                            <button className="p-4 bg-blue-50 rounded-lg text-center hover:bg-blue-100 transition-colors flex flex-col items-center" onClick={handleClient}>
+                                                <Users size={24} className="text-blue-600 mb-2" />
+                                                <span className="text-sm font-medium text-gray-800">Clients</span>
+                                            </button>
+                                            <button className="p-4 bg-amber-50 rounded-lg text-center hover:bg-amber-100 transition-colors flex flex-col items-center" onClick={handleMessage}>
+                                                <MessageSquare size={24} className="text-amber-600 mb-2" />
+                                                <span className="text-sm font-medium text-gray-800">Send Message</span>
+                                            </button>
+                                            <button className="p-4 bg-emerald-50 rounded-lg text-center hover:bg-emerald-100 transition-colors flex flex-col items-center" onClick={handleItems}>
+                                                <Edit size={24} className="text-emerald-600 mb-2" />
+                                                <span className="text-sm font-medium text-gray-800">Edit Items</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    )}
                 </main>
 
                 {/* Footer */}
