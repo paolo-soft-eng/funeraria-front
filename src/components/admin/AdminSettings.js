@@ -260,53 +260,6 @@ const AdminSettings = () => {
     setStaffToDelete(staff);
   };
 
-  const handleFacilitySubmit = async (e) => {
-    e.preventDefault();
-    setStatusMessage({ type: '', message: '' });
-
-    try {
-      const response = await fetch('http://localhost/apii/components/updateFacilityInfo.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          facility: formData.facilityName,
-          facilityAddress: formData.facilityAddress,
-          facilityPhone: formData.facilityPhone,
-          facilityEmail: formData.facilityEmail,
-          facilityWebsite: formData.facilityWebsite
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Facility update response:', data);
-
-      if (data.success) {
-        setStatusMessage({
-          type: 'success',
-          message: data.message || 'Facility information saved successfully!'
-        });
-      } else {
-        setStatusMessage({
-          type: 'error',
-          message: data.message || 'Error saving facility information.'
-        });
-      }
-    } catch (error) {
-      console.error('Error saving facility information:', error);
-      setStatusMessage({
-        type: 'error',
-        message: `Error: ${error.message}`
-      });
-    }
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -618,7 +571,6 @@ const AdminSettings = () => {
     { id: 'profile', label: 'Profile', icon: <User size={18} /> },
     { id: 'password', label: 'Password', icon: <Lock size={18} /> },
     { id: 'notifications', label: 'Notifications', icon: <Bell size={18} /> },
-    { id: 'facility', label: 'Facility', icon: <SettingsIcon size={18} /> },
     { id: 'staff', label: 'Staff', icon: <Users size={18} /> },
     { id: 'report', label: 'Report Bug', icon: <Bug size={18} /> },
     { id: 'help', label: 'Help', icon: <HelpCircle size={18} /> }
@@ -945,92 +897,6 @@ finish it
                       >
                         <Save size={16} className="mr-2" />
                         Save Changes
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              {activeTab === 'facility' && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-6">Facility Information</h2>
-                  <form onSubmit={handleSubmit}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Facility Name
-                        </label>
-                        <input
-                          type="text"
-                          name="facilityName"
-                          value={formData.facilityName}
-                          onChange={handleInputChange}
-                          className="w-full p-2 border border-gray-300 rounded-md"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Facility Phone
-                        </label>
-                        <input
-                          type="tel"
-                          name="facilityPhone"
-                          value={formData.facilityPhone}
-                          onChange={handleInputChange}
-                          className="w-full p-2 border border-gray-300 rounded-md"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Facility Email
-                        </label>
-                        <input
-                          type="email"
-                          name="facilityEmail"
-                          value={formData.facilityEmail}
-                          onChange={handleInputChange}
-                          className="w-full p-2 border border-gray-300 rounded-md"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Website
-                        </label>
-                        <input
-                          type="url"
-                          name="facilityWebsite"
-                          value={formData.facilityWebsite}
-                          onChange={handleInputChange}
-                          className="w-full p-2 border border-gray-300 rounded-md"
-                          placeholder="https://www.example.com"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Facility Address
-                      </label>
-                      <textarea
-                        name="facilityAddress"
-                        value={formData.facilityAddress}
-                        onChange={handleInputChange}
-                        className="w-full p-2 border border-gray-300 rounded-md"
-                        rows="3"
-                      ></textarea>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        onClick={handleFacilitySubmit}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center"
-                      >
-                        <Save size={16} className="mr-2" />
-                        Save Facility Info
                       </button>
                     </div>
                   </form>
