@@ -244,12 +244,12 @@ const ClientMenu = () => {
 
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800 mb-2">Our Services</h1>
-                        <p className="text-gray-600">Select from our range of dignified funeral services</p>
+                        <h1 className="text-3xl font-bold text-gray-800 mb-2">Funeral Menu Items</h1>
+                        <p className="text-gray-600">Select from our range of dignified menu items</p>
                     </div>
                     <Link 
                         to="/dashboard-client/cart" 
-                        className="mt-4 sm:mt-0 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 w-full sm:w-auto text-center font-medium"
+                        className="mt-4 sm:mt-0 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 w-full sm:w-auto text-center font-medium"
                     >
                         View Cart
                     </Link>
