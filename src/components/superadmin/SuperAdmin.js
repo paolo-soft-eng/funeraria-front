@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Trash2, Edit, Copy, X, RefreshCw, Search, UserCog, ArrowUp, ArrowDown, Shield, Mail, Phone, MapPin, Calendar, FileText } from 'lucide-react';
+import { UserPlus, Trash2, Edit, Copy, X, RefreshCw, Search, UserCog, ArrowUp, ArrowDown, Shield, Mail, Phone, MapPin, Calendar, FileText, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 
 const SuperAdmin = () => {
@@ -34,13 +34,13 @@ const SuperAdmin = () => {
     try {
       setLoading(true);
       const response = await fetch('http://localhost/apii/components/superadmin/users.php');
-      
+
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-      
+
       const data = await response.json();
-      
+
       const usersWithStatus = data.map(user => {
         console.log(`User ${user.id} status from DB:`, user.status);
         return {
@@ -61,18 +61,18 @@ const SuperAdmin = () => {
     await fetchUsers();
     setTimeout(() => setIsRefreshing(false), 500);
   };
- 
+
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
         const response = await fetch(`http://localhost/apii/components/superadmin/delete_user.php?id=${id}`, {
           method: 'DELETE',
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to delete user');
         }
-        
+
         const result = await response.json();
         if (result.success) {
           setUsers(users.filter(user => user.id !== id));
@@ -89,7 +89,7 @@ const SuperAdmin = () => {
 
   const validateForm = () => {
     const errors = {};
-    
+
     if (!newAdmin.username.trim()) errors.username = 'Username is required';
     if (!newAdmin.firstname.trim()) errors.firstname = 'Firstname is required';
     if (!newAdmin.lastname.trim()) errors.lastname = 'Lastname is required';
@@ -99,23 +99,23 @@ const SuperAdmin = () => {
     } else if (!/\S+@\S+\.\S+/.test(newAdmin.email)) {
       errors.email = 'Email is invalid';
     }
-    
+
     if (!newAdmin.telephone.trim()) {
       errors.telephone = 'Telephone is required';
     } else if (!/^\d{10,11}$/.test(newAdmin.telephone)) {
       errors.telephone = 'Telephone must be 10-11 digits';
     }
-    
+
     if (!newAdmin.password) {
       errors.password = 'Password is required';
     } else if (newAdmin.password.length < 6) {
       errors.password = 'Password must be at least 6 characters';
     }
-    
+
     if (newAdmin.password !== newAdmin.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -130,9 +130,9 @@ const SuperAdmin = () => {
 
   const handleAddAdmin = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
+
     try {
       const response = await fetch('http://localhost/apii/components/superadmin/add_admin.php', {
         method: 'POST',
@@ -149,16 +149,16 @@ const SuperAdmin = () => {
           password: newAdmin.password
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to add admin');
       }
-      
+
       const result = await response.json();
-      
+
       if (result.success) {
         fetchUsers();
-        
+
         setNewAdmin({
           username: '',
           firstname: '',
@@ -170,7 +170,7 @@ const SuperAdmin = () => {
           confirmPassword: ''
         });
         setShowAddForm(false);
-        
+
         showNotification('Admin added successfully!', 'success');
       } else {
         throw new Error(result.error || 'Unknown error occurred');
@@ -184,7 +184,7 @@ const SuperAdmin = () => {
   const copyToClipboard = (text) => {
     const sanitizedUser = { ...JSON.parse(text) };
     delete sanitizedUser.password;
-    
+
     navigator.clipboard.writeText(JSON.stringify(sanitizedUser))
       .then(() => showNotification('User data copied to clipboard!', 'info'))
       .catch(err => {
@@ -200,15 +200,14 @@ const SuperAdmin = () => {
 
   const showNotification = (message, type = 'info') => {
     const notification = document.createElement('div');
-    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg transition-all duration-500 transform translate-x-0 z-50 ${
-      type === 'success' ? 'bg-green-500' : 
-      type === 'error' ? 'bg-red-500' : 
-      'bg-blue-500'
-    } text-white`;
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg transition-all duration-500 transform translate-x-0 z-50 ${type === 'success' ? 'bg-green-500' :
+        type === 'error' ? 'bg-red-500' :
+          'bg-blue-500'
+      } text-white`;
     notification.innerHTML = message;
-    
+
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
       notification.classList.add('opacity-0', 'translate-x-full');
       setTimeout(() => {
@@ -228,20 +227,20 @@ const SuperAdmin = () => {
 
   const getSortIcon = (name) => {
     if (sortConfig.key === name) {
-      return sortConfig.direction === 'ascending' ? 
-        <ArrowUp size={14} className="ml-1" /> : 
+      return sortConfig.direction === 'ascending' ?
+        <ArrowUp size={14} className="ml-1" /> :
         <ArrowDown size={14} className="ml-1" />;
     }
     return null;
   };
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.firstname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.lastname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.telephone?.includes(searchTerm)
   );
-  
+
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     if (a[sortConfig.key] < b[sortConfig.key]) {
       return sortConfig.direction === 'ascending' ? -1 : 1;
@@ -251,7 +250,7 @@ const SuperAdmin = () => {
     }
     return 0;
   });
-  
+
   // Then later in your component, use these variables:
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -265,11 +264,11 @@ const SuperAdmin = () => {
       // Get the current user from the users array
       const currentUser = users.find(user => user.id === userId);
       const effectiveCurrentStatus = currentUser?.status || 'disabled';
-      
+
       console.log('Toggling status for user:', userId, 'Current status:', effectiveCurrentStatus);
-      
+
       const newStatus = effectiveCurrentStatus === 'active' ? 'disabled' : 'active';
-      
+
       const response = await fetch('http://localhost/apii/components/superadmin/toggleAdminStatus.php', {
         method: 'POST',
         headers: {
@@ -287,11 +286,11 @@ const SuperAdmin = () => {
       if (!response.ok) {
         throw new Error(data.message || `HTTP error! status: ${response.status}`);
       }
-      
+
       if (data.success) {
         // Update the local state with the status from the backend response
-        setUsers(prevUsers => prevUsers.map(user => 
-          user.id === userId 
+        setUsers(prevUsers => prevUsers.map(user =>
+          user.id === userId
             ? { ...user, status: data.new_status }
             : user
         ));
@@ -306,7 +305,7 @@ const SuperAdmin = () => {
     }
   };
 
-  const handleLogout = async ()=>{
+  const handleLogout = async () => {
     const userConfirmed = window.confirm("Are you sure you want to log out?");
 
     if (userConfirmed) {
@@ -320,7 +319,7 @@ const SuperAdmin = () => {
         alert('Failed to log out. Please try again.');
       }
     }
-    
+
   }
 
   return (
@@ -335,17 +334,17 @@ const SuperAdmin = () => {
                 <h1 className="text-2xl md:text-3xl font-bold text-white">Admin Dashboard</h1>
               </div>
               <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
-                <button 
+                <button
                   onClick={refreshData}
                   className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200"
                 >
                   <RefreshCw size={18} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                   Refresh
                 </button>
-                <button 
+                <button
                   onClick={toggleAddForm}
-                  className={`${showAddForm 
-                    ? 'bg-red-500 hover:bg-red-600' 
+                  className={`${showAddForm
+                    ? 'bg-red-500 hover:bg-red-600'
                     : 'bg-green-500 hover:bg-green-600'} 
                     text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200`}
                 >
@@ -362,18 +361,25 @@ const SuperAdmin = () => {
                   )}
                 </button>
 
-                <button 
+                <button
                   onClick={() => navigate('/super-admin/reports')}
                   className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200"
                 >
                   <FileText size={18} className="mr-2" />
                   View Reports
                 </button>
+                <button
+                  onClick={() => navigate('/super-admin/performance')}
+                  className="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200"
+                >
+                  <TrendingUp size={18} className="mr-2" />
+                  Performance Ratings
+                </button>
                 <button className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200" onClick={handleLogout}>Logout</button>
               </div>
             </div>
           </div>
-          
+
           {/* Dashboard Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6 bg-gray-50 border-b">
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
@@ -421,7 +427,7 @@ const SuperAdmin = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Search Bar */}
           <div className="p-6 bg-white border-b">
             <div className="relative max-w-md">
@@ -437,7 +443,7 @@ const SuperAdmin = () => {
               />
             </div>
           </div>
-          
+
           {/* Add New Admin Form */}
           {showAddForm && (
             <div className="p-6 border-b border-gray-200 bg-indigo-50">
@@ -491,7 +497,7 @@ const SuperAdmin = () => {
                     />
                     {formErrors.lastname && <p className="text-red-500 text-xs mt-1">{formErrors.lastname}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="email">
                       Email
@@ -506,7 +512,7 @@ const SuperAdmin = () => {
                     />
                     {formErrors.email && <p className="text-red-500 text-xs mt-1">{formErrors.email}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="telephone">
                       Telephone
@@ -536,7 +542,7 @@ const SuperAdmin = () => {
                     />
                     {formErrors.address && <p className="text-red-500 text-xs mt-1">{formErrors.address}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="password">
                       Password
@@ -551,7 +557,7 @@ const SuperAdmin = () => {
                     />
                     {formErrors.password && <p className="text-red-500 text-xs mt-1">{formErrors.password}</p>}
                   </div>
-                  
+
                   <div>
                     <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="confirmPassword">
                       Confirm Password
@@ -566,7 +572,7 @@ const SuperAdmin = () => {
                     />
                     {formErrors.confirmPassword && <p className="text-red-500 text-xs mt-1">{formErrors.confirmPassword}</p>}
                   </div>
-                  
+
                   <div className="md:col-span-2 flex justify-end">
                     <button
                       type="submit"
@@ -579,7 +585,7 @@ const SuperAdmin = () => {
               </div>
             </div>
           )}
-          
+
           {/* Error State */}
           {error && (
             <div className="p-4 m-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-md shadow-sm">
@@ -589,7 +595,7 @@ const SuperAdmin = () => {
               </p>
             </div>
           )}
-          
+
           {/* Loading State */}
           {loading ? (
             <div className="flex flex-col items-center justify-center p-12">
@@ -671,11 +677,10 @@ const SuperAdmin = () => {
                             </div>
                           </td>
                           <td className="py-3 px-4">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              user.status === 'active' 
-                                ? 'bg-green-100 text-green-800' 
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${user.status === 'active'
+                                ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'
-                            }`}>
+                              }`}>
                               {user.status || 'disabled'}
                             </span>
                           </td>
@@ -683,11 +688,10 @@ const SuperAdmin = () => {
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => handleToggleAdminStatus(user.id, user.status)}
-                                className={`px-3 py-1 rounded-md text-sm font-medium ${
-                                  user.status === 'active'
+                                className={`px-3 py-1 rounded-md text-sm font-medium ${user.status === 'active'
                                     ? 'bg-red-100 text-red-700 hover:bg-red-200'
                                     : 'bg-green-100 text-green-700 hover:bg-green-200'
-                                }`}
+                                  }`}
                               >
                                 {user.status === 'active' ? 'Disable' : 'Enable'}
                               </button>
@@ -713,7 +717,7 @@ const SuperAdmin = () => {
                   </div>
                 )}
               </div>
-              
+
               {/* User Cards for Mobile */}
               <div className="md:hidden">
                 {filteredUsers.length > 0 ? (
@@ -733,11 +737,10 @@ const SuperAdmin = () => {
                           <div className="flex space-x-2">
                             <button
                               onClick={() => handleToggleAdminStatus(user.id, user.status)}
-                              className={`px-3 py-1 rounded-md text-sm font-medium ${
-                                user.status === 'active'
+                              className={`px-3 py-1 rounded-md text-sm font-medium ${user.status === 'active'
                                   ? 'bg-red-100 text-red-700 hover:bg-red-200'
                                   : 'bg-green-100 text-green-700 hover:bg-green-200'
-                              }`}
+                                }`}
                             >
                               {user.status === 'active' ? 'Disable' : 'Enable'}
                             </button>
@@ -764,11 +767,10 @@ const SuperAdmin = () => {
                           </div>
                           <div className="flex items-center mb-2">
                             <span className="text-sm font-medium text-gray-500 w-24">Status:</span>
-                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              user.status === 'active' 
-                                ? 'bg-green-100 text-green-800' 
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${user.status === 'active'
+                                ? 'bg-green-100 text-green-800'
                                 : 'bg-red-100 text-red-800'
-                            }`}>
+                              }`}>
                               {user.status || 'disabled'}
                             </span>
                           </div>
@@ -843,11 +845,10 @@ const SuperAdmin = () => {
                       <button
                         key={number}
                         onClick={() => paginate(number)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          currentPage === number
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === number
                             ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
                             : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         {number}
                       </button>
