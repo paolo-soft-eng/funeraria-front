@@ -177,28 +177,24 @@ const AdminAnalytics = () => {
     {
       title: 'Total Revenue',
       value: `₱${Number(analyticsData.kpis?.total_revenue || 0).toLocaleString()}`,
-      change: '+18%',
       icon: <DollarSign size={20} />,
       color: 'text-emerald-600 bg-emerald-100'
     },
     {
       title: 'Regular Orders',
       value: (analyticsData.kpis?.total_orders || 0).toString(),
-      change: '+12%',
       icon: <ShoppingCart size={20} />,
       color: 'text-indigo-600 bg-indigo-100'
     },
     {
       title: 'Funeral Services',
       value: (analyticsData.kpis?.total_funeral_services || 0).toString(),
-      change: '+8%',
       icon: <FileText size={20} />,
       color: 'text-blue-600 bg-blue-100'
     },
     {
       title: 'New Clients',
       value: (analyticsData.kpis?.new_clients || 0).toString(),
-      change: '+5%',
       icon: <Users size={20} />,
       color: 'text-amber-600 bg-amber-100'
     },
@@ -355,8 +351,6 @@ const AdminAnalytics = () => {
                     >
                       <option value="">All Clients</option>
                       <option value="user">Regular User</option>
-                      <option value="admin">Admin</option>
-                      <option value="staff">Staff</option>
                     </select>
                   </div>
 
@@ -408,9 +402,6 @@ const AdminAnalytics = () => {
                 <div className={`p-3 rounded-full ${kpi.color}`}>
                   {kpi.icon}
                 </div>
-              </div>
-              <div className="mt-4 text-xs text-green-600 flex items-center">
-                <span>{kpi.change} from last period</span>
               </div>
             </div>
           ))}
