@@ -33,13 +33,7 @@ const AdminSettings = () => {
       email: true,
       sms: false,
     },
-    profileImage: null,
-    // Add facility fields
-    facilityName: '',
-    facilityAddress: '',
-    facilityPhone: '',
-    facilityEmail: '',
-    facilityWebsite: ''
+    profileImage: null
   });
 
   // Password state
@@ -72,7 +66,6 @@ const AdminSettings = () => {
   useEffect(() => {
     if (email) {
       fetchProfileData();
-      fetchFacilityData();
       fetchNotificationData();
     }
   }, [email]);
@@ -163,40 +156,6 @@ const AdminSettings = () => {
       }
     } catch (error) {
       console.error('Error fetching notification data:', error);
-    }
-  };
-
-  const fetchFacilityData = async () => {
-    try {
-      const response = await fetch('http://localhost/apii/components/fetchFacilityInfo.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Fetched facility data:', data);
-
-      if (data.success) {
-        setFormData(prevData => ({
-          ...prevData,
-          facilityName: data.data.facilityName || '',
-          facilityAddress: data.data.facilityAddress || '',
-          facilityPhone: data.data.facilityPhone || '',
-          facilityEmail: data.data.facilityEmail || '',
-          facilityWebsite: data.data.facilityWebsite || ''
-        }));
-      } else {
-        console.log('No facility data found or error:', data.message);
-      }
-    } catch (error) {
-      console.error('Error fetching facility data:', error);
     }
   };
 
@@ -496,26 +455,26 @@ const AdminSettings = () => {
         },
         body: JSON.stringify({ email: formData.email })
       });
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
+
       const data = await response.json();
-      
+
       if (data.success) {
         // Clean up the object URL if it exists
         if (profilePreview && profilePreview.startsWith('blob:')) {
           URL.revokeObjectURL(profilePreview);
         }
-  
+
         setFormData(prevData => ({
           ...prevData,
           profileImage: null
         }));
-        
+
         setProfilePreview(null);
-        
+
         setStatusMessage({
           type: 'success',
           message: 'Profile picture removed successfully'
@@ -536,34 +495,34 @@ const AdminSettings = () => {
   const updateStaffMember = async (e) => {
     e.preventDefault();
     try {
-        const response = await fetch('http://localhost/apii/components/staff.php', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(editingStaff)
-        });
-        const data = await response.json();
-        if (data.success) {
-            setShowEditModal(false); // Close the modal
-            setEditingStaff(null);
-            fetchStaff(); // Refresh the staff list
-            setStatusMessage({
-                type: 'success',
-                message: 'Staff member updated successfully'
-            });
-        } else {
-            setStatusMessage({
-                type: 'error',
-                message: data.message || 'Error updating staff member'
-            });
-        }
-    } catch (error) {
-        console.error('Error updating staff:', error);
+      const response = await fetch('http://localhost/apii/components/staff.php', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editingStaff)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setShowEditModal(false); // Close the modal
+        setEditingStaff(null);
+        fetchStaff(); // Refresh the staff list
         setStatusMessage({
-            type: 'error',
-            message: 'Error updating staff member'
+          type: 'success',
+          message: 'Staff member updated successfully'
         });
+      } else {
+        setStatusMessage({
+          type: 'error',
+          message: data.message || 'Error updating staff member'
+        });
+      }
+    } catch (error) {
+      console.error('Error updating staff:', error);
+      setStatusMessage({
+        type: 'error',
+        message: 'Error updating staff member'
+      });
     }
   };
 
@@ -575,7 +534,7 @@ const AdminSettings = () => {
     { id: 'report', label: 'Report Bug', icon: <Bug size={18} /> },
     { id: 'help', label: 'Help', icon: <HelpCircle size={18} /> }
   ];
-  
+
   const [isBugSubmitting, setIsBugSubmitting] = useState(false);
   const [bugDescription, setBugDescription] = useState('');
   const [bugReportStatus, setBugReportStatus] = useState(null);
@@ -585,18 +544,19 @@ const AdminSettings = () => {
     e.preventDefault();
     setIsBugSubmitting(true);
     setBugReportStatus(null);
-  
+
     try {
       const response = await fetch('http://localhost/apii/components/adminBug.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
-          {email: formData.email || email, 
-          description: bugDescription
-        })
+          {
+            email: formData.email || email,
+            description: bugDescription
+          })
       });
       const data = await response.json();
-      
+
       if (data.status === 'success') {
         setBugReportStatus({ type: 'success', message: data.message });
         setBugDescription('');
@@ -845,9 +805,9 @@ const AdminSettings = () => {
                     </div>
 
                     <div className="flex justify-end">
-                      <button type="submit" className="
-finish it
-                        px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center"
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center"
                       >
                         <Save size={16} className="mr-2" />
                         Save Changes
@@ -906,7 +866,7 @@ finish it
               {activeTab === 'staff' && (
                 <div>
                   <h2 className="text-xl font-semibold mb-6">Staff Management</h2>
-                  
+
                   {/* Add/Edit Staff Form */}
                   <form onSubmit={editingStaff ? updateStaffMember : addStaffMember}>
                     <div className="mb-6">
@@ -919,19 +879,19 @@ finish it
                             type="text"
                             placeholder="Full Name"
                             value={editingStaff ? editingStaff.fullName : newStaff.fullName}
-                            onChange={(e) => editingStaff 
-                              ? setEditingStaff({...editingStaff, fullName: e.target.value})
-                              : setNewStaff({...newStaff, fullName: e.target.value})}
+                            onChange={(e) => editingStaff
+                              ? setEditingStaff({ ...editingStaff, fullName: e.target.value })
+                              : setNewStaff({ ...newStaff, fullName: e.target.value })}
                             className="w-full p-2 border border-gray-300 rounded-md"
                             required
                           />
                         </div>
                         <div>
-                          <select 
+                          <select
                             value={editingStaff ? editingStaff.position : newStaff.position}
                             onChange={(e) => editingStaff
-                              ? setEditingStaff({...editingStaff, position: e.target.value})
-                              : setNewStaff({...newStaff, position: e.target.value})}
+                              ? setEditingStaff({ ...editingStaff, position: e.target.value })
+                              : setNewStaff({ ...newStaff, position: e.target.value })}
                             className="w-full p-2 border border-gray-300 rounded-md"
                             required
                           >
@@ -945,8 +905,8 @@ finish it
                             placeholder="Email"
                             value={editingStaff ? editingStaff.email : newStaff.email}
                             onChange={(e) => editingStaff
-                              ? setEditingStaff({...editingStaff, email: e.target.value})
-                              : setNewStaff({...newStaff, email: e.target.value})}
+                              ? setEditingStaff({ ...editingStaff, email: e.target.value })
+                              : setNewStaff({ ...newStaff, email: e.target.value })}
                             className="w-full p-2 border border-gray-300 rounded-md"
                             required
                           />
@@ -971,7 +931,7 @@ finish it
                       </div>
                     </div>
                   </form>
-                  
+
 
                   {/* Staff List */}
                   <div className="mt-8">
@@ -1128,7 +1088,7 @@ finish it
                 </svg>
               </button>
             </div>
-            
+
             <form onSubmit={updateStaffMember}>
               <div className="space-y-4">
                 <div>
@@ -1138,19 +1098,19 @@ finish it
                   <input
                     type="text"
                     value={editingStaff.fullName}
-                    onChange={(e) => setEditingStaff({...editingStaff, fullName: e.target.value})}
+                    onChange={(e) => setEditingStaff({ ...editingStaff, fullName: e.target.value })}
                     className="w-full p-2 border border-gray-300 rounded-md"
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Position
                   </label>
-                  <select 
+                  <select
                     value={editingStaff.position}
-                    onChange={(e) => setEditingStaff({...editingStaff, position: e.target.value})}
+                    onChange={(e) => setEditingStaff({ ...editingStaff, position: e.target.value })}
                     className="w-full p-2 border border-gray-300 rounded-md"
                     required
                   >
@@ -1158,7 +1118,7 @@ finish it
                     <option>Embalmer</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email
@@ -1166,7 +1126,7 @@ finish it
                   <input
                     type="email"
                     value={editingStaff.email}
-                    onChange={(e) => setEditingStaff({...editingStaff, email: e.target.value})}
+                    onChange={(e) => setEditingStaff({ ...editingStaff, email: e.target.value })}
                     className="w-full p-2 border border-gray-300 rounded-md"
                     required
                   />
