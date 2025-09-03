@@ -191,8 +191,8 @@ export default function FuneralManagementLanding() {
           <div className="max-w-7xl mx-auto px-6 w-full">
             <div className="flex flex-col items-center text-center text-white">
               <div className="max-w-4xl">
-                <h2 className="text-4xl md:text-6xl lg:text-7xl font-light mb-6 leading-tight">
-                  Compassionate Service in Your Time of Need
+                <h2 className="text-1xl md:text-3xl lg:text-6xl font-light mb-6 leading-tight">
+                  Your partner who takes good care of you and your loved ones
                 </h2>
                 <p className="text-xl md:text-2xl text-gray-200 mb-12 font-light leading-relaxed max-w-3xl mx-auto">
                   Our comprehensive funeral management system helps you handle all aspects of memorial services with dignity and respect.
