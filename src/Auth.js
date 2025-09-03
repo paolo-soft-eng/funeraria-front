@@ -299,7 +299,7 @@ const Auth = () => {
                     <path d="M3.5 12c2.5-1.5 4-3.5 4.5-6 1.5 2 3.5 3.5 6 4-1.5 2.5-3 4.5-6 6 2.5 0 5-.5 8-2-1.5 3-4 6-9 6-4 0-6-3-6-8z" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
-                <h1 className="text-3xl font-semibold tracking-tight text-white/95">Serenity — Funeral Management</h1>
+                <h1 className="text-3xl font-semibold tracking-tight text-white/95">Funeraria Gomez - Udtohan</h1>
                 <p className="mt-2 max-w-md text-sm text-white/70">
                   Coordinate services, families, and memorial details with dignity. Designed for calm, clarity, and care.
                 </p>
