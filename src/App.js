@@ -28,9 +28,11 @@ const AdminDocuments = lazy(() => import('./components/admin/AdminDocuments'));
 const LandingPage = lazy(() => import('./components/LandingPage'));
 const SuperAdmin = lazy(() => import('./components/superadmin/SuperAdmin'));
 const SuperAdminReport = lazy(() => import('./components/superadmin/SuperAdminReport'));
+const SuperAdminPerformance = lazy(() => import('./components/superadmin/SuperAdminPerformance'));
 const ErrorPage = lazy(() => import('./components/ErrorPage'));
 const ForgotPassword = lazy(() => import('./components/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/ResetPassword'));
+
 
 const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
@@ -215,6 +217,13 @@ const App = () => {
                 <Suspense fallback={<LoadingScreen />}>
                   <LoadingWrapper>
                     <SuperAdminReport/>
+                  </LoadingWrapper>
+                </Suspense>
+              } />
+              <Route path='/super-admin/performance' element={
+                <Suspense fallback={<LoadingScreen />}>
+                  <LoadingWrapper>
+                    <SuperAdminPerformance/>
                   </LoadingWrapper>
                 </Suspense>
               } />
