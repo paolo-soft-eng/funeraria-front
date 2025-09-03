@@ -132,7 +132,7 @@ export const fetchCaskets = async () => {
 // Fetch all flowers
 export const fetchFlowers = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/apii/components/flowers.php`, {
+        const response = await fetch(`${API_BASE_URL}/apii/components/chapel.php`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
