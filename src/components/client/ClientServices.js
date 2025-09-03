@@ -198,7 +198,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
   });
   const [orderStatus, setOrderStatus] = useState(null);
   const [caskets, setCaskets] = useState([]);
-  const [flowers, setFlowers] = useState([]);
+  const [chapels, setChapels] = useState([]);
   const [loadingItems, setLoadingItems] = useState(true);
   const [selectedCaskets, setSelectedCaskets] = useState([]);
   const [selectedFlowers, setSelectedFlowers] = useState([]);
@@ -229,7 +229,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
           fetchFlowersByServiceId(service.id)
         ]);
         setCaskets(casketData);
-        setFlowers(flowerData);
+        setChapels(flowerData);
       } catch (err) {
         console.error("Failed to load service items:", err);
         showNotification("Failed to load service items", "error");
@@ -392,11 +392,11 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
                     </div>
                   )}
 
-                  {flowers.length > 0 && (
+                  {chapels.length > 0 && (
                     <div className="mb-8">
                       <h3 className="text-xl font-semibold text-gray-900 mb-4">Flower Options</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        {flowers.map((flower) => (
+                        {chapels.map((flower) => (
                           <div
                             key={flower.id}
                             className={`bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-200 ${selectedFlowers.some(f => f.id === flower.id) ? 'ring-2 ring-gray-900' : 'hover:shadow-md'
@@ -406,7 +406,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
                             {flower.image && (
                               <div className="h-48 w-full">
                                 <img
-                                  src={`${API_BASE_URL}/apii/components/uploads/flowers/${flower.image}`}
+                                  src={`${API_BASE_URL}/apii/components/uploads/chapels/${flower.image}`}
                                   alt={flower.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
