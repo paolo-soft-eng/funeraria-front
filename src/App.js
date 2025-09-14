@@ -220,13 +220,13 @@ const App = () => {
                   </LoadingWrapper>
                 </Suspense>
               } />
-              <Route path='/super-admin/performance' element={
+              {/* <Route path='/super-admin/performance' element={
                 <Suspense fallback={<LoadingScreen />}>
                   <LoadingWrapper>
                     <SuperAdminPerformance/>
                   </LoadingWrapper>
                 </Suspense>
-              } />
+              } /> */}
             </Routes>
           </Suspense>
         </Router>
