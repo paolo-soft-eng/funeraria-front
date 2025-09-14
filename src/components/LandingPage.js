@@ -119,7 +119,7 @@ export default function FuneralManagementLanding() {
         <div className="flex items-center">
           <Heart className="h-8 w-8 text-gray-400 mr-3" />
           <div>
-            <h1 className="text-xl font-semibold">Gomez Funeraria</h1>
+            <h1 className="text-xl font-semibold">Funeraria Gomez - Udtohan</h1>
             <p className="text-xs text-gray-300">Funeral Management Services</p>
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function FuneralManagementLanding() {
               </div>
             </div>
             <div className="lg:w-1/2">
-              <h2 className="text-4xl md:text-5xl font-light mb-8 text-gray-800">About Gomez Funeraria</h2>
+              <h2 className="text-4xl md:text-5xl font-light mb-8 text-gray-800">Funeraria Gomez - Udtohan</h2>
               <p className="text-xl text-gray-600 mb-6 leading-relaxed">
                 For over 25 years, we've been helping families navigate the difficult journey of saying goodbye to loved ones. Our compassionate team understands the importance of honoring a life well-lived.
               </p>
@@ -454,7 +454,7 @@ export default function FuneralManagementLanding() {
                   <div className="bg-gray-700 p-3 rounded-full mr-4">
                     <Mail className="h-6 w-6 text-gray-300" />
                   </div>
-                  <span className="text-lg">support@gomezfuneraria.com</span>
+                  <span className="text-lg">support@funerariagomez.com</span>
                 </div>
 
                 <div className="flex items-center">
@@ -567,7 +567,7 @@ export default function FuneralManagementLanding() {
             <div className="mb-6 md:mb-0">
               <div className="flex items-center">
                 <Heart className="h-8 w-8 text-gray-400 mr-3" />
-                <h3 className="text-2xl font-semibold">Gomez Funeraria</h3>
+                <h3 className="text-2xl font-semibold">Funeraria Gomez - Udtohan</h3>
               </div>
               <p className="text-gray-400 mt-2 text-lg">
                 Compassionate Funeral Management Services
@@ -584,7 +584,7 @@ export default function FuneralManagementLanding() {
           </div>
 
           <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-            <p className="text-lg">© {new Date().getFullYear()} Gomez Funeraria. All rights reserved.</p>
+            <p className="text-lg">© {new Date().getFullYear()} Funeraria Gomez - Udtohan. All rights reserved.</p>
           </div>
         </div>
       </footer>
