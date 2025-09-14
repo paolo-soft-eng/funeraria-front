@@ -48,7 +48,7 @@ const ClientMenu = () => {
     useEffect(() => {
         // Properly set up refs when items change
         itemsRef.current = itemsRef.current.slice(0, items.length);
-        
+
         const options = {
             root: null,
             rootMargin: '0px',
@@ -113,24 +113,24 @@ const ClientMenu = () => {
                 userId
             }),
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                toast.success('Item added to cart successfully', {
-              duration: 2000,
-              position: 'top-right',
-            });
-                // Update the item's stock in the state
-                setItems(prevItems =>
-                    prevItems.map(item =>
-                        item.id === itemId ? { ...item, stock: item.stock - quantity } : item
-                    )
-                );
-            } else {
-                toast.error('Purchase failed: ' + data.error);
-            }
-        })
-        .catch(error => console.error('Error buying item:', error));
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    toast.success('Item added to cart successfully', {
+                        duration: 2000,
+                        position: 'top-right',
+                    });
+                    // Update the item's stock in the state
+                    setItems(prevItems =>
+                        prevItems.map(item =>
+                            item.id === itemId ? { ...item, stock: item.stock - quantity } : item
+                        )
+                    );
+                } else {
+                    toast.error('Purchase failed: ' + data.error);
+                }
+            })
+            .catch(error => console.error('Error buying item:', error));
     };
 
     if (loading) {
@@ -199,56 +199,56 @@ const ClientMenu = () => {
                 }} />
 
                 <Toaster
-          position="top-right"
-          reverseOrder={false}
-          gutter={8}
-          containerClassName=""
-          containerStyle={{}}
-          toastOptions={{
-            // Define default options
-            className: '',
-            duration: 3000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-              fontSize: '14px',
-              borderRadius: '8px',
-              padding: '12px 16px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            },
-            // Default options for specific types
-            success: {
-              duration: 4000,
-              theme: {
-                primary: '#10b981',
-                secondary: '#ffffff',
-              },
-              style: {
-                background: '#10b981',
-                color: '#ffffff',
-              },
-            },
-            error: {
-              duration: 4000,
-              theme: {
-                primary: '#ef4444',
-                secondary: '#ffffff',
-              },
-              style: {
-                background: '#ef4444',
-                color: '#ffffff',
-              },
-            },
-          }}
-        />
+                    position="top-right"
+                    reverseOrder={false}
+                    gutter={8}
+                    containerClassName=""
+                    containerStyle={{}}
+                    toastOptions={{
+                        // Define default options
+                        className: '',
+                        duration: 3000,
+                        style: {
+                            background: '#363636',
+                            color: '#fff',
+                            fontSize: '14px',
+                            borderRadius: '8px',
+                            padding: '12px 16px',
+                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                        },
+                        // Default options for specific types
+                        success: {
+                            duration: 4000,
+                            theme: {
+                                primary: '#10b981',
+                                secondary: '#ffffff',
+                            },
+                            style: {
+                                background: '#10b981',
+                                color: '#ffffff',
+                            },
+                        },
+                        error: {
+                            duration: 4000,
+                            theme: {
+                                primary: '#ef4444',
+                                secondary: '#ffffff',
+                            },
+                            style: {
+                                background: '#ef4444',
+                                color: '#ffffff',
+                            },
+                        },
+                    }}
+                />
 
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-800 mb-2">Funeral Menu Items</h1>
+                        <h1 className="text-3xl font-bold text-gray-800 mb-2">Gomez Menu Items</h1>
                         <p className="text-gray-600">Select from our range of dignified menu items</p>
                     </div>
-                    <Link 
-                        to="/dashboard-client/cart" 
+                    <Link
+                        to="/dashboard-client/cart"
                         className="mt-4 sm:mt-0 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 w-full sm:w-auto text-center font-medium"
                     >
                         View Cart
@@ -318,11 +318,10 @@ const ClientMenu = () => {
                                         <button
                                             onClick={() => handleBuy(item.id)}
                                             disabled={!isLoggedIn || item.stock < 1}
-                                            className={`btn-primary px-4 py-2 rounded-lg text-sm font-medium flex-grow ${
-                                                !isLoggedIn || item.stock < 1
+                                            className={`btn-primary px-4 py-2 rounded-lg text-sm font-medium flex-grow ${!isLoggedIn || item.stock < 1
                                                     ? 'opacity-50 cursor-not-allowed'
                                                     : 'text-white'
-                                            }`}
+                                                }`}
                                         >
                                             {item.stock < 1 ? 'Out of Stock' : 'Add to Cart'}
                                         </button>
