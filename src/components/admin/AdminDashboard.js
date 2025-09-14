@@ -269,6 +269,27 @@ const AdminDashboard = () => {
         };
     }, []);
 
+    const formatTime12Hour = (timeString) => {
+    if (!timeString) return '';
+    
+    // Handle both "HH:MM:SS" and "HH:MM" formats
+    const timeParts = timeString.split(':');
+    let hours = parseInt(timeParts[0], 10);
+    const minutes = timeParts[1];
+    
+    // Determine AM/PM
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    
+    // Convert to 12-hour format
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 should be 12
+    
+    // Remove leading zero from hours if present
+    const formattedHours = hours.toString();
+    
+    return `${formattedHours}:${minutes} ${ampm}`;
+};
+
     // Main nav items with icons
     const mainNavItems = [
         { name: 'home', icon: <Home size={20} />, label: 'Home' },
@@ -367,7 +388,7 @@ const AdminDashboard = () => {
                     <div className="flex items-center justify-between p-4">
                         <Link to="/dashboard-admin/home" className="flex items-center">
                             {isSidebarOpen ? (
-                                <h1 className="text-xl font-bold">Gomez Funeraria</h1>
+                                <h1 className="text-xl font-bold">Funeraria Gomez</h1>
                             ) : (
                                 <span className="text-2xl font-bold">FG</span>
                             )}
@@ -437,7 +458,7 @@ const AdminDashboard = () => {
                             <button onClick={toggleSidebar} className="mr-4 focus:outline-none">
                                 <Menu size={24} />
                             </button>
-                            <h2 className="text-xl font-semibold hidden sm:block">Admin Dashboard</h2>
+                            <h2 className="text-xl font-semibold hidden sm:block">Dashboard</h2>
                         </div>
 
                         {/* User Actions */}
@@ -775,7 +796,7 @@ const AdminDashboard = () => {
                                                         </div>
                                                         <div className="mt-4 flex items-center text-sm text-gray-500">
                                                             <Clock size={16} className="mr-2" />
-                                                            <span>{appointment.appointment_time}</span>
+                                                            <span>{formatTime12Hour(appointment.appointment_time)}</span>
                                                         </div>
                                                         <div className="mt-3 flex items-center text-sm text-gray-500">
                                                             <User size={16} className="mr-2" />
@@ -837,7 +858,7 @@ const AdminDashboard = () => {
                     <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center">
                         <div className="mb-3 sm:mb-0">
                             <p className="text-sm text-gray-600">
-                                &copy; 2025 Gomez Funeraria. All rights reserved.
+                                &copy; 2025 Funeraria Gomez - Udtohan. All rights reserved.
                             </p>
                         </div>
                         <div className="flex flex-wrap justify-center gap-4">
