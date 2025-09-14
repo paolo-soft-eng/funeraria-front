@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { fetchServices, placeOrder, fetchCasketsByServiceId, fetchFlowersByServiceId, API_BASE_URL } from '../Api';
+import { fetchServices, placeOrder, fetchCasketsByServiceId, API_BASE_URL, fetchChapelsByServiceId } from '../Api';
 import { EmailContext } from '../EmailContext';
 
 const ClientServices = () => {
@@ -201,7 +201,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
   const [chapels, setChapels] = useState([]);
   const [loadingItems, setLoadingItems] = useState(true);
   const [selectedCaskets, setSelectedCaskets] = useState([]);
-  const [selectedFlowers, setSelectedFlowers] = useState([]);
+  const [selectedChapels, setSelectedChapels] = useState([]);
   const [userId, setUserId] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -224,12 +224,12 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
     const fetchServiceItems = async () => {
       setLoadingItems(true);
       try {
-        const [casketData, flowerData] = await Promise.all([
+        const [casketData, chapelData] = await Promise.all([
           fetchCasketsByServiceId(service.id),
-          fetchFlowersByServiceId(service.id)
+          fetchChapelsByServiceId(service.id)
         ]);
         setCaskets(casketData);
-        setChapels(flowerData);
+        setChapels(chapelData);
       } catch (err) {
         console.error("Failed to load service items:", err);
         showNotification("Failed to load service items", "error");
@@ -252,13 +252,13 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
     });
   };
 
-  const handleFlowerSelect = (flower) => {
-    setSelectedFlowers(prev => {
-      const isSelected = prev.some(f => f.id === flower.id);
+  const handleChapelSelect = (chapel) => {
+    setSelectedChapels(prev => {
+      const isSelected = prev.some(c => c.id === chapel.id);
       if (isSelected) {
-        return prev.filter(f => f.id !== flower.id);
+        return prev.filter(c => c.id !== chapel.id);
       } else {
-        return [...prev, flower];
+        return [...prev, chapel];
       }
     });
   };
@@ -272,7 +272,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
       const orderData = {
         ...formData,
         selected_caskets: selectedCaskets.map(c => c.id),
-        selected_flowers: selectedFlowers.map(f => f.id)
+        selected_chapels: selectedChapels.map(f => f.id)
       };
       await placeOrder(orderData);
       setOrderStatus({ type: 'success', message: 'Order placed successfully!' });
@@ -284,7 +284,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
         customer_phone: ''
       });
       setSelectedCaskets([]);
-      setSelectedFlowers([]);
+      setSelectedChapels([]);
 
       setTimeout(() => {
         refetchServices();
@@ -354,7 +354,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
                             key={casket.id}
                             className={`bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-200 ${selectedCaskets.some(c => c.id === casket.id) ? 'ring-2 ring-gray-900' : 'hover:shadow-md'
                               }`}
-                            onClick={() => service.name?.toLowerCase().includes('customized') && handleCasketSelect(casket)}
+                            onClick={() => service.name?.toLowerCase().includes('bubbles') && handleCasketSelect(casket)}
                           >
                             {casket.image && (
                               <div className="h-48 w-full">
@@ -394,20 +394,20 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
 
                   {chapels.length > 0 && (
                     <div className="mb-8">
-                      <h3 className="text-xl font-semibold text-gray-900 mb-4">Flower Options</h3>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-4">Chapels Options</h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        {chapels.map((flower) => (
+                        {chapels.map((chapel) => (
                           <div
-                            key={flower.id}
-                            className={`bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-200 ${selectedFlowers.some(f => f.id === flower.id) ? 'ring-2 ring-gray-900' : 'hover:shadow-md'
+                            key={chapel.id}
+                            className={`bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-200 ${selectedChapels.some(c => c.id === chapel.id) ? 'ring-2 ring-gray-900' : 'hover:shadow-md'
                               }`}
-                            onClick={() => service.name?.toLowerCase().includes('customized') && handleFlowerSelect(flower)}
+                            onClick={() => service.name?.toLowerCase().includes('customized') && handleChapelSelect(chapel)}
                           >
-                            {flower.image && (
+                            {chapel.image && (
                               <div className="h-48 w-full">
                                 <img
-                                  src={`${API_BASE_URL}/apii/components/uploads/chapels/${flower.image}`}
-                                  alt={flower.name}
+                                  src={`${API_BASE_URL}/apii/components/uploads/chapels/${chapel.image}`}
+                                  alt={chapel.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     e.target.onerror = null;
@@ -417,17 +417,17 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification }) 
                               </div>
                             )}
                             <div className="p-4">
-                              <h4 className="font-semibold text-lg text-gray-900">{flower.name}</h4>
-                              <p className="text-gray-600 mt-1">{flower.description}</p>
+                              <h4 className="font-semibold text-lg text-gray-900">{chapel.name}</h4>
+                              <p className="text-gray-600 mt-1">{chapel.description}</p>
                               {service.name?.toLowerCase().includes('customized') && (
                                 <>
-                                  <p className="text-gray-900 font-semibold mt-2">₱{parseFloat(flower.price).toFixed(2)}</p>
+                                  <p className="text-gray-900 font-semibold mt-2">₱{parseFloat(chapel.price).toFixed(2)}</p>
                                   <div className="mt-2">
-                                    <span className={`inline-block px-3 py-1 rounded-full text-sm ${selectedFlowers.some(f => f.id === flower.id)
+                                    <span className={`inline-block px-3 py-1 rounded-full text-sm ${selectedChapels.some(c => c.id === chapel.id)
                                         ? 'bg-gray-900 text-white'
                                         : 'bg-gray-100 text-gray-700'
                                       }`}>
-                                      {selectedFlowers.some(f => f.id === flower.id) ? 'Selected' : 'Click to select'}
+                                      {selectedChapels.some(c => c.id === chapel.id) ? 'Selected' : 'Click to select'}
                                     </span>
                                   </div>
                                 </>
