@@ -361,7 +361,7 @@ const AdminLayout = ({ children, currentPage }) => {
           <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center">
             <div className="mb-3 sm:mb-0">
               <p className="text-sm text-gray-600">
-                &copy; 2025 Gome Funeraria. All rights reserved.
+                &copy; 2025 Funeraria Gomez - Udtohan. All rights reserved.
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-4">
