@@ -129,8 +129,8 @@ export const fetchCaskets = async () => {
     }
 };
 
-// Fetch all flowers
-export const fetchFlowers = async () => {
+// Fetch all chapels
+export const fetchChapels = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/apii/components/chapel.php`, {
             method: 'GET',
@@ -155,10 +155,10 @@ export const fetchFlowers = async () => {
         let data;
         try {
             data = await response.json();
-            console.log('Fetched flowers data:', data);
+            console.log('Fetched chapels data:', data);
 
             if (!Array.isArray(data)) {
-                console.warn('API did not return an array for flowers:', data);
+                console.warn('API did not return an array for chapels:', data);
                 if (data && Array.isArray(data.data)) {
                     return data.data;
                 }
@@ -171,7 +171,7 @@ export const fetchFlowers = async () => {
             throw new Error(`Failed to parse JSON response: ${jsonError.message}`);
         }
     } catch (error) {
-        console.error('Failed to fetch flowers:', error);
+        console.error('Failed to fetch chapels:', error);
         return [];
     }
 };
@@ -187,13 +187,13 @@ export const fetchCasketsByServiceId = async (serviceId) => {
     }
 };
 
-// Fetch flowers by service ID
-export const fetchFlowersByServiceId = async (serviceId) => {
+// Fetch chapels by service ID
+export const fetchChapelsByServiceId = async (serviceId) => {
     try {
-        const allFlowers = await fetchFlowers();
-        return allFlowers.filter(flower => flower.service_id == serviceId);
+        const allChapels = await fetchChapels();
+        return allChapels.filter(chapel => chapel.service_id == serviceId);
     } catch (error) {
-        console.error(`Failed to fetch flowers for service ${serviceId}:`, error);
+        console.error(`Failed to fetch chapels for service ${serviceId}:`, error);
         return [];
     }
 };
