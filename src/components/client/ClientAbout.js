@@ -249,12 +249,12 @@ const ClientAbout = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="bg-gray-200 rounded-lg overflow-hidden slide-left">
                             <img
-                                src="/chapel.webp"
+                                src="/chapel4.jpg"
                                 alt="Main chapel interior at Gomez Funeral Home with seating for memorial services"
                                 className="w-full h-64 transform transition-transform hover:scale-105 object-cover"
                             />
                             <div className="p-4">
-                                <h4 className="text-xl font-semibold mb-2 text-gray-800">Main Chapel</h4>
+                                <h4 className="text-xl font-semibold mb-2 text-gray-800 text-center">Chapel 4</h4>
                                 <p className="text-gray-600">
                                     A peaceful and welcoming space for memorial and funeral services, with capacity
                                     for up to 150 people.
@@ -263,12 +263,12 @@ const ClientAbout = () => {
                         </div>
                         <div className="bg-gray-200 rounded-lg overflow-hidden slide-right">
                             <img
-                                src="/reception.webp"
+                                src="/chapel1.jpg"
                                 alt="Reception room at Gomez Funeral Home set up for family gatherings"
                                 className="w-full h-64 transform transition-transform hover:scale-105 object-cover"
                             />
                             <div className="p-4">
-                                <h4 className="text-xl font-semibold mb-2 text-gray-800">Reception Room</h4>
+                                <h4 className="text-xl font-semibold mb-2 text-gray-800 text-center">Chapel 1</h4>
                                 <p className="text-gray-600">
                                     A comfortable space for family gatherings and post-service receptions,
                                     with catering services available.
@@ -283,14 +283,14 @@ const ClientAbout = () => {
                 <div className="container mx-auto px-4">
                     <div className="flex flex-col md:flex-row justify-between">
                         <div className="mb-6 md:mb-0">
-                            <h2 className="text-2xl font-serif mb-4">Gomez Funeraria</h2>
+                            <h2 className="text-2xl font-serif mb-4">Funeraria Gomez - Udtohan</h2>
                             <p>Serving our community since 1987</p>
                         </div>
                         <div className="mb-6 md:mb-0">
                             <h3 className="text-lg font-semibold mb-3">Contact Us</h3>
                             <p>Tagbilaran City Branch</p>
                             <p>Phone: (123) 456-7890</p>
-                            <p>info@gomezfuneraria.com</p>
+                            <p>Email: funerariagomez@gmail.com</p>
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold mb-3">Hours</h3>
