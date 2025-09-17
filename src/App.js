@@ -30,7 +30,7 @@ const SuperAdmin = lazy(() => import('./components/superadmin/SuperAdmin'));
 const SuperAdminReport = lazy(() => import('./components/superadmin/SuperAdminReport'));
 const SuperAdminPerformance = lazy(() => import('./components/superadmin/SuperAdminPerformance'));
 const ErrorPage = lazy(() => import('./components/ErrorPage'));
-const ForgotPassword = lazy(() => import('./components/ForgotPassword'));
+const ForgotPassword = lazy(() => import('./components/utils/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/ResetPassword'));
 
 
