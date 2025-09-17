@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import AdminLayout from './AdminLayout'
-import { FaTable, FaThLarge } from 'react-icons/fa'
+import { FaTable, FaThLarge, FaUser } from 'react-icons/fa'
 
 const AdminAppointments = () => {
     const [appointments, setAppointments] = useState([]);
@@ -60,9 +60,6 @@ const AdminAppointments = () => {
             });
 
             const data = await response.json();
-            console.log(response);
-
-            console.log(data);
 
             if (data.status === 'success') {
                 fetchAppointments(); // Refresh the list
@@ -126,8 +123,25 @@ const AdminAppointments = () => {
                                 {appointments.map((appointment) => (
                                     <tr key={appointment.id}>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">{appointment.user_name}</div>
-                                            <div className="text-sm text-gray-500">{appointment.user_email}</div>
+                                            <div className="flex items-center">
+                                                <div className="flex-shrink-0 h-10 w-10">
+                                                    {appointment.profile_picture ? (
+                                                        <img
+                                                            className="h-10 w-10 rounded-full object-cover"
+                                                            src={`http://localhost/apii/components/${appointment.profile_picture}`}
+                                                            alt={appointment.user_name}
+                                                        />
+                                                    ) : (
+                                                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                                            <FaUser className="text-gray-400" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="ml-4">
+                                                    <div className="text-sm font-medium text-gray-900">{appointment.user_name}</div>
+                                                    <div className="text-sm text-gray-500">{appointment.user_email}</div>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm text-gray-900">
@@ -165,10 +179,23 @@ const AdminAppointments = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {appointments.map((appointment) => (
                             <div key={appointment.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-gray-900">{appointment.user_name}</h3>
-                                        <p className="text-sm text-gray-500">{appointment.user_email}</p>
+                                <div className="flex items-center mb-4">
+                                    <div className="flex-shrink-0 h-12 w-12">
+                                        {appointment.profile_picture ? (
+                                            <img
+                                                className="h-12 w-12 rounded-full object-cover"
+                                                src={`http://localhost/apii/components/${appointment.profile_picture}`}
+                                                alt={appointment.user_name}
+                                            />
+                                        ) : (
+                                            <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center">
+                                                <FaUser className="text-gray-400 text-xl" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="ml-4 flex-1 min-w-0">
+                                        <h3 className="text-lg font-semibold text-gray-900 truncate">{appointment.user_name}</h3>
+                                        <p className="text-sm text-gray-500 truncate">{appointment.user_email}</p>
                                     </div>
                                     <span className={`px-3 py-1 text-xs font-semibold rounded-full 
                         ${appointment.status === 'finished' ? 'bg-green-100 text-green-800' :

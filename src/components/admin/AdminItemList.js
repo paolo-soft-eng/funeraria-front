@@ -21,7 +21,37 @@ const AdminItemList = () => {
   const { email } = useContext(EmailContext);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [userName, setUserName] = useState("");
   const navigate = useNavigate();
+  
+  useEffect(() => {
+  if (email) {
+    fetch(
+      `http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(
+        email
+      )}`
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.userId) {
+          setUserId(data.userId);
+          setUserName(data.userName || 'Admin'); // Set the actual username
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+          navigate("/auth");
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching user ID:", error);
+        setIsLoggedIn(false);
+        navigate("/auth");
+      });
+  } else {
+    setIsLoggedIn(false);
+    navigate("/auth");
+  }
+}, [email, navigate]);
 
   useEffect(() => {
     if (email) {
@@ -79,6 +109,8 @@ const AdminItemList = () => {
       formDataToSend.append("details", formData.details);
       formDataToSend.append("price", formData.price);
       formDataToSend.append("stock", formData.stock);
+      formDataToSend.append("user_id", userId);
+      formDataToSend.append("user_name", userName);
 
       if (formData.image) {
         formDataToSend.append("image", formData.image);
@@ -115,6 +147,8 @@ const AdminItemList = () => {
       formDataToSend.append("details", formData.details);
       formDataToSend.append("price", formData.price);
       formDataToSend.append("stock", formData.stock);
+      formDataToSend.append("user_id", userId);
+      formDataToSend.append("user_name", userName);
 
       if (formData.image) {
         formDataToSend.append("image", formData.image);
@@ -150,8 +184,8 @@ const AdminItemList = () => {
       try {
         setIsLoading(true);
         await axios.delete(
-          `http://localhost/apii/components/itemlist.php?id=${id}`
-        );
+        `http://localhost/apii/components/itemlist.php?id=${id}&user_id=${userId}&user_name=${encodeURIComponent(userName)}`
+      );
         fetchItems();
         toast.success("Item deleted successfully 🗑️");
       } catch (error) {

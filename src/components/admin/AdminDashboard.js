@@ -42,6 +42,8 @@ const AdminDashboard = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [userId, setUserId] = useState(null);
     const [isValidatingAdmin, setIsValidatingAdmin] = useState(true);
+    const [recentActivities, setRecentActivities] = useState([]);
+    const [activitiesLoading, setActivitiesLoading] = useState(false);
 
     const [dashboardStats, setDashboardStats] = useState({
         totalOrders: 0,
@@ -65,10 +67,10 @@ const AdminDashboard = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost/apii/components/getUserId.php', { 
-                email: email 
+            const response = await axios.post('http://localhost/apii/components/getUserId.php', {
+                email: email
             });
-            
+
             if (response.data.success && response.data.isAdmin) {
                 setIsValidatingAdmin(false);
                 return true;
@@ -270,25 +272,25 @@ const AdminDashboard = () => {
     }, []);
 
     const formatTime12Hour = (timeString) => {
-    if (!timeString) return '';
-    
-    // Handle both "HH:MM:SS" and "HH:MM" formats
-    const timeParts = timeString.split(':');
-    let hours = parseInt(timeParts[0], 10);
-    const minutes = timeParts[1];
-    
-    // Determine AM/PM
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    
-    // Convert to 12-hour format
-    hours = hours % 12;
-    hours = hours ? hours : 12; // 0 should be 12
-    
-    // Remove leading zero from hours if present
-    const formattedHours = hours.toString();
-    
-    return `${formattedHours}:${minutes} ${ampm}`;
-};
+        if (!timeString) return '';
+
+        // Handle both "HH:MM:SS" and "HH:MM" formats
+        const timeParts = timeString.split(':');
+        let hours = parseInt(timeParts[0], 10);
+        const minutes = timeParts[1];
+
+        // Determine AM/PM
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+
+        // Convert to 12-hour format
+        hours = hours % 12;
+        hours = hours ? hours : 12; // 0 should be 12
+
+        // Remove leading zero from hours if present
+        const formattedHours = hours.toString();
+
+        return `${formattedHours}:${minutes} ${ampm}`;
+    };
 
     // Main nav items with icons
     const mainNavItems = [
@@ -305,10 +307,78 @@ const AdminDashboard = () => {
     ];
 
     // Sample data for activities
-    const activities = [
-        { id: 1, type: 'Order', description: 'New order processed for Client A', time: '10 mins ago' },
-        { id: 2, type: 'Message', description: 'New message received from Client B', time: '20 mins ago' }
-    ];
+    const fetchRecentActivities = async () => {
+        try {
+            setActivitiesLoading(true);
+            const response = await axios.get(
+                'http://localhost/apii/components/fetchRecentActivities.php?limit=5'
+            );
+
+            if (response.data.success) {
+                setRecentActivities(response.data.data);
+            } else {
+                console.error('Failed to fetch recent activities:', response.data.error);
+            }
+        } catch (error) {
+            console.error('Error fetching recent activities:', error);
+        } finally {
+            setActivitiesLoading(false);
+        }
+    };
+
+    // Add this useEffect to fetch activities when component loads
+    useEffect(() => {
+        if (!isValidatingAdmin && email) {
+            fetchRecentActivities();
+            // Set up polling every 30 seconds to refresh activities
+            const intervalId = setInterval(fetchRecentActivities, 30 * 1000);
+            return () => clearInterval(intervalId);
+        }
+    }, [email, isValidatingAdmin]);
+
+    // Function to get activity icon based on type
+    const getActivityIcon = (type) => {
+        switch (type) {
+            case 'Order':
+                return <ShoppingCart size={16} className="text-indigo-600" />;
+            case 'Message':
+                return <MessageSquare size={16} className="text-blue-600" />;
+            case 'Client':
+                return <Users size={16} className="text-green-600" />;
+            case 'Item':
+                return <Edit size={16} className="text-purple-600" />;
+            case 'Appointment':
+                return <Calendar size={16} className="text-orange-600" />;
+            case 'Payment':
+                return <Activity size={16} className="text-emerald-600" />;
+            case 'System':
+                return <Settings size={16} className="text-gray-600" />;
+            default:
+                return <Activity size={16} className="text-gray-600" />;
+        }
+    };
+
+    // Function to get activity color based on type
+    const getActivityColor = (type) => {
+        switch (type) {
+            case 'Order':
+                return 'bg-indigo-50 border-indigo-200';
+            case 'Message':
+                return 'bg-blue-50 border-blue-200';
+            case 'Client':
+                return 'bg-green-50 border-green-200';
+            case 'Item':
+                return 'bg-purple-50 border-purple-200';
+            case 'Appointment':
+                return 'bg-orange-50 border-orange-200';
+            case 'Payment':
+                return 'bg-emerald-50 border-emerald-200';
+            case 'System':
+                return 'bg-gray-50 border-gray-200';
+            default:
+                return 'bg-gray-50 border-gray-200';
+        }
+    };
 
     if (!isLoggedIn && !isValidatingAdmin) {
         return (
@@ -341,9 +411,9 @@ const AdminDashboard = () => {
             {notification && (
                 <div className="fixed top-4 right-4 z-50 animate-fade-in">
                     <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${notification.type === 'success' ? 'bg-green-500 text-white' :
-                            notification.type === 'error' ? 'bg-red-500 text-white' :
-                                notification.type === 'warning' ? 'bg-yellow-500 text-white' :
-                                    'bg-blue-500 text-white'
+                        notification.type === 'error' ? 'bg-red-500 text-white' :
+                            notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+                                'bg-blue-500 text-white'
                         }`}>
                         {notification.type === 'success' && (
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -585,7 +655,6 @@ const AdminDashboard = () => {
 
                             {/* Main Content Grid */}
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                {/* User Profile Card */}
                                 <div className="bg-white rounded-lg shadow-sm p-6">
                                     <div className="flex flex-col items-center mb-6">
                                         <div className="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
@@ -607,32 +676,71 @@ const AdminDashboard = () => {
                                         </div>
                                     </div>
 
-                                    {/* Recent Activities */}
                                     <div>
                                         <h3 className="font-medium text-gray-800 mb-4 flex items-center">
                                             <Activity size={18} className="mr-2" />
                                             Recent Activities
+                                            {activitiesLoading && (
+                                                <div className="ml-2 animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
+                                            )}
                                         </h3>
-                                        <div className="space-y-3">
-                                            {activities.map((activity) => (
-                                                <div
-                                                    key={activity.id}
-                                                    className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                                                >
-                                                    <div className="flex justify-between items-start">
-                                                        <h4 className="font-medium text-gray-800 text-sm">
-                                                            {activity.type}
-                                                        </h4>
-                                                        <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full">
-                                                            {activity.time}
-                                                        </span>
+                                        <div className="space-y-3 ">
+                                            {recentActivities.length > 0 ? (
+                                                recentActivities.map((activity) => (
+                                                    <div
+                                                        key={activity.id}
+                                                        className={`p-3 rounded-lg border hover:shadow-sm transition-all duration-200 ${getActivityColor(activity.type)}`}
+                                                    >
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex items-start space-x-3">
+                                                                <div className="flex-shrink-0 mt-1">
+                                                                    {getActivityIcon(activity.type)}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center space-x-2 mb-1">
+                                                                        <h4 className="font-medium text-gray-800 text-sm">
+                                                                            {activity.type}
+                                                                        </h4>
+                                                                        {activity.user_name && (
+                                                                            <span className="text-xs text-gray-500">
+                                                                                by {activity.user_name}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <p className="text-gray-600 text-sm leading-relaxed">
+                                                                        {activity.description}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-xs bg-white bg-opacity-80 text-gray-700 px-2 py-1 rounded-full whitespace-nowrap ml-2">
+                                                                {activity.time}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <p className="text-gray-600 mt-1 text-sm">
-                                                        {activity.description}
-                                                    </p>
+                                                ))
+                                            ) : (
+                                                <div className="p-4 text-center text-gray-500">
+                                                    {activitiesLoading ? (
+                                                        <div className="flex items-center justify-center">
+                                                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mr-2"></div>
+                                                            Loading activities...
+                                                        </div>
+                                                    ) : (
+                                                        "No recent activities found"
+                                                    )}
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
+                                        {recentActivities.length > 0 && (
+                                            <div className="mt-4 text-center">
+                                                <button
+                                                    className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                                                    onClick={fetchRecentActivities}
+                                                >
+                                                    Refresh Activities
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 

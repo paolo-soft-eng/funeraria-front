@@ -31,7 +31,27 @@ const AdminMessages = () => {
   const { email } = useContext(EmailContext);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);
+  const [userName, setUserName] = useState("");
   const navigate = useNavigate();
+
+  // Activity logging function
+  const addActivity = async (activityType, description, relatedId = null) => {
+    try {
+      await axios.post('http://localhost/apii/components/addActivity.php', {
+        activity_type: activityType,
+        description: description,
+        related_id: relatedId,
+        user_id: userId,
+        user_name: userName
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error('Error logging activity:', error);
+    }
+  };
 
   // Add login validation
   useEffect(() => {
@@ -42,6 +62,7 @@ const AdminMessages = () => {
         .then(data => {
           if (data.userId) {
             setUserId(data.userId);
+            setUserName(data.userName || 'Admin'); // Set the actual username
             setIsLoggedIn(true);
           } else {
             setIsLoggedIn(false);
@@ -316,6 +337,13 @@ const AdminMessages = () => {
         setSelectedFile(null);
         setPreviewUrl(null);
 
+        // Log activity for image message
+        addActivity(
+          'Message',
+          `Sent image message to client '${selectedUser.name}'`,
+          selectedUser.user_id
+        );
+
         // Send message via WebSocket
         if (socket && isConnected) {
           socket.send(JSON.stringify({
@@ -360,6 +388,13 @@ const AdminMessages = () => {
         fetchUserMessages(selectedUser.user_id);
         setReplyText('');
 
+        // Log activity for text message
+        addActivity(
+          'Message',
+          `Sent message to client '${selectedUser.name}': "${replyText.substring(0, 50)}${replyText.length > 50 ? '...' : ''}"`,
+          selectedUser.user_id
+        );
+
         // Send message via WebSocket
         if (socket && isConnected) {
           socket.send(JSON.stringify({
@@ -384,11 +419,21 @@ const AdminMessages = () => {
     }
 
     try {
+      const messageToDelete = messages.find(msg => msg.id === messageId);
       const response = await axios.delete(`${API_URL}/${messageId}`);
 
       if (response.data.success) {
         // Remove the deleted message from the messages array
         setMessages(prev => prev.filter(msg => msg.id !== messageId));
+        
+        // Log activity for message deletion
+        if (messageToDelete) {
+          addActivity(
+            'Message',
+            `Deleted message in conversation with '${selectedUser.name}': "${messageToDelete.message?.substring(0, 50) || 'Image message'}${messageToDelete.message?.length > 50 ? '...' : ''}"`,
+            selectedUser.user_id
+          );
+        }
       }
     } catch (err) {
       console.error('Error deleting message:', err);

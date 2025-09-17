@@ -3,7 +3,7 @@ import axios from 'axios';
 import AdminLayout from './AdminLayout';
 import { EmailContext } from '../EmailContext';
 import { useNavigate } from 'react-router-dom';
-import { FaTable, FaThLarge } from 'react-icons/fa';
+import { FaTable, FaThLarge, FaUser } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -17,6 +17,7 @@ const AdminClients = () => {
   const [viewMode, setViewMode] = useState('table');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const navigate = useNavigate();
+  const [userName, setUserName] = useState("");
 
   // Mobile detection
   useEffect(() => {
@@ -32,27 +33,32 @@ const AdminClients = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Login validation
   useEffect(() => {
     if (email) {
-      fetch(`http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`)
-        .then(res => res.json())
-        .then(data => {
+      fetch(
+        `http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(
+          email
+        )}`
+      )
+        .then((response) => response.json())
+        .then((data) => {
           if (data.userId) {
             setUserId(data.userId);
+            setUserName(data.userName || 'Admin'); // Set the actual username
             setIsLoggedIn(true);
           } else {
             setIsLoggedIn(false);
-            navigate('/auth');
+            navigate("/auth");
           }
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error("Error fetching user ID:", error);
           setIsLoggedIn(false);
-          navigate('/auth');
+          navigate("/auth");
         });
     } else {
       setIsLoggedIn(false);
-      navigate('/auth');
+      navigate("/auth");
     }
   }, [email, navigate]);
 
@@ -88,7 +94,13 @@ const AdminClients = () => {
 
     axios.post("http://localhost/apii/components/fetchClients.php", {
       id: selectedClient.id,
-      action: selectedClient.action
+      action: selectedClient.action,
+      userId: userId,
+      userName: userName
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     })
       .then(res => {
         if (res.data.success) {
@@ -108,7 +120,8 @@ const AdminClients = () => {
           toast.error("Failed to update client ❌");
         }
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("Update error:", error);
         toast.error("Network error while updating client 🚨");
       });
   };
@@ -116,6 +129,34 @@ const AdminClients = () => {
   const cancelAction = () => {
     setShowActionModal(false);
     setSelectedClient(null);
+  };
+
+  // Component for profile picture display
+  const ProfilePicture = ({ client, size = 'small' }) => {
+    const [imgError, setImgError] = useState(false);
+    
+    const sizeClasses = {
+      small: 'w-8 h-8',
+      medium: 'w-12 h-12',
+      large: 'w-16 h-16'
+    };
+
+    if (imgError || !client.profile_picture) {
+      return (
+        <div className={`${sizeClasses[size]} bg-gray-300 rounded-full flex items-center justify-center`}>
+          <FaUser className="text-gray-500 text-xs" />
+        </div>
+      );
+    }
+
+    return (
+      <img
+        src={client.profile_picture}
+        alt={`${client.username}'s profile`}
+        className={`${sizeClasses[size]} rounded-full object-cover`}
+        onError={() => setImgError(true)}
+      />
+    );
   };
 
   if (!isLoggedIn) {
@@ -167,6 +208,7 @@ const AdminClients = () => {
               <table className="min-w-full text-sm text-left border">
                 <thead className="bg-gray-200 text-gray-600 text-xs uppercase">
                   <tr>
+                    <th className="px-4 py-2">Profile</th>
                     <th className="px-4 py-2">ID</th>
                     <th className="px-4 py-2">Username</th>
                     <th className="px-4 py-2">Name</th>
@@ -182,6 +224,9 @@ const AdminClients = () => {
                 <tbody>
                   {clients.map(client => (
                     <tr key={client.id} className="border-b">
+                      <td className="px-4 py-2">
+                        <ProfilePicture client={client} size="small" />
+                      </td>
                       <td className="px-4 py-2">{client.id}</td>
                       <td className="px-4 py-2">{client.username}</td>
                       <td className="px-4 py-2">{client.first_name} {client.last_name}</td>
@@ -222,8 +267,13 @@ const AdminClients = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {clients.map(client => (
                 <div key={client.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                  <h3 className="text-lg font-semibold">{client.username}</h3>
-                  <p className="text-sm text-gray-500">ID: {client.id}</p>
+                  <div className="flex items-center space-x-3 mb-4">
+                    <ProfilePicture client={client} size="large" />
+                    <div>
+                      <h3 className="text-lg font-semibold">{client.username}</h3>
+                      <p className="text-sm text-gray-500">ID: {client.id}</p>
+                    </div>
+                  </div>
                   <div className="mt-3 space-y-2 text-sm text-gray-600">
                     <p><span className="font-medium">Name:</span> {client.first_name} {client.last_name}</p>
                     <p><span className="font-medium">Email:</span> {client.email}</p>
@@ -232,7 +282,10 @@ const AdminClients = () => {
                     <p><span className="font-medium">Emergency:</span> {client.emergency_contact}</p>
                     <p><span className="font-medium">Created:</span> {new Date(client.created_at).toLocaleString()}</p>
                   </div>
-                  <div className="mt-4 flex justify-end">
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className={`px-2 py-1 rounded text-white text-l ${client.status === "disabled" ? "bg-red-500" : "bg-green-500"}`}>
+                      {client.status}
+                    </span>
                     {client.status === "disabled" ? (
                       <button
                         className="bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700 transition"
@@ -266,9 +319,15 @@ const AdminClients = () => {
       {showActionModal && selectedClient && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <h2 className="text-lg font-bold mb-4">
-              {selectedClient.action === "disable" ? "Disable Client" : "Enable Client"}
-            </h2>
+            <div className="flex items-center space-x-3 mb-4">
+              <ProfilePicture client={selectedClient} size="medium" />
+              <div>
+                <h2 className="text-lg font-bold">
+                  {selectedClient.action === "disable" ? "Disable Client" : "Enable Client"}
+                </h2>
+                <p className="text-sm text-gray-600">{selectedClient.username}</p>
+              </div>
+            </div>
             <p className="mb-6 text-sm">
               Are you sure you want to{" "}
               <span className="font-bold">{selectedClient.action}</span>{" "}
