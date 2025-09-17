@@ -726,12 +726,6 @@ const ClientCart = () => {
             return;
         }
 
-        // Debug logging
-        console.log('Order data:', order);
-        console.log('Service price range:', order.service_price_range);
-        console.log('Caskets:', order.caskets);
-        console.log('Flowers:', order.flowers);
-
         // Calculate total amount
         let totalAmount = 0;
 
@@ -740,20 +734,6 @@ const ClientCart = () => {
             const basePrice = parseFloat(order.service_price_range);
             console.log('Base price:', basePrice);
             totalAmount += basePrice;
-        }
-
-        // Add casket prices
-        if (order.caskets && order.caskets.length > 0) {
-            const casketTotal = order.caskets.reduce((sum, casket) => sum + parseFloat(casket.price), 0);
-            console.log('Casket total:', casketTotal);
-            totalAmount += casketTotal;
-        }
-
-        // Add flower prices
-        if (order.flowers && order.flowers.length > 0) {
-            const flowerTotal = order.flowers.reduce((sum, flower) => sum + parseFloat(flower.price), 0);
-            console.log('Flower total:', flowerTotal);
-            totalAmount += flowerTotal;
         }
 
         console.log('Final total amount:', totalAmount);
@@ -975,7 +955,7 @@ const ClientCart = () => {
     return (
         <div className="flex flex-col min-h-screen">
             <div className="container mx-auto p-4 flex-grow">
-                <h1 className="text-3xl font-bold text-center mb-6 text-white-300">Gomez Funeraria Payment</h1>
+                <h1 className="text-3xl font-bold text-center mb-6 text-white-300">Funeraria Gomez Payment</h1>
 
                 {error && (
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow">
@@ -1367,21 +1347,6 @@ const ClientCart = () => {
                                                 </div>
                                             )}
 
-                                            {/* Add Flowers Section */}
-                                            {order.flowers && order.flowers.length > 0 && (
-                                                <div className="mt-4">
-                                                    <h3 className="font-medium text-gray-900">Selected Flowers</h3>
-                                                    <div className="mt-2 space-y-2">
-                                                        {order.flowers.map((flower, index) => (
-                                                            <div key={index} className="flex justify-between items-center text-sm">
-                                                                <span className="text-gray-600">{flower.name}</span>
-                                                                <span className="font-medium text-gray-900">₱{parseFloat(flower.price).toFixed(2)}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
                                             {/* Calculate and Display Total */}
                                             {order.caskets && order.flowers && (
                                                 <div className="mt-4 pt-4 border-t">
@@ -1389,9 +1354,7 @@ const ClientCart = () => {
                                                         <span className="font-medium text-gray-900">Total Amount:</span>
                                                         <span className="font-bold text-lg text-gray-900">
                                                             ₱{(
-                                                                parseFloat(order.service_price_range || 0) +
-                                                                (order.caskets ? order.caskets.reduce((sum, casket) => sum + parseFloat(casket.price), 0) : 0) +
-                                                                (order.flowers ? order.flowers.reduce((sum, flower) => sum + parseFloat(flower.price), 0) : 0)
+                                                                parseFloat(order.service_price_range || 0)
                                                             ).toFixed(2)}
                                                         </span>
                                                     </div>

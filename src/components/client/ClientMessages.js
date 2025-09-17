@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Info, Phone, Video, Image, Camera, Mic, Smile, Send, Copy, Trash, CornerUpLeft, Menu, X, ZoomIn } from 'lucide-react';
+import { Info, Phone, Video, Image, Camera, Send, Copy, Trash, CornerUpLeft, Menu, X, ZoomIn } from 'lucide-react';
 import { EmailContext } from '../EmailContext';
 
 export default function ClientMessages() {
@@ -145,14 +145,8 @@ const fetchMessages = async () => {
     }
 
     const data = await response.json();
-    console.log('Messages response:', data); // Debug log
-    // In your fetchMessages function, add:
-console.log('Current user ID:', currentUserId);
-console.log('Selected admin ID:', selectedAdmin?.id);
-console.log('API URL:', apiUrl);
-
+    console.log('Messages response:', data);
     if (data.status === 'success') {
-      // Clear processedMessageIds when loading a new conversation
       processedMessageIds.clear();
 
       // Ensure each message has a unique ID
@@ -922,10 +916,20 @@ useEffect(() => {
                   messages.map((msg) => (
                     <div key={`msg-${msg.id}`} className={`flex ${msg.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
                       {msg.sender !== 'me' && (
-                        <div className="h-8 w-8 bg-gray-300 rounded-full mr-2 flex-shrink-0 self-end"></div>
+                        <div className="h-8 w-8 bg-gray-300 rounded-full mr-3 flex-shrink-0 self-end overflow-hidden">
+                          {selectedAdmin.image_path ? (
+                            <img
+                              src={`http://${window.location.hostname}/apii/components/${selectedAdmin.image_path}`}
+                              alt={selectedAdmin.username}
+                              className="h-8 w-8 object-cover"
+                            />
+                          ) : (
+                            <div className="h-8 w-8 bg-gray-300 rounded-full"></div>
+                          )}
+                        </div>
                       )}
                       <div className={`max-w-xs md:max-w-md p-3 rounded-lg relative ${msg.sender === 'me'
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-blue-500 text-white'
                         : 'bg-gray-200 text-black'
                         }`}
                         onClick={() => handleMessageClick(msg)}
@@ -1040,18 +1044,6 @@ useEffect(() => {
                 </button>
               ) : (
                 <>
-                  <button
-                    className="p-2 rounded-full hover:bg-gray-200"
-                    disabled={!selectedAdmin}
-                  >
-                    <Mic size={24} className={selectedAdmin ? "text-blue-800" : "text-gray-400"} />
-                  </button>
-                  <button
-                    className="p-2 rounded-full hover:bg-gray-200"
-                    disabled={!selectedAdmin}
-                  >
-                    <Smile size={24} className={selectedAdmin ? "text-blue-800" : "text-gray-400"} />
-                  </button>
                 </>
               )}
             </div>

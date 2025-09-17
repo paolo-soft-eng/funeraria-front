@@ -295,7 +295,7 @@ const ClientHome = () => {
             
             {/* Welcome Section */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome, {username||firstName || email}</h2>
+                <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome, {username || firstName}</h2>
                 <p className="text-gray-600">We're here to help you through this difficult time. Below you'll find all your funeral arrangements and resources.</p>
             </div>
             
