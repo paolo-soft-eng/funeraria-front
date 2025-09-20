@@ -1,10 +1,10 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { EmailProvider } from './components/EmailContext';
+import { EmailProvider } from './components/utils/EmailContext';
 import LoadingScreen from './components/LoadingScreen';
 import LoadingWrapper from './components/LoadingWrapper';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/utils/ProtectedRoute';
 
 const Auth = lazy(() => import('./Auth'));
 const ClientDashboard = lazy(() => import('./components/client/ClientDashboard'));
@@ -31,7 +31,7 @@ const SuperAdminReport = lazy(() => import('./components/superadmin/SuperAdminRe
 const SuperAdminPerformance = lazy(() => import('./components/superadmin/SuperAdminPerformance'));
 const ErrorPage = lazy(() => import('./components/ErrorPage'));
 const ForgotPassword = lazy(() => import('./components/utils/ForgotPassword'));
-const ResetPassword = lazy(() => import('./components/ResetPassword'));
+const ResetPassword = lazy(() => import('./components/utils/ResetPassword'));
 
 
 const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
