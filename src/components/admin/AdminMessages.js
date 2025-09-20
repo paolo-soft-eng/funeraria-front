@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import axios from 'axios';
 import { MessageSquare, Trash2, Send, ArrowLeft, X, ZoomIn, Image, Camera } from 'lucide-react';
 import AdminLayout from './AdminLayout';
-import { EmailContext } from '../EmailContext';
+import { EmailContext } from '../utils/EmailContext';
 import { useNavigate } from 'react-router-dom';
 
 const API_URL = 'http://localhost/apii/components/admin_messages.php';

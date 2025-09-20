@@ -22,7 +22,7 @@ import {
   FileText
 } from 'lucide-react';
 import axios from 'axios';
-import { EmailContext } from '../EmailContext';
+import { EmailContext } from '../utils/EmailContext';
 import LoadingWrapper from '../LoadingWrapper';
 
 const AdminLayout = ({ children, currentPage }) => {

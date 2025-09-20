@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { fetchServices, placeOrder, fetchCasketsByServiceId, API_BASE_URL, fetchChapelsByServiceId } from '../Api';
-import { EmailContext } from '../EmailContext';
+import { EmailContext } from '../utils/EmailContext';
 
 const ClientServices = () => {
   const [services, setServices] = useState([]);

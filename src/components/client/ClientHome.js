@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import { Calendar, FileText, Users, MessageSquare, Clock, MapPin, ChevronRight, X } from 'lucide-react';
-import {EmailContext} from '../EmailContext'
+import {EmailContext} from '../utils/EmailContext'
 import axios from 'axios';
 
 const ClientHome = () => {

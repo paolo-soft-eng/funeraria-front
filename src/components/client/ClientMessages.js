@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Info, Phone, Video, Image, Camera, Send, Copy, Trash, CornerUpLeft, Menu, X, ZoomIn } from 'lucide-react';
-import { EmailContext } from '../EmailContext';
+import { EmailContext } from '../utils/EmailContext';
 
 export default function ClientMessages() {
   const [message, setMessage] = useState('');

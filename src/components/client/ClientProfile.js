@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { EmailContext } from '../EmailContext';
+import { EmailContext } from '../utils/EmailContext';
 import {
   User,
   Lock,

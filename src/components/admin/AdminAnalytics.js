@@ -46,8 +46,7 @@ const AdminAnalytics = () => {
     if (!services || services.length === 0) {
       return "No service";
     }
-
-    // Find the service/item with the highest percentage
+    
     const mostPopular = services.reduce((prev, current) => {
       const prevValue = Number(prev.value) || 0;
       const currentValue = Number(current.value) || 0;
@@ -92,19 +91,15 @@ const AdminAnalytics = () => {
     };
   };
 
-  // Fetch initial data and service types
   useEffect(() => {
     fetchAnalyticsData();
   }, []);
 
-  // Refetch when filters change
   useEffect(() => {
-    if (!loading) { // Avoid double fetch on initial load
+    if (!loading) { 
       fetchAnalyticsData();
     }
   }, [filters]);
-
-  // Add this useEffect to fetch service types separately
   useEffect(() => {
     const fetchServiceTypes = async () => {
       try {

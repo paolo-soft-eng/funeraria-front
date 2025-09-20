@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 import AdminLayout from './AdminLayout';
-import { EmailContext } from '../EmailContext';
+import { EmailContext } from '../utils/EmailContext';
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('profile');

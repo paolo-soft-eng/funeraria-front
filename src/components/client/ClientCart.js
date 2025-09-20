@@ -6,7 +6,7 @@ import {
     PaymentElement
 } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { EmailContext } from '../EmailContext';
+import { EmailContext } from '../utils/EmailContext';
 const stripePromise = loadStripe('pk_test_51REVEcRLZ2HeS19hcy1hxk9AHQNFv1kHPVcJzVIQEy7ATFJDazz34LLjnlJlsZjsHutNmyvmd44DT50GJ2vFV1Ks00o1LzMnAv');
 const CheckoutForm = ({ totalAmount, cartItems, userId, onSuccess, onError, orderId }) => {
     const stripe = useStripe();

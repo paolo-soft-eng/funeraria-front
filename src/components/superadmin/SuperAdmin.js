@@ -368,13 +368,6 @@ const SuperAdmin = () => {
                   <FileText size={18} className="mr-2" />
                   View Reports
                 </button>
-                <button
-                  onClick={() => navigate('/super-admin/performance')}
-                  className="bg-purple-500 hover:bg-purple-600 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200"
-                >
-                  <TrendingUp size={18} className="mr-2" />
-                  Performance Ratings
-                </button>
                 <button className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200" onClick={handleLogout}>Logout</button>
               </div>
             </div>

@@ -20,7 +20,7 @@ import {
 
 import LoadingWrapper from '../LoadingWrapper';
 
-import { EmailContext } from '../EmailContext';
+import { EmailContext } from '../utils/EmailContext';
 
 const ClientDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);

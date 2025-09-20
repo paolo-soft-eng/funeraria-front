@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import AdminLayout from "./AdminLayout"; // Import the layout component
-import { EmailContext } from "../EmailContext";
+import { EmailContext } from "../utils/EmailContext";
 import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -23,6 +23,11 @@ const AdminItemList = () => {
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState("");
   const navigate = useNavigate();
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
   
   useEffect(() => {
   if (email) {
@@ -83,22 +88,29 @@ const AdminItemList = () => {
 
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [currentPage, itemsPerPage]);
 
   const fetchItems = async () => {
-    try {
-      setIsLoading(true);
-      const response = await axios.get(
-        "http://localhost/apii/components/itemlist.php"
-      );
+  try {
+    setIsLoading(true);
+    const response = await axios.get(
+      `http://localhost/apii/components/itemlist.php?page=${currentPage}&limit=${itemsPerPage}`
+    );
+
+    if (response.data.items) {
+      setItems(response.data.items);
+      setTotalItems(response.data.total || response.data.items.length);
+    } else {
       setItems(response.data);
-    } catch (error) {
-      toast.error("Error fetching items ❌");
-      console.error("Error fetching items:", error);
-    } finally {
-      setIsLoading(false);
+      setTotalItems(response.data.length);
     }
-  };
+  } catch (error) {
+    toast.error("Error fetching items ❌");
+    console.error("Error fetching items:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const addItem = async () => {
     try {
@@ -251,6 +263,50 @@ const AdminItemList = () => {
     } else {
       setImagePreview(null);
     }
+  };
+
+  // Pagination functions
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  const getVisiblePageNumbers = () => {
+    const delta = 2;
+    const range = [];
+    const rangeWithDots = [];
+
+    for (
+      let i = Math.max(2, currentPage - delta);
+      i <= Math.min(totalPages - 1, currentPage + delta);
+      i++
+    ) {
+      range.push(i);
+    }
+
+    if (currentPage - delta > 2) {
+      rangeWithDots.push(1, '...');
+    } else {
+      rangeWithDots.push(1);
+    }
+
+    rangeWithDots.push(...range);
+
+    if (currentPage + delta < totalPages - 1) {
+      rangeWithDots.push('...', totalPages);
+    } else if (totalPages > 1) {
+      rangeWithDots.push(totalPages);
+    }
+
+    return rangeWithDots;
   };
 
   if (!isLoggedIn) {
@@ -430,7 +486,34 @@ const AdminItemList = () => {
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="p-4 md:p-6">
-            <h2 className="text-xl font-semibold mb-4">Current Items</h2>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+              <h2 className="text-xl font-semibold">Current Items</h2>
+              
+              {/* Items per page selector */}
+              <div className="flex items-center gap-2">
+                <label htmlFor="itemsPerPage" className="text-sm text-gray-600">
+                  Items per page:
+                </label>
+                <select
+                  id="itemsPerPage"
+                  value={itemsPerPage}
+                  onChange={handleItemsPerPageChange}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Items count display */}
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {items.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to{' '}
+              {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} items
+            </div>
+
             {isLoading && <p className="text-gray-500">Loading items...</p>}
             {!isLoading && items.length === 0 && (
               <p className="text-gray-500">No items found</p>
@@ -438,79 +521,139 @@ const AdminItemList = () => {
           </div>
 
           {items.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                      Image
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                      Name
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                      Details
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                      Price
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                      Stock
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {items.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-800">
-                        {item.image_path ? (
-                          <img
-                            src={`http://localhost/apii/components/${item.image_path}`}
-                            alt={item.name}
-                            className="w-16 h-16 object-cover rounded-md"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded-md">
-                            <span className="text-gray-400 text-xs">
-                              No image
-                            </span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-800">
-                        {item.name}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {item.details}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-800">
-                        ₱{parseFloat(item.price).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-800">
-                        {item.stock}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right">
-                        <button
-                          onClick={() => editItem(item)}
-                          className="mr-2 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteItem(item.id)}
-                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
-                        >
-                          Delete
-                        </button>
-                      </td>
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                        Image
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                        Name
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                        Details
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                        Price
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                        Stock
+                      </th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500">
+                        Actions
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {items.map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-800">
+                          {item.image_path ? (
+                            <img
+                              src={`http://localhost/apii/components/${item.image_path}`}
+                              alt={item.name}
+                              className="w-16 h-16 object-cover rounded-md"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 bg-gray-200 flex items-center justify-center rounded-md">
+                              <span className="text-gray-400 text-xs">
+                                No image
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-800">
+                          {item.name}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {item.details}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-800">
+                          ₱{parseFloat(item.price).toFixed(2)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-800">
+                          {item.stock}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-right">
+                          <button
+                            onClick={() => editItem(item)}
+                            className="mr-2 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteItem(item.id)}
+                            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    {/* Previous button */}
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      >
+                        Previous
+                      </button>
+                    </div>
+
+                    {/* Page numbers */}
+                    <div className="flex items-center space-x-1">
+                      {getVisiblePageNumbers().map((pageNum, index) => (
+                        <React.Fragment key={index}>
+                          {pageNum === '...' ? (
+                            <span className="px-3 py-2 text-sm text-gray-500">
+                              ...
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handlePageChange(pageNum)}
+                              className={`px-3 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${
+                                currentPage === pageNum
+                                  ? 'bg-gray-600 text-white'
+                                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </div>
+
+                    {/* Next button */}
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Page info */}
+                  <div className="mt-2 text-center text-sm text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

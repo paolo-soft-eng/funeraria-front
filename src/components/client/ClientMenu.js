@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext, useRef } from 'react';
-import { EmailContext } from '../EmailContext';
+import { EmailContext } from '../utils/EmailContext';
 import { Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
