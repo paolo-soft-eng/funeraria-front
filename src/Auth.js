@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { EmailContext } from './components/EmailContext';
+import { EmailContext } from './components/utils/EmailContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
