@@ -655,7 +655,7 @@ const AdminDashboard = () => {
 
                             {/* Main Content Grid */}
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <div className="bg-white rounded-lg shadow-sm p-4">
+                                <div className="bg-white rounded-lg shadow-sm p-6">
                                     <div className="flex flex-col items-center mb-6">
                                         <div className="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
                                             {userData && userData.profileImage ? (
