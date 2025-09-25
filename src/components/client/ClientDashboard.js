@@ -18,7 +18,6 @@ import {
   Settings2
 } from 'lucide-react';
 
-import LoadingWrapper from '../LoadingWrapper';
 
 import { EmailContext } from '../utils/EmailContext';
 
