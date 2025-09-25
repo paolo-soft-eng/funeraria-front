@@ -1,123 +1,28 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { Calendar, FileText, Users, MessageSquare, Clock, MapPin, ChevronRight, X } from 'lucide-react';
-import {EmailContext} from '../utils/EmailContext'
-import axios from 'axios';
+import { EmailContext } from '../utils/EmailContext';
+import { useUser } from '../hooks/client/useUser';
+import { useAppointmentsAndOrders } from '../hooks/client/useOrdersAndAppointments';
+import { useProfileImage } from '../hooks/client/useProfileImage';
 
 const ClientHome = () => {
-    const {email} = useContext(EmailContext);
-    const [upcomingAppointments, setUpcomingAppointments] = useState([]);
-    const [recentOrders, setRecentOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [firstName, setFirstName] = useState('');
-    const [appointmentFilter, setAppointmentFilter] = useState('all'); // 'all', 'upcoming', 'past'
-    const [orderFilter, setOrderFilter] = useState('all'); // 'all', 'pending', 'completed'
+    const { email } = useContext(EmailContext);
+    
+    // Custom hooks
+    const { userId, username, setUsername, isLoggedIn, error: userError } = useUser(email);
+    const { firstName, upcomingAppointments, recentOrders, loading, error: dataError } = useAppointmentsAndOrders(email);
+    useProfileImage(email, setUsername);
+    
+    // Local state
+    const [appointmentFilter, setAppointmentFilter] = useState('all');
+    const [orderFilter, setOrderFilter] = useState('all');
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [userId, setUserId] = useState(null);
-    const [username, setUsername] = useState('');
-    const [profileImage, setProfileImage] = useState(null);
     const [selectedResource, setSelectedResource] = useState(null);
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
 
-    // Add login validation
-    useEffect(() => {
-        if (email) {
-            // Fetch user ID based on email
-            fetch(`http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.userId) {
-                        setUserId(data.userId);
-                        setIsLoggedIn(true);
-                    } else {
-                        setIsLoggedIn(false);
-                        setError('Please log in to access your dashboard');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching user ID:', error);
-                    setIsLoggedIn(false);
-                    setError('Failed to verify login status');
-                });
-        } else {
-            setIsLoggedIn(false);
-            setError('Please log in to access your dashboard');
-        }
-    }, [email]);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await fetch('http://localhost/apii/components/get_upcoming.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ email })
-                });
-
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                setFirstName(data.firstName);
-
-                // Transform appointments data
-                const transformedAppointments = data.appointments.map(apt => ({
-                    id: apt.id,
-                    date: apt.appointment_date_formatted,
-                    time: apt.appointment_time,
-                    type: apt.purpose,
-                    location: 'Main Office', // Default location
-                    status: apt.status,
-                    datetimeRaw: apt.appointment_datetime_raw 
-                }));
-
-                // Transform orders data
-                const transformedOrders = data.orders.map(order => ({
-                    id: order.id,
-                    service: order.services_id ? order.service_name || 'Funeral Service' : 'Items Order',
-                    date: order.delivery_date,
-                    status: order.status.charAt(0).toUpperCase() + order.status.slice(1),
-                    amount: `₱${order.total_amount}`,
-                    payment_status: order.payment_status,
-                    payment_method: order.payment_method,
-                    address: order.address,
-                    items: order.items ? order.items.map(item => ({
-                        id: item.id,
-                        name: item.item_name,
-                        quantity: item.quantity,
-                        price: item.item_price
-                    })) : [],
-                    service_details: order.services_id ? {
-                        name: order.service_name,
-                        description: order.service_description,
-                        inclusions: order.service_inclusions,
-                        price_range: order.service_price_range
-                    } : null
-                }));
-
-                setUpcomingAppointments(transformedAppointments);
-                setRecentOrders(transformedOrders);
-                setLoading(false);
-            } catch (err) {
-                setError(err.message);
-                setLoading(false);
-            }
-        };
-
-        if (email) {
-            fetchData();
-        }
-    }, [email]);
+    // Combine errors
+    const error = userError || dataError;
 
     // Filter appointments based on status and date
     const filteredAppointments = upcomingAppointments.filter(apt => {
@@ -227,27 +132,6 @@ const ClientHome = () => {
         setIsResourceModalOpen(false);
         setSelectedResource(null);
     };
-
-    useEffect(() => {
-        const fetchProfileImage = async () => {
-            if (!email) return; // Don't fetch if no email
-            
-            try {
-                const response = await axios.get(`http://localhost/apii/components/client_picture.php?email=${email}`);
-                
-                if (response.data && response.data.success) {
-                    console.log('Username:', response.data.username);
-                    if (response.data.username) {
-                        setUsername(response.data.username);
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching username:', error);
-            }
-        };
-
-        fetchProfileImage();
-    }, [email]);
 
     if (!isLoggedIn) {
         return (
@@ -572,67 +456,67 @@ const ClientHome = () => {
             
             {/* Grief Resources */}
             <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-700 flex items-center">
-                <Users className="mr-2 h-5 w-5 text-purple-500" />
-                Grief Support Resources
-            </h2>
-            <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                View All
-            </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {griefResources.map((resource, index) => (
-                <div
-                    key={index}
-                    className="border border-purple-300 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => handleResourceClick(resource)}
-                >
-                    <div className="flex items-center mb-2">
-                        <MessageSquare className="h-5 w-5 text-purple-400 mr-2" />
-                        <h3 className="font-medium text-gray-800">{resource.title}</h3>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">{resource.type}</p>
-                    <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
-                        Explore Resource
-                    </button>
-                </div>
-            ))}
-        </div>
-    </div>
-
-    {/* Resource Modal */}
-    {isResourceModalOpen && selectedResource && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-semibold text-gray-800 flex items-center">
-                        <MessageSquare className="mr-2 h-5 w-5 text-purple-500" />
-                        {selectedResource.title}
-                    </h3>
-                    <button
-                        onClick={closeResourceModal}
-                        className="text-gray-500 hover:text-gray-700"
-                    >
-                        <X className="h-6 w-6" />
+                    <h2 className="text-xl font-semibold text-gray-700 flex items-center">
+                        <Users className="mr-2 h-5 w-5 text-purple-500" />
+                        Grief Support Resources
+                    </h2>
+                    <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                        View All
                     </button>
                 </div>
-                <div className="space-y-4">
-                    {selectedResource.content}
-                </div>
-                <div className="mt-6 flex justify-end">
-                    <button
-                        onClick={closeResourceModal}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-                    >
-                        Close
-                    </button>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {griefResources.map((resource, index) => (
+                        <div
+                            key={index}
+                            className="border border-purple-300 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                            onClick={() => handleResourceClick(resource)}
+                        >
+                            <div className="flex items-center mb-2">
+                                <MessageSquare className="h-5 w-5 text-purple-400 mr-2" />
+                                <h3 className="font-medium text-gray-800">{resource.title}</h3>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3">{resource.type}</p>
+                            <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                Explore Resource
+                            </button>
+                        </div>
+                    ))}
                 </div>
             </div>
+
+            {/* Resource Modal */}
+            {isResourceModalOpen && selectedResource && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+                                <MessageSquare className="mr-2 h-5 w-5 text-purple-500" />
+                                {selectedResource.title}
+                            </h3>
+                            <button
+                                onClick={closeResourceModal}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            {selectedResource.content}
+                        </div>
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                onClick={closeResourceModal}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-    )}
-</div>
     );
 };
 
