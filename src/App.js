@@ -32,6 +32,8 @@ const SuperAdminPerformance = lazy(() => import('./components/superadmin/SuperAd
 const ErrorPage = lazy(() => import('./components/ErrorPage'));
 const ForgotPassword = lazy(() => import('./components/utils/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/utils/ResetPassword'));
+const PaymentSuccess = lazy(() => import('./components/utils/PaymentSuccess'));
+const PaymentFailed = lazy(() => import('./components/utils/PaymentFailed'));
 
 
 const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
@@ -61,6 +63,16 @@ const App = () => {
               <Route path="/reset-password" element={
                 <LoadingWrapper>
                   <ResetPassword />
+                </LoadingWrapper>
+              } />
+              <Route path="/payment-success" element={
+                <LoadingWrapper>
+                  <PaymentSuccess />
+                </LoadingWrapper>
+              } />
+              <Route path="/payment-failed" element={
+                <LoadingWrapper>
+                  <PaymentFailed />
                 </LoadingWrapper>
               } />
 
