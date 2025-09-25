@@ -1,142 +1,40 @@
-import React, { useEffect, useState, useContext, useRef } from 'react';
+import React, { useContext } from 'react';
 import { EmailContext } from '../utils/EmailContext';
 import { Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
+import { useUser } from '../hooks/client/useUser';
+import { useMenuItems } from '../hooks/client/useMenuItems';
+import { useQuantities } from '../hooks/client/useQuantities';
+import { useIntersectionObserver } from '../hooks/client/useIntersectionObserver';
+import { usePurchase } from '../hooks/client/usePurchase';
 
 const ClientMenu = () => {
-    const [items, setItems] = useState([]);
-    const [quantities, setQuantities] = useState({});
-    const [userId, setUserId] = useState(null);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
     const { email } = useContext(EmailContext);
-    const [loading, setLoading] = useState(true);
-    const itemsRef = useRef([]);
+    
+    // Custom hooks
+    const { userId, isLoggedIn } = useUser(email);
+    const { items, loading, error, updateItemStock } = useMenuItems();
+    const { quantities, handleQuantityChange } = useQuantities(items);
+    const { itemsRef } = useIntersectionObserver(items);
+    const { handleBuy, purchasing } = usePurchase(isLoggedIn, userId, updateItemStock);
 
-    useEffect(() => {
-        if (email) {
-            // Fetch user ID based on email
-            fetch(`http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.userId) {
-                        setUserId(data.userId);
-                        setIsLoggedIn(true);
-                    }
-                })
-                .catch(error => console.error('Error fetching user ID:', error));
-        }
-
-        // Fetch menu items
-        fetch('http://localhost/apii/components/fetchItems.php')
-            .then(response => response.json())
-            .then(data => {
-                setItems(data);
-                // Initialize quantities state with 1 for each item
-                const initialQuantities = data.reduce((acc, item) => {
-                    acc[item.id] = 1;
-                    return acc;
-                }, {});
-                setQuantities(initialQuantities);
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-                setLoading(false);
-            });
-    }, [email]);
-
-    useEffect(() => {
-        // Properly set up refs when items change
-        itemsRef.current = itemsRef.current.slice(0, items.length);
-
-        const options = {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.1
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('animate-section');
-                    entry.target.classList.remove('reverse-animate-section');
-                } else {
-                    entry.target.classList.remove('animate-section');
-                    entry.target.classList.add('reverse-animate-section');
-                }
-            });
-        }, options);
-
-        // Only observe elements that exist
-        itemsRef.current.forEach(ref => {
-            if (ref) {
-                observer.observe(ref);
-            }
-        });
-
-        return () => {
-            // Clean up by only unobserving elements that exist
-            itemsRef.current.forEach(ref => {
-                if (ref && observer) {
-                    try {
-                        observer.unobserve(ref);
-                    } catch (error) {
-                        console.log('Failed to unobserve element:', error);
-                    }
-                }
-            });
-        };
-    }, [items]);
-
-    const handleQuantityChange = (itemId, event) => {
-        const newQuantities = { ...quantities, [itemId]: parseInt(event.target.value, 10) };
-        setQuantities(newQuantities);
-    };
-
-    const handleBuy = (itemId) => {
-        // Check if user is logged in
-        if (!isLoggedIn) {
-            alert('Please log in to make a purchase.');
-            return;
-        }
-
+    const onBuyClick = (itemId) => {
         const quantity = quantities[itemId];
-        // Send a request to the backend to handle the purchase
-        fetch('http://localhost/apii/components/buyItems.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                itemId,
-                quantity,
-                userId
-            }),
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    toast.success('Item added to cart successfully', {
-                        duration: 2000,
-                        position: 'top-right',
-                    });
-                    // Update the item's stock in the state
-                    setItems(prevItems =>
-                        prevItems.map(item =>
-                            item.id === itemId ? { ...item, stock: item.stock - quantity } : item
-                        )
-                    );
-                } else {
-                    toast.error('Purchase failed: ' + data.error);
-                }
-            })
-            .catch(error => console.error('Error buying item:', error));
+        handleBuy(itemId, quantity);
     };
 
     if (loading) {
         return (
             <div className="flex justify-center items-center p-6 min-h-[70vh]">
                 <div className="text-xl text-gray-600">Loading menu items...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex justify-center items-center p-6 min-h-[70vh]">
+                <div className="text-xl text-red-600">Error: {error}</div>
             </div>
         );
     }
@@ -308,7 +206,7 @@ const ClientMenu = () => {
                                             <input
                                                 type="number"
                                                 id={`quantity-${item.id}`}
-                                                value={quantities[item.id]}
+                                                value={quantities[item.id] || 1}
                                                 onChange={(event) => handleQuantityChange(item.id, event)}
                                                 min="1"
                                                 max={item.stock}
@@ -316,14 +214,14 @@ const ClientMenu = () => {
                                             />
                                         </div>
                                         <button
-                                            onClick={() => handleBuy(item.id)}
-                                            disabled={!isLoggedIn || item.stock < 1}
-                                            className={`btn-primary px-4 py-2 rounded-lg text-sm font-medium flex-grow ${!isLoggedIn || item.stock < 1
+                                            onClick={() => onBuyClick(item.id)}
+                                            disabled={!isLoggedIn || item.stock < 1 || purchasing}
+                                            className={`btn-primary px-4 py-2 rounded-lg text-sm font-medium flex-grow ${!isLoggedIn || item.stock < 1 || purchasing
                                                     ? 'opacity-50 cursor-not-allowed'
                                                     : 'text-white'
                                                 }`}
                                         >
-                                            {item.stock < 1 ? 'Out of Stock' : 'Add to Cart'}
+                                            {purchasing ? 'Adding...' : item.stock < 1 ? 'Out of Stock' : 'Add to Cart'}
                                         </button>
                                     </div>
                                 </div>
