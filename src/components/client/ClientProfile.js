@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { EmailContext } from '../utils/EmailContext';
+import React, { useState, useEffect } from 'react';
 import {
   User,
   Lock,
@@ -17,59 +16,94 @@ import {
   Save
 } from 'lucide-react';
 
-const ClientProfile = () => {
-  const { email } = useContext(EmailContext);
-  const [activeTab, setActiveTab] = useState('profile');
-  const [userData, setUserData] = useState(null);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    emergencyContact: ''
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [message, setMessage] = useState(null);
-  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-  const [passwordError, setPasswordError] = useState('');
-  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
-  const [appointmentData, setAppointmentData] = useState({
-    date: '',
-    time: '',
-    purpose: ''
-  });
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userId, setUserId] = useState(null);
+// Import all custom hooks
+import {
+  useAuth,
+  useUserData,
+  useProfileForm,
+  usePassword,
+  useProfilePicture,
+  useAppointments,
+  useDocuments,
+  useBugReport,
+  useNotification
+} from '../hooks/client/useClientProfile';
+import { EmailContext } from '../utils/EmailContext';
 
-  const [documents, setDocuments] = useState([]);
+const ClientProfile = () => {
+  const { email } = React.useContext(EmailContext);
+  const [activeTab, setActiveTab] = useState('profile');
+
+  // Authentication
+  const { isLoggedIn, userId, authError } = useAuth();
+
+  // User data management
+  const { userData, loading, error, refetch } = useUserData(email);
+
+  // Profile form management
+  const { formData, handleInputChange, handleSubmit } = useProfileForm(userData);
+
+  // Password management
+  const {
+    passwordData,
+    passwordError,
+    handlePasswordChange,
+    handlePasswordSubmit,
+    resetPasswordData
+  } = usePassword(userData);
+
+  // Profile picture management
+  const {
+    handleProfilePicture,
+    handleProfilePictureUpload,
+    handleDeleteProfilePicture
+  } = useProfilePicture(userData);
+
+  // Appointments management
+  const {
+    appointments,
+    appointmentData,
+    setAppointmentData,
+    rescheduleData,
+    setRescheduleData,
+    loadAppointments,
+    handleCreateAppointment,
+    handleRescheduleAppointment,
+    handleCancelAppointment,
+    handleDeleteAppointment
+  } = useAppointments(userData);
+
+  // Documents management
+  const {
+    documents,
+    documentDetails,
+    setDocumentDetails,
+    loadDocuments,
+    handleDocumentUpload,
+    handleDeleteDocument
+  } = useDocuments(userData);
+
+  // Bug report management
+  const {
+    bugDescription,
+    setBugDescription,
+    isBugSubmitting,
+    bugReportStatus,
+    setBugReportStatus,
+    handleReportBug,
+    resetBugReport
+  } = useBugReport(userData, email);
+
+  // Notification management
+  const { message, showMessage, clearMessage } = useNotification();
+
+  // Modal states (these remain as local state since they're UI-specific)
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
   const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
   const [documentFile, setDocumentFile] = useState(null);
-  const [documentDetails, setDocumentDetails] = useState({
-    documentName: '',
-    documentType: ''
-  });
-
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
-  const [rescheduleData, setRescheduleData] = useState({
-    date: '',
-    time: ''
-  });
-
-  const [bugDescription, setBugDescription] = useState('');
-  const [bugReportStatus, setBugReportStatus] = useState(null);
-  const [isBugSubmitting, setIsBugSubmitting] = useState(false);
-
-
-  const API_BASE_URL = 'http://localhost/apii/components/user_profile.php';
-  const IMAGE_BASE_URL = 'http://localhost/apii/components/';
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: <User size={18} /> },
@@ -80,292 +114,147 @@ const ClientProfile = () => {
     { id: 'help', label: 'Help', icon: <HelpCircle size={18} /> }
   ];
 
-  // Add login validation
+  // Load data when tab changes
   useEffect(() => {
-    if (email) {
-      // Fetch user ID based on email
-      fetch(`http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.userId) {
-            setUserId(data.userId);
-            setIsLoggedIn(true);
-          } else {
-            setIsLoggedIn(false);
-            setError('Please log in to access your profile');
-          }
-        })
-        .catch(error => {
-          console.error('Error fetching user ID:', error);
-          setIsLoggedIn(false);
-          setError('Failed to verify login status');
-        });
-    } else {
-      setIsLoggedIn(false);
-      setError('Please log in to access your profile');
+    if (activeTab === 'appointments' && userData?.id) {
+      loadAppointments();
     }
-  }, [email]);
+    if (activeTab === 'documents' && userData?.id) {
+      loadDocuments();
+    }
+  }, [activeTab, userData?.id, loadAppointments, loadDocuments]);
 
-  useEffect(() => {
-    const loadUserData = async () => {
+  // Enhanced handlers that use hooks and show messages
+  const handleProfileSubmit = async (e) => {
+    try {
+      const result = await handleSubmit(e);
+      if (result.status === 'success') {
+        showMessage('Profile updated successfully!', 'success');
+      } else {
+        showMessage(result.message || 'Failed to update profile', 'error');
+      }
+    } catch (err) {
+      showMessage('Failed to update profile. Please try again.', 'error');
+    }
+  };
+
+  const handlePasswordSubmitWithMessage = async (e) => {
+    try {
+      const result = await handlePasswordSubmit(e);
+      if (result.status === 'success') {
+        setIsResetModalOpen(false);
+        resetPasswordData();
+        showMessage('Password changed successfully!', 'success');
+      } else {
+        // Error is handled by the hook itself
+      }
+    } catch (err) {
+      showMessage('Failed to change password. Please try again.', 'error');
+    }
+  };
+
+  const handleProfilePictureUploadWithMessage = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
       try {
-        setLoading(true);
-
-        if (!email) {
-          throw new Error("Email is not available in context");
-        }
-
-        console.log("Fetching data for email:", email); // Add this line
-
-        const response = await fetch(`${API_BASE_URL}?email=${encodeURIComponent(email)}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.status === 'success' && data.data) {
-          setUserData(data.data);
-          setFormData({
-            firstName: data.data.first_name || '',
-            lastName: data.data.last_name || '',
-            email: data.data.email || '',
-            phone: data.data.telephone || '',
-            address: data.data.address || '',
-            emergencyContact: data.data.emergency_contact || ''
-          });
-          
+        const result = await handleProfilePictureUpload(file);
+        if (result.status === 'success' && result.image_path) {
+          // Update userData with new profile picture
+          refetch(); // Refresh user data
+          showMessage('Profile picture updated successfully!', 'success');
         } else {
-          throw new Error(data.message || 'Failed to load user data');
+          showMessage(result.message || 'Failed to upload profile picture', 'error');
         }
       } catch (err) {
-        console.error("Error in loadUserData:", err);
-        setError(err.message || 'Failed to load user data');
-      } finally {
-        setLoading(false);
+        showMessage('Failed to upload profile picture. Please try again.', 'error');
       }
-    };
-
-    if (email) {
-      loadUserData();
     }
-  }, [email]);
+  };
 
-  // Add this function to handle appointment creation
-  const handleCreateAppointment = async (e) => {
+  const handleDeleteProfilePictureWithMessage = async () => {
+    if (window.confirm("Are you sure you want to delete your profile picture?")) {
+      try {
+        const result = await handleDeleteProfilePicture();
+        if (result.status === 'success') {
+          refetch(); // Refresh user data
+          showMessage('Profile picture deleted successfully!', 'success');
+        } else {
+          showMessage(result.message || 'Failed to delete profile picture', 'error');
+        }
+      } catch (err) {
+        showMessage('Failed to delete profile picture. Please try again.', 'error');
+      }
+    }
+  };
+
+  const handleCreateAppointmentWithMessage = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(API_BASE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'create_appointment',
-          user_id: userData.id,
-          date: appointmentData.date,
-          time: appointmentData.time,
-          purpose: appointmentData.purpose
-        }),
-      });
-
-      const data = await response.json();
-      if (data.status === 'success') {
+      const result = await handleCreateAppointment(appointmentData);
+      if (result.status === 'success') {
         showMessage('Appointment scheduled successfully!', 'success');
         setIsAppointmentModalOpen(false);
         setAppointmentData({ date: '', time: '', purpose: '' });
-        // Refresh appointments
         loadAppointments();
       } else {
-        showMessage(data.message || 'Failed to schedule appointment', 'error');
+        showMessage(result.message || 'Failed to schedule appointment', 'error');
       }
     } catch (err) {
-      console.error("Error scheduling appointment:", err);
       showMessage('Failed to schedule appointment. Please try again.', 'error');
     }
   };
 
-  // Add this function to load appointments
-  const [appointments, setAppointments] = useState([]);
-
-
-  const handleProfilePicture = (profilePicture) => {
-    if (!profilePicture) {
-      return `${IMAGE_BASE_URL}uploads/profile/default.jpg`;
-    }
-
-    // Check if the URL is already absolute
-    if (profilePicture.startsWith('http')) {
-      return profilePicture;
-    }
-
-    // Otherwise, prepend the base URL
-    return `${IMAGE_BASE_URL}${profilePicture}`;
-  };
-  const loadAppointments = async () => {
-    try {
-      if (!userData?.id) {
-        throw new Error("User ID is missing");
-      }
-
-      const response = await fetch(`${API_BASE_URL}?action=get_appointments&user_id=${userData.id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-      if (data.status === 'success') {
-        setAppointments(data.data || []);
-      } else {
-        showMessage(data.message || 'Failed to load appointments', 'error');
-      }
-    } catch (err) {
-      console.error("Error loading appointments:", err);
-      showMessage('Failed to load appointments. Please try again.', 'error');
-    }
-  };
-
-  const handleRescheduleAppointment = async (e) => {
+  const handleRescheduleAppointmentWithMessage = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(API_BASE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'reschedule_appointment',
-          user_id: userData.id,
-          appointment_id: selectedAppointment.id,
-          date: rescheduleData.date,
-          time: rescheduleData.time
-        }),
-      });
-
-      const data = await response.json();
-      if (data.status === 'success') {
+      const result = await handleRescheduleAppointment(selectedAppointment.id, rescheduleData);
+      if (result.status === 'success') {
         showMessage('Appointment rescheduled successfully!', 'success');
         setIsRescheduleModalOpen(false);
         setRescheduleData({ date: '', time: '' });
         setSelectedAppointment(null);
         loadAppointments();
       } else {
-        showMessage(data.message || 'Failed to reschedule appointment', 'error');
+        showMessage(result.message || 'Failed to reschedule appointment', 'error');
       }
     } catch (err) {
-      console.error("Error rescheduling appointment:", err);
       showMessage('Failed to reschedule appointment. Please try again.', 'error');
     }
   };
 
-  // Call loadAppointments when the appointments tab is active
-  useEffect(() => {
-    if (activeTab === 'appointments' && userData?.id) {
-      loadAppointments();
-    }
-  }, [activeTab, userData?.id]);
-
-  const handleCancelAppointment = async (appointmentId) => {
+  const handleCancelAppointmentWithMessage = async (appointmentId) => {
     if (window.confirm("Are you sure you want to cancel this appointment?")) {
       try {
-        const response = await fetch(API_BASE_URL, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'cancel_appointment',
-            user_id: userData.id,
-            appointment_id: appointmentId
-          }),
-        });
-
-        const data = await response.json();
-        if (data.status === 'success') {
+        const result = await handleCancelAppointment(appointmentId);
+        if (result.status === 'success') {
           showMessage('Appointment cancelled successfully', 'success');
           loadAppointments();
         } else {
-          showMessage(data.message || 'Failed to cancel appointment', 'error');
+          showMessage(result.message || 'Failed to cancel appointment', 'error');
         }
       } catch (err) {
-        console.error("Error cancelling appointment:", err);
         showMessage('Failed to cancel appointment. Please try again.', 'error');
       }
     }
   };
 
-  const handleDeleteAppointment = async (appointmentId) => {
+  const handleDeleteAppointmentWithMessage = async (appointmentId) => {
     if (window.confirm("Are you sure you want to permanently delete this appointment? This action cannot be undone.")) {
       try {
-        const response = await fetch(API_BASE_URL, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'delete_appointment',
-            user_id: userData.id,
-            appointment_id: appointmentId
-          }),
-        });
-
-        const data = await response.json();
-        if (data.status === 'success') {
+        const result = await handleDeleteAppointment(appointmentId);
+        if (result.status === 'success') {
           showMessage('Appointment deleted successfully', 'success');
           loadAppointments();
         } else {
-          showMessage(data.message || 'Failed to delete appointment', 'error');
+          showMessage(result.message || 'Failed to delete appointment', 'error');
         }
       } catch (err) {
-        console.error("Error deleting appointment:", err);
         showMessage('Failed to delete appointment. Please try again.', 'error');
       }
     }
   };
 
-
-  const loadDocuments = async () => {
-    try {
-      if (!userData?.id) {
-        throw new Error("User ID is missing");
-      }
-
-      console.log("Fetching documents for user_id:", userData.id);
-
-      const response = await fetch(`http://localhost/apii/components/documents.php?user_id=${userData.id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      const data = await response.json();
-      console.log("Documents API response:", data);
-
-      if (data.status === 'success') {
-        setDocuments(data.data || []);
-      } else {
-        showMessage(data.message || 'Failed to load documents', 'error');
-      }
-    } catch (err) {
-      console.error("Error loading documents:", err);
-      showMessage('Failed to load documents. Please try again.', 'error');
-    }
-  };
-
-  // Fixed handleDocumentUpload function for ClientProfile.js
-  const handleDocumentUpload = async (e) => {
+  const handleDocumentUploadWithMessage = async (e) => {
     e.preventDefault();
     if (!documentFile || !documentDetails.documentName || !documentDetails.documentType) {
       showMessage('All fields are required, including the file', 'error');
@@ -373,265 +262,52 @@ const ClientProfile = () => {
     }
 
     try {
-      const formData = new FormData();
-      formData.append('user_id', userData.id);
-      formData.append('document', documentFile); // Match the PHP $_FILES key
-      formData.append('document_name', documentDetails.documentName);
-      formData.append('document_type', documentDetails.documentType);
-
-      // Fix: Use the correct endpoint URL (remove the extra /documents.php)
-      const response = await fetch('http://localhost/apii/components/documents.php', {
-        method: 'POST',
-        body: formData // Don't set Content-Type header, let browser set it for FormData
-      });
-
-      const data = await response.json();
-      if (data.status === 'success') {
+      const result = await handleDocumentUpload(documentFile, documentDetails);
+      if (result.status === 'success') {
         showMessage('Document uploaded successfully!', 'success');
         setIsDocumentModalOpen(false);
         setDocumentFile(null);
         setDocumentDetails({ documentName: '', documentType: '' });
-        loadDocuments(); // Refresh the documents list
+        loadDocuments();
       } else {
-        showMessage(data.message || 'Failed to upload document', 'error');
+        showMessage(result.message || 'Failed to upload document', 'error');
       }
     } catch (err) {
-      console.error("Error uploading document:", err);
       showMessage('Failed to upload document. Please try again.', 'error');
     }
   };
 
-  // Delete document
-  const handleDeleteDocument = async (documentId) => {
+  const handleDeleteDocumentWithMessage = async (documentId) => {
     if (window.confirm("Are you sure you want to delete this document?")) {
       try {
-        const response = await fetch(`http://localhost/apii/components/documents.php`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            action: 'delete_document', // Ensure action is included
-            document_id: documentId
-          })
-        });
-
-        const data = await response.json();
-        if (data.status === 'success') {
+        const result = await handleDeleteDocument(documentId);
+        if (result.status === 'success') {
           showMessage('Document deleted successfully', 'success');
           loadDocuments();
         } else {
-          showMessage(data.message || 'Failed to delete document', 'error');
+          showMessage(result.message || 'Failed to delete document', 'error');
         }
       } catch (err) {
-        console.error("Error deleting document:", err);
         showMessage('Failed to delete document. Please try again.', 'error');
       }
     }
   };
 
-  useEffect(() => {
-    if (activeTab === 'documents' && userData?.id) {
-      loadDocuments();
-    }
-  }, [activeTab, userData?.id]);
-
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
-
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleReportBugWithMessage = async (e) => {
     try {
-      const response = await fetch(API_BASE_URL, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: userData.id,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          telephone: formData.phone,
-          address: formData.address,
-          emergency_contact: formData.emergencyContact
-        }),
-      });
-
-      const data = await response.json();
-      if (data.status === 'success') {
-        showMessage('Profile updated successfully!', 'success');
-      } else {
-        showMessage(data.message || 'Failed to update profile', 'error');
-      }
-    } catch (err) {
-      console.error("Error updating profile:", err);
-      showMessage('Failed to update profile. Please try again.', 'error');
-    }
-  };
-
-  const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-
-    // Clear previous errors
-    setPasswordError('');
-
-    // Validate new password length (at least 8 characters)
-    if (passwordData.newPassword.length < 8) {
-      setPasswordError('Password must be at least 8 characters long');
-      return;
-    }
-
-    // Validate new password contains at least one number
-    const hasNumber = /\d/.test(passwordData.newPassword);
-    if (!hasNumber) {
-      setPasswordError('Password must contain at least one number');
-      return;
-    }
-
-    // Check if passwords match
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError('Passwords do not match');
-      return;
-    }
-
-    try {
-      const response = await fetch(API_BASE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'reset_password',
-          user_id: userData.id,
-          current_password: passwordData.currentPassword,
-          new_password: passwordData.newPassword,
-        }),
-      });
-
-      const data = await response.json();
-      console.log(data);
-      if (data.status === 'success') {
-        setIsResetModalOpen(false);
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        showMessage('Password changed successfully!', 'success');
-      } else {
-        setPasswordError(data.message || 'Failed to change password');
-      }
-    } catch (err) {
-      console.error("Error changing password:", err);
-      setPasswordError('Failed to change password. Please try again.');
-    }
-  };
-
-  const handleProfilePictureUpload = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      try {
-        const formData = new FormData();
-        formData.append('user_id', userData.id);
-        formData.append('profile_picture', file);
-
-        const response = await fetch(API_BASE_URL, {
-          method: 'POST',
-          body: formData,
-        });
-
-        const data = await response.json();
-        if (data.status === 'success' && data.image_path) {
-          const fullImagePath = handleProfilePicture(data.image_path);
-          console.log("Full image path:", fullImagePath);
-          
-
-          setUserData({
-            ...userData,
-            profile_picture: fullImagePath
-          });
-          showMessage('Profile picture updated successfully!', 'success');
-        } else {
-          showMessage(data.message || 'Failed to upload profile picture', 'error');
-        }
-      } catch (err) {
-        console.error("Error uploading profile picture:", err);
-        showMessage('Failed to upload profile picture. Please try again.', 'error');
-      }
-    }
-  };
-
-  const handleDeleteProfilePicture = async () => {
-    if (window.confirm("Are you sure you want to delete your profile picture?")) {
-      try {
-        const response = await fetch(API_BASE_URL, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'delete_profile_picture',
-            user_id: userData.id,
-          }),
-        });
-
-        const data = await response.json();
-        if (data.status === 'success') {
-          // Update the user data with default profile picture
-          setUserData({
-            ...userData,
-            profile_picture: `${IMAGE_BASE_URL}uploads/default.png`
-          });
-          showMessage('Profile picture deleted successfully!', 'success');
-        } else {
-          showMessage(data.message || 'Failed to delete profile picture', 'error');
-        }
-      } catch (err) {
-        console.error("Error deleting profile picture:", err);
-        showMessage('Failed to delete profile picture. Please try again.', 'error');
-      }
-    }
-  };
-
-
-  const handleReportBug = async (e) => {
-    e.preventDefault();
-    setIsBugSubmitting(true);
-    setBugReportStatus(null);
-
-    try {
-      const response = await fetch('http://localhost/apii/components/report.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userData?.id || null,
-          email: userData?.email || email,
-          description: bugDescription
-        })
-      });
-      const data = await response.json();
-      if (data.status === 'success') {
-        setBugReportStatus({ type: 'success', message: data.message });
+      const result = await handleReportBug(e);
+      if (result.status === 'success') {
+        setBugReportStatus({ type: 'success', message: result.message });
         setBugDescription('');
       } else {
-        setBugReportStatus({ type: 'error', message: data.message });
+        setBugReportStatus({ type: 'error', message: result.message });
       }
     } catch (err) {
       setBugReportStatus({ type: 'error', message: 'Failed to submit bug report. Please try again.' });
-    } finally {
-      setIsBugSubmitting(false);
     }
   };
 
-  const showMessage = (text, type = 'info') => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage(null), 5000);
-  };
-
+  // Early returns for different states
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -641,7 +317,7 @@ const ClientProfile = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <h2 className="mt-4 text-xl font-semibold text-gray-900">Login Required</h2>
-            <p className="mt-2 text-gray-600">Please log in to access your profile settings.</p>
+            <p className="mt-2 text-gray-600">{authError}</p>
             <div className="mt-6">
               <a
                 href="/auth"
@@ -760,10 +436,11 @@ const ClientProfile = () => {
               </div>
             )}
 
+            {/* Profile Tab */}
             {activeTab === 'profile' && (
               <div>
                 <h2 className="text-xl font-semibold mb-6">Personal Information</h2>
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleProfileSubmit}>
                   <div className="mb-6">
                     <div className="flex flex-col sm:flex-row items-center mb-6">
                       <div className="relative group mb-4 sm:mb-0 sm:mr-6">
@@ -774,7 +451,6 @@ const ClientProfile = () => {
                               alt="Profile"
                               className="h-full w-full object-cover"
                               onError={(e) => {
-                                // If image fails to load, show default
                                 e.target.style.display = 'none';
                                 e.target.nextSibling.style.display = 'block';
                               }}
@@ -782,9 +458,7 @@ const ClientProfile = () => {
                           )}
                           <User
                             size={32}
-                            className={`text-blue-600 ${userData.profile_picture &&
-                              userData.profile_picture !== `${IMAGE_BASE_URL}uploads/default.png` &&
-                              userData.profile_picture !== 'uploads/default.png' ? 'hidden' : 'block'}`}
+                            className={`text-blue-600 ${userData.profile_picture ? 'hidden' : 'block'}`}
                           />
                         </div>
                         <label className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black bg-opacity-30 rounded-full cursor-pointer transition-opacity">
@@ -796,23 +470,21 @@ const ClientProfile = () => {
                             type="file"
                             className="hidden"
                             accept="image/*"
-                            onChange={handleProfilePictureUpload}
+                            onChange={handleProfilePictureUploadWithMessage}
                           />
                         </label>
                       </div>
                       <div>
                         <h3 className="text-lg font-medium mb-1">Profile Picture</h3>
                         <p className="text-sm text-gray-500 mb-3">Upload a clear photo of yourself</p>
-                        {userData.profile_picture &&
-                          userData.profile_picture !== `${IMAGE_BASE_URL}uploads/default.png` &&
-                          userData.profile_picture !== 'uploads/default.png' && (
-                            <button
-                              onClick={handleDeleteProfilePicture}
-                              className="px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 w-full sm:w-auto transition-colors"
-                            >
-                              Delete Picture
-                            </button>
-                          )}
+                        {userData.profile_picture && (
+                          <button
+                            onClick={handleDeleteProfilePictureWithMessage}
+                            className="px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 w-full sm:w-auto transition-colors"
+                          >
+                            Delete Picture
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -921,6 +593,81 @@ const ClientProfile = () => {
               </div>
             )}
 
+            {/* Password Tab */}
+            {activeTab === 'password' && (
+              <div>
+                <h2 className="text-xl font-semibold mb-6">Change Password</h2>
+                <form onSubmit={handlePasswordSubmitWithMessage}>
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      required
+                      minLength="8"
+                    />
+                    <div className="mt-1 text-xs text-gray-500">
+                      <p className={passwordData.newPassword.length >= 8 ? 'text-green-600' : 'text-gray-500'}>
+                        ✓ At least 8 characters
+                      </p>
+                      <p className={/\d/.test(passwordData.newPassword) ? 'text-green-600' : 'text-gray-500'}>
+                        ✓ Contains at least one number
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      required
+                    />
+                  </div>
+
+                  {passwordError && (
+                    <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md">
+                      <div className="flex">
+                        <svg className="h-5 w-5 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>{passwordError}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end">
+                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center">
+                      <Save size={16} className="mr-2" />
+                      Change Password
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Documents Tab */}
             {activeTab === 'documents' && (
               <div>
                 <h2 className="text-xl font-semibold mb-6">Important Documents</h2>
@@ -950,7 +697,7 @@ const ClientProfile = () => {
                           </a>
                         </div>
                         <button
-                          onClick={() => handleDeleteDocument(doc.id)}
+                          onClick={() => handleDeleteDocumentWithMessage(doc.id)}
                           className="text-red-600 hover:text-red-800 text-sm font-medium"
                         >
                           Delete
@@ -960,11 +707,12 @@ const ClientProfile = () => {
                   </ul>
                 )}
 
+                {/* Document Upload Modal */}
                 {isDocumentModalOpen && (
                   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
                       <h3 className="text-lg font-medium mb-4">Upload New Document</h3>
-                      <form onSubmit={handleDocumentUpload}>
+                      <form onSubmit={handleDocumentUploadWithMessage}>
                         <div className="mb-4">
                           <label className="block text-sm font-medium text-gray-700 mb-1">Document Name</label>
                           <input
@@ -1016,6 +764,7 @@ const ClientProfile = () => {
               </div>
             )}
 
+            {/* Appointments Tab */}
             {activeTab === 'appointments' && (
               <div>
                 <div className="flex justify-between items-center mb-6">
@@ -1073,7 +822,7 @@ const ClientProfile = () => {
                                   Reschedule
                                 </button>
                                 <button
-                                  onClick={() => handleCancelAppointment(appointment.id)}
+                                  onClick={() => handleCancelAppointmentWithMessage(appointment.id)}
                                   className="text-yellow-600 hover:text-yellow-800 text-sm font-medium"
                                 >
                                   Cancel
@@ -1081,7 +830,7 @@ const ClientProfile = () => {
                               </>
                             )}
                             <button
-                              onClick={() => handleDeleteAppointment(appointment.id)}
+                              onClick={() => handleDeleteAppointmentWithMessage(appointment.id)}
                               className="text-red-600 hover:text-red-800 text-sm font-medium"
                             >
                               Delete
@@ -1093,75 +842,7 @@ const ClientProfile = () => {
                   </div>
                 )}
 
-                {isRescheduleModalOpen && selectedAppointment && (
-                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium">Reschedule Appointment</h3>
-                        <button
-                          onClick={() => {
-                            setIsRescheduleModalOpen(false);
-                            setSelectedAppointment(null);
-                            setRescheduleData({ date: '', time: '' });
-                          }}
-                          className="text-gray-500 hover:text-gray-700"
-                        >
-                          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                      <form onSubmit={handleRescheduleAppointment}>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">New Date</label>
-                            <input
-                              type="date"
-                              value={rescheduleData.date}
-                              onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })}
-                              className="w-full p-2 border border-gray-300 rounded-md"
-                              required
-                              min={new Date().toISOString().split('T')[0]}
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">New Time</label>
-                            <input
-                              type="time"
-                              value={rescheduleData.time}
-                              onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })}
-                              className="w-full p-2 border border-gray-300 rounded-md"
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mt-6 flex justify-end space-x-3">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsRescheduleModalOpen(false);
-                              setSelectedAppointment(null);
-                              setRescheduleData({ date: '', time: '' });
-                            }}
-                            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-                          >
-                            Reschedule
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
-                )}
-
-                {/* Appointment Modal */}
+                {/* Appointment Creation Modal */}
                 {isAppointmentModalOpen && (
                   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
@@ -1177,7 +858,7 @@ const ClientProfile = () => {
                         </button>
                       </div>
 
-                      <form onSubmit={handleCreateAppointment}>
+                      <form onSubmit={handleCreateAppointmentWithMessage}>
                         <div className="space-y-4">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
@@ -1239,93 +920,86 @@ const ClientProfile = () => {
                     </div>
                   </div>
                 )}
-              </div>
-            )}
 
-            {activeTab === 'password' && (
-              <div>
-                <h2 className="text-xl font-semibold mb-6">Change Password</h2>
-                <form onSubmit={handlePasswordSubmit}>
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Current Password
-                    </label>
-                    <input
-                      type="password"
-                      value={passwordData.currentPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      required
-                    />
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={passwordData.newPassword}
-                      onChange={(e) => {
-                        setPasswordData({ ...passwordData, newPassword: e.target.value });
-                        // Clear error when user starts typing
-                        if (passwordError) setPasswordError('');
-                      }}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      required
-                      minLength="8"
-                    />
-                    <div className="mt-1 text-xs text-gray-500">
-                      <p className={passwordData.newPassword.length >= 8 ? 'text-green-600' : 'text-gray-500'}>
-                        ✓ At least 8 characters
-                      </p>
-                      <p className={/\d/.test(passwordData.newPassword) ? 'text-green-600' : 'text-gray-500'}>
-                        ✓ Contains at least one number
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      required
-                    />
-                  </div>
-
-                  {passwordError && (
-                    <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-md">
-                      <div className="flex">
-                        <svg className="h-5 w-5 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <span>{passwordError}</span>
+                {/* Reschedule Modal */}
+                {isRescheduleModalOpen && selectedAppointment && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Reschedule Appointment</h3>
+                        <button
+                          onClick={() => {
+                            setIsRescheduleModalOpen(false);
+                            setSelectedAppointment(null);
+                            setRescheduleData({ date: '', time: '' });
+                          }}
+                          className="text-gray-500 hover:text-gray-700"
+                        >
+                          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
                       </div>
-                    </div>
-                  )}
+                      <form onSubmit={handleRescheduleAppointmentWithMessage}>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">New Date</label>
+                            <input
+                              type="date"
+                              value={rescheduleData.date}
+                              onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })}
+                              className="w-full p-2 border border-gray-300 rounded-md"
+                              required
+                              min={new Date().toISOString().split('T')[0]}
+                            />
+                          </div>
 
-                  <div className="flex justify-end">
-                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center">
-                      <Save size={16} className="mr-2" />
-                      Change Password
-                    </button>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">New Time</label>
+                            <input
+                              type="time"
+                              value={rescheduleData.time}
+                              onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })}
+                              className="w-full p-2 border border-gray-300 rounded-md"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-6 flex justify-end space-x-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsRescheduleModalOpen(false);
+                              setSelectedAppointment(null);
+                              setRescheduleData({ date: '', time: '' });
+                            }}
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                          >
+                            Reschedule
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   </div>
-                </form>
+                )}
               </div>
             )}
 
+            {/* Bug Report Tab */}
             {activeTab === 'report bug' && (
               <div>
                 <h2 className="text-xl font-semibold mb-6">Report a Bug</h2>
-                <form onSubmit={handleReportBug} className="space-y-4">
+                <form onSubmit={handleReportBugWithMessage} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Describe the issue(English, Tagalog, Bisaya)
+                      Describe the issue (English, Tagalog, Bisaya)
                     </label>
                     <textarea
                       className="w-full p-2 border border-gray-300 rounded-md"
@@ -1354,6 +1028,7 @@ const ClientProfile = () => {
               </div>
             )}
 
+            {/* Help Tab */}
             {activeTab === 'help' && (
               <div>
                 <h2 className="text-xl font-semibold mb-6">Help & Support</h2>
