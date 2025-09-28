@@ -3,7 +3,7 @@ import { API_BASE_URL } from '../Api';
 import { EmailContext } from '../utils/EmailContext';
 import { useServices } from '../hooks/client/useServices';
 import { useUser } from '../hooks/client/useUser';
-import ServiceDetail from './ServiceDetail'; 
+import ServiceDetail from './ClientServiceDetail'; 
 
 const ClientServices = () => {
   const [selectedService, setSelectedService] = useState(null);

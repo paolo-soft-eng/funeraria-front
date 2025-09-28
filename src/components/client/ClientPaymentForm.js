@@ -1,6 +1,6 @@
 // Unified PaymentForm.js - All methods use payment intents
 import React, { useState, useEffect, useCallback } from 'react';
-import BillingForm from './BillingForm';
+import BillingForm from './ClientBillingForm';
 
 const PAYMENT_METHODS = {
   CARD: 'card',
