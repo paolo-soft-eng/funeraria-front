@@ -10,7 +10,9 @@ import {
   Download,
   Filter,
   RefreshCw,
-  Printer
+  Printer,
+  X,
+  Settings
 } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +24,8 @@ const AdminAnalytics = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [paperSize, setPaperSize] = useState('A4');
   const navigate = useNavigate();
   const printRef = useRef();
 
@@ -42,11 +46,20 @@ const AdminAnalytics = () => {
     clientType: '',
     paymentStatus: ''
   });
+
+  // Paper size configurations
+  const paperSizes = {
+    'A4': { width: '210mm', height: '297mm' },
+    'Letter': { width: '216mm', height: '279mm' },
+    'Legal': { width: '216mm', height: '356mm' },
+    'A3': { width: '297mm', height: '420mm' }
+  };
+
   const getMostPopularService = (services) => {
     if (!services || services.length === 0) {
       return "No service";
     }
-    
+
     const mostPopular = services.reduce((prev, current) => {
       const prevValue = Number(prev.value) || 0;
       const currentValue = Number(current.value) || 0;
@@ -96,10 +109,11 @@ const AdminAnalytics = () => {
   }, []);
 
   useEffect(() => {
-    if (!loading) { 
+    if (!loading) {
       fetchAnalyticsData();
     }
-  }, [filters]);
+  }, [timeRange, filters]);
+
   useEffect(() => {
     const fetchServiceTypes = async () => {
       try {
@@ -127,7 +141,7 @@ const AdminAnalytics = () => {
 
       const queryParams = new URLSearchParams({
         action: 'all',
-        timeRange: timeRange,
+        timeRange: timeRange, // Make sure this is included
         ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== ''))
       });
 
@@ -150,12 +164,43 @@ const AdminAnalytics = () => {
     }
   };
 
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prev => ({
       ...prev,
       [name]: value
     }));
+  };
+  const getDateRange = (range) => {
+    const now = new Date();
+    let startDate = new Date();
+
+    switch (range) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        // Show current month data
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        break;
+      case 'quarter':
+        // Show current quarter data
+        const currentQuarter = Math.floor(now.getMonth() / 3);
+        startDate = new Date(now.getFullYear(), currentQuarter * 3, 1);
+        break;
+      case 'year':
+        // Show current year data
+        startDate = new Date(now.getFullYear(), 0, 1);
+        break;
+      default:
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    return {
+      startDate: startDate.toISOString().split('T')[0],
+      endDate: now.toISOString().split('T')[0]
+    };
   };
 
   const handleFilterSubmit = (e) => {
@@ -171,172 +216,282 @@ const AdminAnalytics = () => {
       clientType: '',
       paymentStatus: ''
     });
+    setTimeRange('month')
   };
 
   const handleRefresh = () => {
     fetchAnalyticsData();
   };
 
-  // New function to format data for printing
-  const handleFormatPrint = () => {
-    const revenueData = analyticsData.revenue || [];
-    const serviceData = analyticsData.services || [];
-    const topClients = analyticsData.topClients || [];
+  // Generate print content with paper size support
+  const generatePrintContent = () => {
     const recentActivity = analyticsData.recentActivity || [];
-    const kpis = [
-      {
-        title: 'Total Revenue',
-        value: `₱${Number(analyticsData.kpis?.total_revenue || 0).toLocaleString()}`,
-      },
-      {
-        title: 'Regular Orders',
-        value: (analyticsData.kpis?.total_orders || 0).toString(),
-      },
-      {
-        title: 'Funeral Services',
-        value: (analyticsData.kpis?.total_funeral_services || 0).toString(),
-      },
-      {
-        title: 'New Clients',
-        value: (analyticsData.kpis?.new_clients || 0).toString(),
-      },
-    ];
-
-    const totalRevenue = revenueData.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
     const currentDate = new Date().toLocaleDateString();
 
-    // Active filters for display
-    const activeFilters = Object.entries(filters)
-      .filter(([_, value]) => value !== '')
-      .map(([key, value]) => {
-        if (key === 'serviceType' && analyticsData.serviceTypes) {
-          const serviceType = analyticsData.serviceTypes.find(s =>
-            value.startsWith('service-')
-              ? `service-${s.id}` === value
-              : `item-${s.id}` === value
-          );
-          return `${key}: ${serviceType?.name || value}`;
-        }
-        return `${key}: ${value}`;
-      });
+    // Get date range based on filters or time range
+    let dateRangeText = '';
+    if (filters.startDate && filters.endDate) {
+      dateRangeText = `${new Date(filters.startDate).toLocaleDateString()} - ${new Date(filters.endDate).toLocaleDateString()}`;
+    } else {
+      const now = new Date();
+      let startDate;
+
+      switch (timeRange) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'quarter':
+          const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+          startDate = new Date(now.getFullYear(), quarterStart, 1);
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      }
+      dateRangeText = `${startDate.toLocaleDateString()} - ${now.toLocaleDateString()}`;
+    }
+
+    // Calculate total revenue from recent activity
+    const totalRevenue = recentActivity.reduce((sum, activity) => {
+      return sum + (Number(activity.total_amount) || 0);
+    }, 0);
 
     return `
-      <div style="font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px;">
-        <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 15px;">
-          <h1 style="color: #333; margin: 0; font-size: 28px;">Funeraria Reports</h1>
-          <p style="color: #666; margin: 5px 0; font-size: 14px;">Generated on ${currentDate}</p>
-          <p style="color: #666; margin: 5px 0; font-size: 12px;">Time Range: ${timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}</p>
-          ${activeFilters.length > 0 ? `<p style="color: #666; margin: 5px 0; font-size: 12px;">Filters Applied: ${activeFilters.join(', ')}</p>` : ''}
-        </div>
-
-        <!-- KPI Section -->
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 8px;">Key Performance Indicators</h2>
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px;">
-            ${kpis.map(kpi => `
-              <div style="border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; background: #f9f9f9;">
-                <h3 style="margin: 0 0 5px 0; font-size: 14px; color: #666;">${kpi.title}</h3>
-                <p style="margin: 0; font-size: 20px; font-weight: bold; color: #333;">${kpi.value}</p>
-              </div>
-            `).join('')}
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Funeraria Gomez - Sales Report</title>
+        <style>
+          @media print {
+            @page {
+              size: ${paperSize.toLowerCase()};
+              margin: 20mm;
+            }
+            body {
+              margin: 0;
+              padding: 0;
+              font-family: Arial, sans-serif;
+              color: #000;
+            }
+          }
+          body {
+            font-family: Arial, sans-serif;
+            max-width: ${paperSizes[paperSize].width};
+            margin: 0 auto;
+            padding: 20px;
+            color: #000;
+            background: white;
+          }
+          .header {
+            display: flex;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #333;
+            gap: 0;
+          }
+          .logo {
+            flex-shrink: 0;
+            position: relative;
+            margin-right: 0;
+          }
+          .logo img {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            border-radius: 50%;
+            border: 4px solid #ffffff;
+            background: white;
+          }
+          .header-text {
+            flex: 1;
+            text-align: left;
+          }
+          .header-text h1 {
+            color: #000;
+            margin: 0;
+            font-size: 25px;
+            font-weight: bold;
+          }
+          .header-text .location{
+            color: #000;
+            margin: 0;
+            font-size: 12px;
+          }
+            .header-text .contact-number{
+            color: #000;
+            margin: 0;
+            font-size: 12px;
+          }
+            .header-text .email{
+            color: #000;
+            margin: 0;
+            font-size: 12px;
+          }
+          .header-text .date-range {
+            color: #000;
+            font-size: 14px;
+          }
+          .header-text .generated-date {
+            color: #000;
+            margin: 0;
+            font-size: 12px;
+          }
+          .transaction-section h2 {
+            color: #000;
+            font-size: 18px;
+            font-weight: bold;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+          }
+          th, td {
+            border: 1px solid #000;
+            padding: 12px;
+            text-align: center;
+          }
+          th {
+            background: #f0f0f0;
+            font-weight: bold;
+          }
+          .summary {
+            text-align: right;
+            margin-bottom: 30px;
+          }
+          .total-revenue {
+            font-size: 16px;
+            color: #000;
+            margin: 0;
+            font-weight: bold;
+          }
+          .signature {
+            text-align: left;
+            margin-bottom: 40px;
+          }
+          .signature-line {
+            border-bottom: 1px solid #000;
+            width: 250px;
+            height: 20px;
+            margin-bottom: 5px;
+          }
+          .footer {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+            background: white;
+          }
+          .footer-content {
+            max-width: ${paperSizes[paperSize].width};
+            margin: 0 auto;
+            padding: 0 20px;
+          }
+          .no-data {
+            color: #666;
+            font-style: italic;
+            text-align: center;
+            padding: 40px;
+          }
+        </style>
+      </head>
+      <body>
+        <!-- Header -->
+        <div class="header">
+          <!-- Logo -->
+          <div class="logo">
+            <img src="/gomez_icon.jpg" alt="Funeraria Gomez Logo" />
           </div>
+          
+          <!-- Header Text -->
+          <div class="header-text">
+            <h1>Funeraria Gomez - Udtohan</h1>
+            <p class="location">CPG North Avenue, Barangay Cogon, Tagbilaran City, Philippines</p>
+            <p class="contact-number">0909 669 7792</p>
+            <p class="email">info@funegomezudtohan.com</p>
+            <p class="generated-date">Generated on: ${currentDate}</p>
+          </div>
+          
+          <!-- Empty space for balance -->
+          <div style="flex-shrink: 0; width: 100px;"></div>
         </div>
 
-        <!-- Revenue Overview -->
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 8px; text-align: center;">Revenue Overview</h2>
-          <p style="margin: 10px 0; font-size: 14px; color: #666;">Total Revenue: ₱${Number(totalRevenue).toLocaleString()}</p>
-          ${revenueData.length > 0 ? `
-            <div style="margin-top: 15px;">
-              <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+        <!-- Main Content -->
+        <div class="main-content">
+          <!-- Transaction Table -->
+          <div class="transaction-section">
+            <h2>Transaction Report</h2>
+            
+            ${recentActivity.length > 0 ? `
+              <table>
                 <thead>
-                  <tr style="background: #f5f5f5;">
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Period</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Revenue</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${revenueData.map(item => `
-                    <tr>
-                      <td style="border: 1px solid #ddd; padding: 8px;">${item.month}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">₱${Number(item.value || 0).toLocaleString()}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          ` : '<p style="color: #666; font-style: italic;">No revenue data available</p>'}
-        </div>
-
-        <!-- Service Distribution -->
-        <div style="margin-bottom: 30px;">
-          <h2 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 8px; text-align: center;">Service & Menu Item Distribution</h2>
-          ${serviceData.length > 0 ? `
-            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-              <thead>
-                <tr style="background: #f5f5f5;">
-                  <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Service/Item Name</th>
-                  <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Type</th>
-                  <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Percentage</th>
-                  <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${serviceData.map(item => `
                   <tr>
-                    <td style="border: 1px solid #ddd; padding: 8px;">${item.name}</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">
-                      <span style="background: ${item.type === 'service' ? '#e0e7ff' : '#dcfce7'}; color: ${item.type === 'service' ? '#3730a3' : '#166534'}; padding: 2px 6px; border-radius: 12px; font-size: 11px;">
-                        ${item.type === 'service' ? 'Service' : 'Menu Item'}
-                      </span>
-                    </td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${Number(item.value || 0).toFixed(1)}%</td>
-                    <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">${item.count || 0}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          ` : '<p style="color: #666; font-style: italic;">No service or menu item data available</p>'}
-        </div>
-
-        <div>
-          <!-- Top Clients -->
-          <div>
-            <h2 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 8px; text-align: center;">Top Clients</h2>
-            ${topClients.length > 0 ? `
-              <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-                <thead>
-                  <tr style="background: #f5f5f5;">
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Client Name</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Services</th>
-                    <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Revenue</th>
+                    <th>Date</th>
+                    <th>Client Name</th>
+                    <th>Service/Item</th>
+                    <th>Amount</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${topClients.map(client => `
+                  ${recentActivity.map(activity => `
                     <tr>
-                      <td style="border: 1px solid #ddd; padding: 8px;">${client.name}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${client.services}</td>
-                      <td style="border: 1px solid #ddd; padding: 8px; text-align: right;">₱${client.revenue}</td>
+                      <td>${new Date(activity.created_at).toLocaleDateString()}</td>
+                      <td>${activity.client_name || 'N/A'}</td>
+                      <td>${activity.service_name || activity.item_name || 'N/A'}</td>
+                      <td>₱${Number(activity.total_amount || 0).toLocaleString()}</td>
                     </tr>
                   `).join('')}
                 </tbody>
               </table>
-            ` : '<p style="color: #666; font-style: italic;">No client data available</p>'}
+            ` : '<p class="no-data">No transaction data available for the selected period</p>'}
+          </div>
+
+          <!-- Summary Section -->
+          <div class="summary-section">
+            <!-- Total Revenue -->
+            <div class="summary">
+              <div>
+                <p class="total-revenue">Total: ₱${totalRevenue.toLocaleString()}</p>
+              </div>
+            </div>
+
+            <!-- Prepared By -->
+            <div class="signature">
+              <p style="margin: 0 0 10px 0; font-weight: bold; color: #000;">Prepared by:</p>
+              <div class="signature-line"></div>
+              <p style="margin: 0; font-size: 12px; color: #666;">Administrator Signature</p>
+            </div>
           </div>
         </div>
-      </div>
+      </body>
+      </html>
     `;
   };
 
-  const handlePrint = () => {
-    const printContent = handleFormatPrint();
-    const originalContent = document.body.innerHTML;
+  const handlePrintPreview = () => {
+    setShowPrintPreview(true);
+  };
 
-    document.body.innerHTML = printContent;
-    window.print();
-    document.body.innerHTML = originalContent;
-    window.location.reload();
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(generatePrintContent());
+    printWindow.document.close();
+
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+  };
+
+  const handleClosePreview = () => {
+    setShowPrintPreview(false);
   };
 
   const handleExport = () => {
@@ -388,6 +543,73 @@ const AdminAnalytics = () => {
 
     // Export the workbook
     XLSX.writeFile(workbook, `analytics_report_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  // Print Preview Modal
+  const PrintPreviewModal = () => {
+    if (!showPrintPreview) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col">
+          {/* Header */}
+          <div className="flex justify-between items-center p-4 border-b">
+            <h2 className="text-xl font-bold">Print Preview</h2>
+            <div className="flex items-center space-x-4">
+              {/* Paper Size Selector */}
+              <div className="flex items-center space-x-2">
+                <Settings size={16} className="text-gray-600" />
+                <select
+                  value={paperSize}
+                  onChange={(e) => setPaperSize(e.target.value)}
+                  className="border rounded px-3 py-1 text-sm"
+                >
+                  {Object.keys(paperSizes).map(size => (
+                    <option key={size} value={size}>{size}</option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={handlePrint}
+                className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700"
+              >
+                <Printer size={16} className="mr-2" />
+                Print
+              </button>
+              <button
+                onClick={handleClosePreview}
+                className="flex items-center px-4 py-2 bg-gray-500 text-white rounded-lg text-sm font-medium hover:bg-gray-600"
+              >
+                <X size={16} className="mr-2" />
+                Close
+              </button>
+            </div>
+          </div>
+
+          {/* Preview Content */}
+          <div className="flex-1 overflow-auto p-4 bg-gray-100">
+            <div
+              className="bg-white mx-auto shadow-lg"
+              style={{
+                width: paperSizes[paperSize].width,
+                height: paperSizes[paperSize].height,
+                overflow: 'auto'
+              }}
+            >
+              <iframe
+                srcDoc={generatePrintContent()}
+                title="Print Preview"
+                className="w-full h-full border-none"
+                style={{
+                  minHeight: paperSizes[paperSize].height
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -442,13 +664,13 @@ const AdminAnalytics = () => {
     },
     {
       title: 'Regular Orders',
-      value: (analyticsData.kpis?.total_orders || 0).toString(),
+      value: (analyticsData.kpis?.regular_orders || 0).toString(),
       icon: <ShoppingCart size={20} />,
       color: 'text-indigo-600 bg-indigo-100'
     },
     {
       title: 'Funeral Services',
-      value: (analyticsData.kpis?.total_funeral_services || 0).toString(),
+      value: (analyticsData.kpis?.funeral_services || 0).toString(),
       icon: <FileText size={20} />,
       color: 'text-blue-600 bg-blue-100'
     },
@@ -459,15 +681,38 @@ const AdminAnalytics = () => {
       color: 'text-amber-600 bg-amber-100'
     },
   ];
-
   const handleTimeRangeChange = (range) => {
     setTimeRange(range);
+
+    // Clear manual date filters when selecting a predefined time range
+    setFilters(prev => ({
+      ...prev,
+      startDate: '',
+      endDate: ''
+    }));
   };
 
   const toggleFilter = () => {
     setIsFilterOpen(!isFilterOpen);
   };
+  const getTimeRangeDisplayText = (timeRange, filters) => {
+    if (filters.startDate && filters.endDate) {
+      return 'Custom range';
+    }
 
+    switch (timeRange) {
+      case 'week':
+        return 'Current week (by days)';
+      case 'month':
+        return 'Current month (by days)';
+      case 'quarter':
+        return 'Current quarter (by months)';
+      case 'year':
+        return 'Current year (by months)';
+      default:
+        return 'Current month (by days)';
+    }
+  };
 
   return (
     <AdminLayout currentPage="analytics">
@@ -477,6 +722,12 @@ const AdminAnalytics = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-800 mb-1">Analytics Dashboard</h1>
               <p className="text-gray-600">Track performance and business growth</p>
+              {/* Display current time range */}
+              <div className="mt-1 text-sm text-gray-500">
+                Showing data for: <span className="font-medium text-indigo-600 capitalize">
+                  {getTimeRangeDisplayText(timeRange, filters)}
+                </span>
+              </div>
             </div>
             <div className="flex mt-4 sm:mt-0 space-x-3">
               <button
@@ -494,11 +745,11 @@ const AdminAnalytics = () => {
                 Export
               </button>
               <button
-                onClick={handlePrint}
+                onClick={handlePrintPreview}
                 className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
               >
                 <Printer size={16} className="mr-2" />
-                Print
+                Report
               </button>
               <button
                 onClick={toggleFilter}
@@ -510,12 +761,13 @@ const AdminAnalytics = () => {
             </div>
           </div>
 
+          {/* Time Range Selector */}
           <div className="bg-white rounded-lg shadow-sm p-3 flex flex-wrap gap-2">
             <button
               onClick={() => handleTimeRangeChange('week')}
               className={`px-4 py-2 rounded-md text-sm font-medium ${timeRange === 'week'
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
+                : 'text-gray-600 hover:bg-gray-100 border border-transparent'
                 }`}
             >
               Week
@@ -523,8 +775,8 @@ const AdminAnalytics = () => {
             <button
               onClick={() => handleTimeRangeChange('month')}
               className={`px-4 py-2 rounded-md text-sm font-medium ${timeRange === 'month'
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
+                : 'text-gray-600 hover:bg-gray-100 border border-transparent'
                 }`}
             >
               Month
@@ -532,8 +784,8 @@ const AdminAnalytics = () => {
             <button
               onClick={() => handleTimeRangeChange('quarter')}
               className={`px-4 py-2 rounded-md text-sm font-medium ${timeRange === 'quarter'
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
+                : 'text-gray-600 hover:bg-gray-100 border border-transparent'
                 }`}
             >
               Quarter
@@ -541,8 +793,8 @@ const AdminAnalytics = () => {
             <button
               onClick={() => handleTimeRangeChange('year')}
               className={`px-4 py-2 rounded-md text-sm font-medium ${timeRange === 'year'
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'text-gray-600 hover:bg-gray-100'
+                ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
+                : 'text-gray-600 hover:bg-gray-100 border border-transparent'
                 }`}
             >
               Year
@@ -580,6 +832,7 @@ const AdminAnalytics = () => {
                       className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
                     <select
@@ -647,7 +900,7 @@ const AdminAnalytics = () => {
                     onClick={handleFilterReset}
                     className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-300"
                   >
-                    Reset
+                    Reset All
                   </button>
                   <button
                     type="submit"
@@ -695,7 +948,7 @@ const AdminAnalytics = () => {
               {revenueData.length > 0 ? (
                 <>
                   <div className="h-64 relative">
-                    <div className="absolute inset-0 flex items-end">
+                    <div className="absolute inset-0 flex items-end justify-between">
                       {revenueData.map((item, index) => {
                         const maxValue = Math.max(...revenueData.map(d => Number(d.value) || 0));
                         const height = maxValue > 0 ? ((Number(item.value) || 0) / maxValue) * 100 : 0;
@@ -703,11 +956,16 @@ const AdminAnalytics = () => {
                         return (
                           <div
                             key={index}
-                            className="flex-1 mx-1 bg-green-500 rounded-t-sm hover:bg-green-600 transition-colors relative group"
-                            style={{ height: `${height}%`, minHeight: height > 0 ? '4px' : '0px' }}
+                            className="flex-1 mx-1 bg-green-500 rounded-t-sm hover:bg-green-600 transition-colors relative group flex flex-col items-center"
+                            style={{
+                              height: `${height}%`,
+                              minHeight: height > 0 ? '4px' : '0px',
+                              maxWidth: `${90 / revenueData.length}%`
+                            }}
                           >
                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 text-xs bg-gray-800 text-white py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                               ₱{Number(item.value || 0).toLocaleString()}
+                              <div className="text-xs mt-1">{item.period}</div>
                             </div>
                           </div>
                         );
@@ -717,17 +975,26 @@ const AdminAnalytics = () => {
 
                   <div className="flex justify-between mt-4 text-xs text-gray-600">
                     {revenueData.map((item, index) => (
-                      <div key={index} className="text-center" style={{ flex: '1 0 auto' }}>
-                        {item.month}
+                      <div
+                        key={index}
+                        className="text-center flex-1 px-1"
+                        style={{ minWidth: 0 }}
+                      >
+                        {/* For week view, show abbreviated day names */}
+                        {timeRange === 'week' ?
+                          item.period.substring(0, 3) : // Mon, Tue, Wed, etc.
+                          item.period
+                        }
                       </div>
                     ))}
                   </div>
                 </>
               ) : (
                 <div className="h-64 flex items-center justify-center text-gray-500">
-                  No revenue data available
+                  No revenue data available for the selected period
                 </div>
               )}
+
             </div>
 
             {/* Service Distribution */}
@@ -840,9 +1107,9 @@ const AdminAnalytics = () => {
                   {analyticsData.recentActivity.map((activity, index) => (
                     <div key={index} className="flex gap-3">
                       <div className={`h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 ${activity.status === 'completed' ? 'bg-green-100 text-green-600' :
-                          activity.status === 'pending' || activity.status === 'unpaid' ? 'bg-yellow-100 text-yellow-600' :
-                            activity.status === 'processing' ? 'bg-blue-100 text-blue-600' :
-                              'bg-gray-100 text-gray-600'
+                        activity.status === 'pending' || activity.status === 'unpaid' ? 'bg-yellow-100 text-yellow-600' :
+                          activity.status === 'processing' ? 'bg-blue-100 text-blue-600' :
+                            'bg-gray-100 text-gray-600'
                         }`}>
                         {activity.type === 'service' ? (
                           <FileText size={16} />
@@ -863,9 +1130,9 @@ const AdminAnalytics = () => {
                       <div className="text-right flex-shrink-0">
                         <p className="text-sm font-medium">₱{Number(activity.total_amount || 0).toLocaleString()}</p>
                         <span className={`inline-block px-2 py-1 text-xs rounded-full ${activity.status === 'completed' || activity.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
-                            activity.status === 'pending' || activity.payment_status === 'unpaid' ? 'bg-yellow-100 text-yellow-800' :
-                              activity.status === 'processing' ? 'bg-blue-100 text-blue-800' :
-                                'bg-gray-100 text-gray-800'
+                          activity.status === 'pending' || activity.payment_status === 'unpaid' ? 'bg-yellow-100 text-yellow-800' :
+                            activity.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
                           }`}>
                           {activity.status === 'unpaid' ? 'pending' : activity.status}
                         </span>
@@ -998,6 +1265,9 @@ const AdminAnalytics = () => {
           </div>
         )}
       </div>
+
+      {/* Print Preview Modal */}
+      <PrintPreviewModal />
 
       {/* Print styles */}
       <style>
