@@ -34,6 +34,7 @@ const ForgotPassword = lazy(() => import('./components/utils/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/utils/ResetPassword'));
 const PaymentSuccess = lazy(() => import('./components/utils/PaymentSuccess'));
 const PaymentFailed = lazy(() => import('./components/utils/PaymentFailed'));
+const OurStory = lazy(()=> import('./components/OurStory'))
 
 
 const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
@@ -53,6 +54,11 @@ const App = () => {
               <Route path='/' element={
                 <LoadingWrapper>
                   <LandingPage/>
+                </LoadingWrapper>
+              }/>
+              <Route path='/story' element={
+                <LoadingWrapper>
+                  <OurStory/>
                 </LoadingWrapper>
               }/>
               <Route path="/forgot-password" element={
