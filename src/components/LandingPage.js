@@ -111,6 +111,10 @@ export default function FuneralManagementLanding() {
     console.log('Navigate to auth');
   }
 
+  const handleStory = ()=>{
+    navigate('/story')
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 font-sans">
       {/* Navigation */}
@@ -288,7 +292,7 @@ export default function FuneralManagementLanding() {
             <div className="lg:w-1/2">
               <div className="bg-gray-200 h-96 lg:h-[500px] rounded-2xl shadow-lg overflow-hidden">
                 <img
-                  src="/login_bg.jpg"
+                  src="/gomez_logo.jpg"
                   alt="Funeral service professionals"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                 />
@@ -303,7 +307,7 @@ export default function FuneralManagementLanding() {
                 Our funeral management system was developed with input from funeral directors, grief counselors, and families to ensure it meets the needs of everyone involved in the memorial process.
               </p>
               <div className="flex flex-col sm:flex-row gap-6">
-                <button className="bg-gray-800 hover:bg-gray-900 text-white py-4 px-8 rounded-lg transition-all duration-300 shadow-lg text-lg font-medium">
+                <button className="bg-gray-800 hover:bg-gray-900 text-white py-4 px-8 rounded-lg transition-all duration-300 shadow-lg text-lg font-medium" onClick={handleStory}>
                   Our Story
                 </button>
                 <button className="bg-white hover:bg-gray-50 text-gray-800 py-4 px-8 rounded-lg transition-all duration-300 shadow-lg border-2 border-gray-300 text-lg font-medium">
@@ -447,7 +451,7 @@ export default function FuneralManagementLanding() {
                   <div className="bg-gray-700 p-3 rounded-full mr-4">
                     <Phone className="h-6 w-6 text-gray-300" />
                   </div>
-                  <span className="text-lg">(555) 123-4567</span>
+                  <span className="text-lg">0909 669 7792</span>
                 </div>
 
                 <div className="flex items-center">
