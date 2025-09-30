@@ -1,4 +1,3 @@
-// hooks/usePagination.js
 export const usePagination = (totalItems, itemsPerPage, currentPage, setCurrentPage, setItemsPerPage) => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -10,7 +9,7 @@ export const usePagination = (totalItems, itemsPerPage, currentPage, setCurrentP
 
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(Number(e.target.value));
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
   const getVisiblePageNumbers = () => {
@@ -18,6 +17,17 @@ export const usePagination = (totalItems, itemsPerPage, currentPage, setCurrentP
     const range = [];
     const rangeWithDots = [];
 
+    // Handle edge case where there are no pages
+    if (totalPages === 0) {
+      return [];
+    }
+
+    // Handle single page
+    if (totalPages === 1) {
+      return [1];
+    }
+
+    // Build the range of pages around current page
     for (
       let i = Math.max(2, currentPage - delta);
       i <= Math.min(totalPages - 1, currentPage + delta);
@@ -26,21 +36,31 @@ export const usePagination = (totalItems, itemsPerPage, currentPage, setCurrentP
       range.push(i);
     }
 
+    // Always show first page
+    rangeWithDots.push(1);
+
+    // Add ellipsis after first page if needed
     if (currentPage - delta > 2) {
-      rangeWithDots.push(1, '...');
-    } else {
-      rangeWithDots.push(1);
+      rangeWithDots.push('...');
     }
 
+    // Add the range of pages
     rangeWithDots.push(...range);
 
+    // Add ellipsis before last page if needed
     if (currentPage + delta < totalPages - 1) {
-      rangeWithDots.push('...', totalPages);
-    } else if (totalPages > 1) {
+      rangeWithDots.push('...');
+    }
+
+    // Always show last page (if it's not already included)
+    if (totalPages > 1 && !rangeWithDots.includes(totalPages)) {
       rangeWithDots.push(totalPages);
     }
 
-    return rangeWithDots;
+    // Remove duplicates while maintaining order
+    return rangeWithDots.filter((value, index, self) => 
+      self.indexOf(value) === index
+    );
   };
 
   return {
