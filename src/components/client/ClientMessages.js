@@ -28,14 +28,14 @@ export default function ClientMessages() {
     removeMessage,
     clearMessages,
     setError: setMessagesError
-  } = useMessages(userId, null); // We'll pass selectedAdmin later
+  } = useMessages(userId, null);
   
   const {
     admins,
     selectedAdmin,
     setSelectedAdmin,
-    markMessagesAsRead
-  } = useAdmins();
+    markMessagesAsRead,
+  } = useAdmins(userId);
 
   const {
     showCamera,
@@ -84,6 +84,7 @@ export default function ClientMessages() {
     removeMessage: currentRemoveMessage,
     clearMessages: currentClearMessages,
     countMessages,
+    markAsRead: currentMarkAsRead,
     setError: setCurrentMessagesError
   } = useMessages(userId, selectedAdmin);
 
@@ -120,17 +121,34 @@ export default function ClientMessages() {
     return () => socket.removeEventListener('message', handleMessage);
   }, [socket, processedMessageIds, currentAddMessage]);
 
-  // Handle admin selection
-  const handleAdminClick = (admin) => {
-    setSelectedAdmin(admin);
-    currentClearMessages();
-    processedMessageIds.clear();
-    setShowSidebar(false);
-    markMessagesAsRead(admin.id, userId);
-    if (userId) {
-      countMessages(admin.id, userId);
+  useEffect(() => {
+  if (selectedAdmin && userId && currentMessages.length > 0) {
+    // Mark messages as read after viewing
+    const hasUnreadMessages = currentMessages.some(msg => 
+      msg.sender === 'admin' && !msg.isRead
+    );
+    
+    if (hasUnreadMessages) {
+      markMessagesAsRead(selectedAdmin.id, userId);
+      currentMarkAsRead(); // Now this is defined
     }
-  };
+  }
+}, [selectedAdmin, userId, currentMessages, markMessagesAsRead, currentMarkAsRead]);
+
+  // Handle admin selection
+ const handleAdminClick = (admin) => {
+  setSelectedAdmin(admin);
+  currentClearMessages();
+  processedMessageIds.clear();
+  setShowSidebar(false);
+  
+  // Mark messages as read in the backend
+  markMessagesAsRead(admin.id, userId);
+  
+  if (userId) {
+    countMessages(admin.id, userId);
+  }
+};
 
   // Message sending functions
   const sendMessage = async () => {
@@ -447,7 +465,7 @@ export default function ClientMessages() {
             {selectedAdmin && (
               <div className="space-y-4">
                 <div className="text-center text-gray-600 mb-4">
-                  Total Messages: {currentMessageCount}
+                  Total Messages: {messageCount}
                 </div>
                 {currentLoading ? (
                   <div className="flex justify-center items-center h-full">

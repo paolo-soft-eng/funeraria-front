@@ -1,16 +1,18 @@
 import React, { useState, useContext } from 'react';
-import { Calendar, FileText, Users, MessageSquare, Clock, MapPin, ChevronRight, X } from 'lucide-react';
+import { Calendar, FileText, Users, MessageSquare, Clock, MapPin, ChevronRight, X, Mail } from 'lucide-react';
 import { EmailContext } from '../utils/EmailContext';
 import { useUser } from '../hooks/client/useUser';
 import { useAppointmentsAndOrders } from '../hooks/client/useOrdersAndAppointments';
 import { useProfileImage } from '../hooks/client/useProfileImage';
+import { useRecentMessages } from '../hooks/client/useRecentMessages';
 
 const ClientHome = () => {
     const { email } = useContext(EmailContext);
     
     // Custom hooks
     const { userId, username, setUsername, isLoggedIn, error: userError } = useUser(email);
-    const { firstName, upcomingAppointments, recentOrders, loading, error: dataError } = useAppointmentsAndOrders(email);
+    const { firstName, upcomingAppointments, recentOrders, loading: dataLoading, error: dataError } = useAppointmentsAndOrders(email);
+    const { recentMessages, loading: messagesLoading, error: messagesError, markAsRead } = useRecentMessages(email);
     useProfileImage(email, setUsername);
     
     // Local state
@@ -20,9 +22,12 @@ const ClientHome = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedResource, setSelectedResource] = useState(null);
     const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
+    const [selectedMessage, setSelectedMessage] = useState(null);
+    const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
-    // Combine errors
-    const error = userError || dataError;
+    // Combine loading states and errors
+    const loading = dataLoading || messagesLoading;
+    const error = userError || dataError || messagesError;
 
     // Filter appointments based on status and date
     const filteredAppointments = upcomingAppointments.filter(apt => {
@@ -38,6 +43,25 @@ const ClientHome = () => {
         }
         return true;
     });
+
+     const handleMessageClick = async (message) => {
+        setSelectedMessage(message);
+        setIsMessageModalOpen(true);
+        
+        // Mark as read if it's a received message and unread
+        if (message.message_direction === 'received' && !message.is_read) {
+            await markAsRead(message.id);
+        }
+    };
+
+    const closeMessageModal = () => {
+        setIsMessageModalOpen(false);
+        setSelectedMessage(null);
+    };
+
+     const unreadCount = recentMessages.filter(msg => 
+        msg.message_direction === 'received' && !msg.is_read
+    ).length;
 
     // Filter orders based on status
     const filteredOrders = recentOrders.filter(order => {
@@ -181,6 +205,72 @@ const ClientHome = () => {
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                 <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome, {username || firstName}</h2>
                 <p className="text-gray-600">We're here to help you through this difficult time. Below you'll find all your funeral arrangements and resources.</p>
+            </div>
+
+             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-semibold text-gray-700 flex items-center">
+                        <Mail className="mr-2 h-5 w-5 text-blue-500" />
+                        Recent Messages
+                        {unreadCount > 0 && (
+                            <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                                {unreadCount} new
+                            </span>
+                        )}
+                    </h2>
+                </div>
+                
+                <div className="space-y-3">
+                    {recentMessages.length === 0 ? (
+                        <p className="text-gray-500 text-center py-4">No messages found</p>
+                    ) : (
+                        recentMessages.slice(0, 5).map(message => (
+                            <div 
+                                key={message.id}
+                                className={`border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
+                                    message.message_direction === 'received' && !message.is_read 
+                                        ? 'border-blue-300 bg-blue-50' 
+                                        : 'border-gray-200'
+                                }`}
+                                onClick={() => handleMessageClick(message)}
+                            >
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="font-medium text-gray-800">
+                                                {message.message_direction === 'sent' 
+                                                    ? `To: ${message.receiver_username}` 
+                                                    : `From: ${message.sender_username}`
+                                                }
+                                            </h3>
+                                            <span className="text-xs text-gray-500">
+                                                {message.formatted_time}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                            {message.message}
+                                        </p>
+                                        <div className="flex items-center mt-2 space-x-2">
+                                            <span className={`text-xs px-2 py-1 rounded-full ${
+                                                message.message_direction === 'sent' 
+                                                    ? 'bg-gray-100 text-gray-800' 
+                                                    : 'bg-blue-100 text-blue-800'
+                                            }`}>
+                                                {message.message_direction === 'sent' ? 'Sent' : 'Received'}
+                                            </span>
+                                            {message.message_direction === 'received' && !message.is_read && (
+                                                <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                                                    New
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="h-5 w-5 text-gray-400 ml-2 flex-shrink-0" />
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
             
             {/* Appointments Section */}
@@ -508,6 +598,79 @@ const ClientHome = () => {
                         <div className="mt-6 flex justify-end">
                             <button
                                 onClick={closeResourceModal}
+                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isMessageModalOpen && selectedMessage && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+                                <Mail className="mr-2 h-5 w-5 text-blue-500" />
+                                Message Details
+                            </h3>
+                            <button 
+                                onClick={closeMessageModal}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+                        
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-sm text-gray-500">From</p>
+                                    <p className="font-medium">{selectedMessage.sender_username}</p>
+                                    <p className="text-sm text-gray-600">{selectedMessage.sender_email}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">To</p>
+                                    <p className="font-medium">{selectedMessage.receiver_username}</p>
+                                    <p className="text-sm text-gray-600">{selectedMessage.receiver_email}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Date & Time</p>
+                                    <p className="font-medium">{selectedMessage.formatted_time}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Status</p>
+                                    <p className="font-medium">
+                                        <span className={`px-2 py-1 text-xs rounded-full ${
+                                            selectedMessage.message_direction === 'sent' 
+                                                ? 'bg-gray-100 text-gray-800' 
+                                                : selectedMessage.is_read 
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-blue-100 text-blue-800'
+                                        }`}>
+                                            {selectedMessage.message_direction === 'sent' 
+                                                ? 'Sent' 
+                                                : selectedMessage.is_read 
+                                                    ? 'Read' 
+                                                    : 'Unread'
+                                            }
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="border-t pt-4">
+                                <p className="text-sm text-gray-500 mb-2">Message</p>
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                    <p className="text-gray-800 whitespace-pre-wrap">{selectedMessage.message}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                onClick={closeMessageModal}
                                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
                             >
                                 Close

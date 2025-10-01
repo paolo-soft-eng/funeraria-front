@@ -444,21 +444,19 @@ const ClientProfile = () => {
                     <div className="flex flex-col sm:flex-row items-center mb-6">
                       <div className="relative group mb-4 sm:mb-0 sm:mr-6">
                         <div className="h-24 w-24 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                          {userData.profile_picture && (
+                          {userData.profile_picture ? 
                             <img
                               src={handleProfilePicture(userData.profile_picture)}
                               alt="Profile"
                               className="h-full w-full object-cover"
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'block';
-                              }}
                             />
-                          )}
-                          <User
+                            :
+                            <User
                             size={32}
                             className={`text-blue-600 ${userData.profile_picture ? 'hidden' : 'block'}`}
                           />
+                          }
+                          
                         </div>
                         <label className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black bg-opacity-30 rounded-full cursor-pointer transition-opacity">
                           <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
