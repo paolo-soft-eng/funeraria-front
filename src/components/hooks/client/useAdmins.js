@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-export const useAdmins = () => {
+export const useAdmins = (userId) => {
   const [admins, setAdmins] = useState([]);
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -10,28 +10,21 @@ export const useAdmins = () => {
 
   const fetchAdmins = useCallback(async () => {
     try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(`${API_BASE_URL}?all_admins=true`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
+      // Pass client_id to get unread counts per admin
+      const url = userId 
+        ? `${API_BASE_URL}?all_admins=true&client_id=${userId}`
+        : `${API_BASE_URL}?all_admins=true`;
+        
+      const response = await fetch(url);
       const data = await response.json();
-
+      
       if (data.status === 'success') {
         setAdmins(data.admins);
-      } else {
-        setError(`API error: ${data.message}`);
       }
     } catch (error) {
       console.error('Failed to fetch admins:', error);
-      setError(`Failed to fetch admins: ${error.message}`);
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   const markMessagesAsRead = useCallback(async (adminId, userId) => {
     if (!userId || !adminId) return;

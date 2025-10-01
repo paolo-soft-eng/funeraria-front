@@ -5,6 +5,7 @@ export const useMessages = (userId, selectedAdmin) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [messageCount, setMessageCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const API_BASE_URL = 'http://localhost/apii/components/send_message.php';
 
@@ -30,6 +31,12 @@ export const useMessages = (userId, selectedAdmin) => {
           id: msg.id || `db_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
         }));
         setMessages(messagesWithIds);
+        
+        // Count unread messages from this admin
+        const unread = messagesWithIds.filter(msg => 
+          msg.sender === 'admin' && !msg.isRead
+        ).length;
+        setUnreadCount(unread);
       } else {
         setError(data.message || 'Failed to fetch messages');
       }
@@ -61,16 +68,38 @@ export const useMessages = (userId, selectedAdmin) => {
     setMessages(prev => {
       const exists = prev.some(msg => msg.id === message.id);
       if (exists) return prev;
+      
+      // If it's an incoming message from admin, increment unread count
+      if (message.sender === 'admin' && !message.isRead) {
+        setUnreadCount(prevCount => prevCount + 1);
+      }
+      
       return [...prev, message];
     });
   }, []);
 
   const removeMessage = useCallback((messageId) => {
-    setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    setMessages(prev => {
+      const messageToRemove = prev.find(msg => msg.id === messageId);
+      
+      // If removing an unread admin message, decrement unread count
+      if (messageToRemove?.sender === 'admin' && !messageToRemove.isRead) {
+        setUnreadCount(prevCount => Math.max(0, prevCount - 1));
+      }
+      
+      return prev.filter(msg => msg.id !== messageId);
+    });
   }, []);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
+    setUnreadCount(0);
+  }, []);
+
+  const markAsRead = useCallback(() => {
+    // Mark all messages as read locally
+    setMessages(prev => prev.map(msg => ({ ...msg, isRead: true })));
+    setUnreadCount(0);
   }, []);
 
   useEffect(() => {
@@ -85,11 +114,13 @@ export const useMessages = (userId, selectedAdmin) => {
     loading,
     error,
     messageCount,
+    unreadCount,
     fetchMessages,
     countMessages,
     addMessage,
     removeMessage,
     clearMessages,
+    markAsRead,
     setError
   };
 };

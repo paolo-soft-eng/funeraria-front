@@ -244,7 +244,7 @@ export const usePassword = (userData) => {
 export const useProfilePicture = (userData) => {
   const handleProfilePicture = (profilePicture) => {
     if (!profilePicture) {
-      return `${IMAGE_BASE_URL}uploads/profile/default.jpg`;
+      return 
     }
     if (profilePicture.startsWith('http')) {
       return profilePicture;
