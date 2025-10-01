@@ -1,290 +1,88 @@
-import React, { useEffect, useState, useContext } from 'react';
-import axios from 'axios';
+import React from 'react';
 import AdminLayout from './AdminLayout';
-import { EmailContext } from '../utils/EmailContext';
-import { useNavigate } from 'react-router-dom';
 import { FaTable, FaThLarge, FaUser, FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import { ToastContainer, toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// Import custom hooks
+import { useAuth } from '../hooks/admin/useAuth';
+import { useClients } from '../hooks/admin/useClients';
+import { useClientActions } from '../hooks/admin/useClientActions';
+import { usePagination } from '../hooks/admin/usePagination';
+import { useFilters } from '../hooks/admin/useFilters';
+import { useViewMode } from '../hooks/admin/useViewMode';
+import { useProfilePicture } from '../hooks/admin/useProfilePicture';
+
 const AdminClients = () => {
-  const [clients, setClients] = useState([]);
-  const [showActionModal, setShowActionModal] = useState(false);
-  const [selectedClient, setSelectedClient] = useState(null);
-  const { email } = useContext(EmailContext);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const [viewMode, setViewMode] = useState('table');
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const [userName, setUserName] = useState("");
-
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  // Use custom hooks
+  const { isLoggedIn, userId, userName } = useAuth();
+  const { viewMode, isMobile, setViewMode } = useViewMode('table');
   
-  // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  // Add state for itemsPerPage and currentPage
+  const [itemsPerPage, setItemsPerPage] = React.useState(isMobile ? 6 : 10);
+  const [currentPage, setCurrentPage] = React.useState(1);
+  
+  const {
+    searchTerm,
+    searchInput,
+    statusFilter,
+    setSearchInput,
+    handleSearch,
+    handleSearchKeyPress,
+    handleStatusFilter,
+    clearFilters
+  } = useFilters();
 
-  // Mobile detection
-  useEffect(() => {
-    const handleResize = () => {
-      const mobile = window.innerWidth < 768;
-      setIsMobile(mobile);
-      if (mobile) {
-        setViewMode('card');
-        setItemsPerPage(6); // Fewer items on mobile
-      } else {
-        setItemsPerPage(10);
-      }
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const {
+    clients,
+    loading,
+    fetchClients
+  } = useClients(isLoggedIn, currentPage, itemsPerPage, searchTerm, statusFilter);
 
-  useEffect(() => {
-    if (email) {
-      fetch(
-        `http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(
-          email
-        )}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.userId) {
-            setUserId(data.userId);
-            setUserName(data.userName || 'Admin');
-            setIsLoggedIn(true);
-          } else {
-            setIsLoggedIn(false);
-            navigate("/auth");
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching user ID:", error);
-          setIsLoggedIn(false);
-          navigate("/auth");
-        });
-    } else {
-      setIsLoggedIn(false);
-      navigate("/auth");
-    }
-  }, [email, navigate]);
+  // Fix: Update usePagination usage to match what it actually returns
+  const {
+    totalPages,
+    handlePageChange,
+    handleItemsPerPageChange, // This expects an event object
+    getVisiblePageNumbers  // This is what usePagination actually returns
+  } = usePagination(clients.totalCount || 0, itemsPerPage, currentPage, setCurrentPage, setItemsPerPage);
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      fetchClients();
-    }
-  }, [isLoggedIn, currentPage, itemsPerPage, searchTerm, statusFilter]);
+  const {
+    showActionModal,
+    selectedClient,
+    confirmAction,
+    handleConfirmAction,
+    cancelAction
+  } = useClientActions(userId, userName, fetchClients);
 
-  const fetchClients = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: itemsPerPage.toString(),
-      });
-      
-      if (searchTerm) params.append('search', searchTerm);
-      if (statusFilter) params.append('status', statusFilter);
+  const { ProfilePicture } = useProfilePicture();
 
-      const response = await axios.get(`http://localhost/apii/components/fetchClients.php?${params}`);
-      
-      if (response.data.success) {
-        setClients(response.data.data || []);
-        setTotalPages(response.data.pagination.total_pages);
-        setTotalItems(response.data.pagination.total_items);
-      } else {
-        setClients([]);
-        toast.error('Failed to fetch clients ❌');
-      }
-    } catch (error) {
-      setClients([]);
-      toast.error('Network error while fetching clients 🚨');
-      console.error('Fetch error:', error);
-    } finally {
-      setLoading(false);
-    }
+  // Update items per page when mobile detection changes
+  React.useEffect(() => {
+    setItemsPerPage(isMobile ? 6 : 10);
+  }, [isMobile]);
+
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  // Fix: Create a custom handler for items per page change
+  const handleItemsPerPageChangeCustom = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
+  
+
+  // Fix: Calculate display range manually since usePagination doesn't provide it
+  const getDisplayRange = () => {
+    const start = (currentPage - 1) * itemsPerPage + 1;
+    const end = Math.min(currentPage * itemsPerPage, clients.totalCount || 0);
+    return { start, end };
   };
 
-  const handleSearch = () => {
-    setSearchTerm(searchInput.trim());
-    setCurrentPage(1); // Reset to first page when searching
-  };
-
-  const handleSearchKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-
-  const handleStatusFilter = (status) => {
-    setStatusFilter(status);
-    setCurrentPage(1); // Reset to first page when filtering
-  };
-
-  const handleItemsPerPageChange = (newLimit) => {
-    setItemsPerPage(newLimit);
-    setCurrentPage(1); // Reset to first page when changing limit
-  };
-
-  const goToPage = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
-  const confirmAction = (client, action) => {
-    setSelectedClient({ ...client, action });
-    setShowActionModal(true);
-  };
-
-  const handleConfirmAction = async () => {
-    if (!selectedClient) return;
-
-    try {
-      const response = await axios.post("http://localhost/apii/components/fetchClients.php", {
-        id: selectedClient.id,
-        action: selectedClient.action,
-        userId: userId,
-        userName: userName
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.data.success) {
-        // Refresh the current page data instead of updating state manually
-        fetchClients();
-        setShowActionModal(false);
-        toast.success(
-          selectedClient.action === "disable"
-            ? `Client "${selectedClient.username}" disabled 🚫`
-            : `Client "${selectedClient.username}" enabled ✅`
-        );
-        setSelectedClient(null);
-      } else {
-        toast.error(response.data.message || "Failed to update client ❌");
-      }
-    } catch (error) {
-      console.error("Update error:", error);
-      toast.error("Network error while updating client 🚨");
-    }
-  };
-
-  const cancelAction = () => {
-    setShowActionModal(false);
-    setSelectedClient(null);
-  };
-
-  // Component for profile picture display
-  const ProfilePicture = ({ client, size = 'small' }) => {
-    const [imgError, setImgError] = useState(false);
-    
-    const sizeClasses = {
-      small: 'w-8 h-8',
-      medium: 'w-12 h-12',
-      large: 'w-16 h-16'
-    };
-
-    if (imgError || !client.profile_picture) {
-      return (
-        <div className={`${sizeClasses[size]} bg-gray-300 rounded-full flex items-center justify-center`}>
-          <FaUser className="text-gray-500 text-xs" />
-        </div>
-      );
-    }
-
-    return (
-      <img
-        src={client.profile_picture}
-        alt={`${client.username}'s profile`}
-        className={`${sizeClasses[size]} rounded-full object-cover`}
-        onError={() => setImgError(true)}
-      />
-    );
-  };
-
-  // Pagination component
-  const Pagination = () => {
-    const getVisiblePages = () => {
-      const delta = 2;
-      const range = [];
-      const rangeWithDots = [];
-
-      for (let i = Math.max(2, currentPage - delta); i <= Math.min(totalPages - 1, currentPage + delta); i++) {
-        range.push(i);
-      }
-
-      if (currentPage - delta > 2) {
-        rangeWithDots.push(1, '...');
-      } else {
-        rangeWithDots.push(1);
-      }
-
-      rangeWithDots.push(...range);
-
-      if (currentPage + delta < totalPages - 1) {
-        rangeWithDots.push('...', totalPages);
-      } else if (totalPages > 1) {
-        rangeWithDots.push(totalPages);
-      }
-
-      return rangeWithDots;
-    };
-
-    if (totalPages <= 1) return null;
-
-    return (
-      <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
-        <div className="text-sm text-gray-600">
-          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} clients
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="p-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-          >
-            <FaChevronLeft className="w-4 h-4" />
-          </button>
-
-          {getVisiblePages().map((page, index) => (
-            <button
-              key={index}
-              onClick={() => typeof page === 'number' && goToPage(page)}
-              disabled={page === '...'}
-              className={`px-3 py-2 border rounded text-sm ${
-                page === currentPage 
-                  ? 'bg-blue-500 text-white border-blue-500' 
-                  : page === '...' 
-                    ? 'cursor-default' 
-                    : 'hover:bg-gray-50'
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-
-          <button
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="p-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-          >
-            <FaChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    );
-  };
+  const { start, end } = getDisplayRange();
+  const totalItems = clients.totalCount || 0;
 
   if (!isLoggedIn) {
     return (
@@ -370,7 +168,8 @@ const AdminClients = () => {
               <span className="text-sm text-gray-600">Show:</span>
               <select
                 value={itemsPerPage}
-                onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
+                // Fix: Use the custom handler instead of the one from usePagination
+                onChange={(e) => handleItemsPerPageChangeCustom(Number(e.target.value))}
                 className="px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value={5}>5</option>
@@ -504,12 +303,7 @@ const AdminClients = () => {
               </p>
               {(searchTerm || statusFilter) && (
                 <button
-                  onClick={() => {
-                    setSearchTerm('');
-                    setSearchInput('');
-                    setStatusFilter('');
-                    setCurrentPage(1);
-                  }}
+                  onClick={clearFilters}
                   className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                 >
                   Clear Filters
@@ -519,7 +313,49 @@ const AdminClients = () => {
           )}
 
           {/* Pagination */}
-          {!loading && <Pagination />}
+          {!loading && totalPages > 0 && (
+            <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
+              <div className="text-sm text-gray-600">
+                Showing {start} to {end} of {totalItems} clients
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  <FaChevronLeft className="w-4 h-4" />
+                </button>
+
+                {/* Fix: Use getVisiblePageNumbers instead of getVisiblePages */}
+                {getVisiblePageNumbers().map((page, index) => (
+                  <button
+                    key={index}
+                    onClick={() => typeof page === 'number' && handlePageChange(page)}
+                    disabled={page === '...'}
+                    className={`px-3 py-2 border rounded text-sm ${
+                      page === currentPage 
+                        ? 'bg-blue-500 text-white border-blue-500' 
+                        : page === '...' 
+                          ? 'cursor-default' 
+                          : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                >
+                  <FaChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

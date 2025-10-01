@@ -1,200 +1,131 @@
-import React, { useEffect, useState, useContext } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { FaTable, FaThLarge, FaCheck, FaTrash, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import { EmailContext } from '../utils/EmailContext';
-import { useNavigate } from 'react-router-dom';
+
+// Import custom hooks
+import { useAuth } from '../hooks/admin/useAuth';
+import { useOrders } from '../hooks/admin/useOrders';
+import { useOrderActions } from '../hooks/admin/useOrderActions';
+import { usePagination } from '../hooks/admin/usePagination';
+import { useOrderView } from '../hooks/admin/useOrderView';
+import { useStatusMessage } from '../hooks/admin/useStatusMessage';
 
 const AdminOrders = () => {
-  const [orders, setOrders] = useState([]);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
-  const { email } = useContext(EmailContext);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const [userName, setUserName] = useState("");
-  const navigate = useNavigate();
+  // Use custom hooks
+  const { userId, userName } = useAuth();
+  const { statusMessage, showSuccess, showError, clearMessage } = useStatusMessage();
   
-  // Pagination state
+  // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
-  const [totalOrders, setTotalOrders] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (email) {
-      fetch(
-        `http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(
-          email
-        )}`
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.userId) {
-            setUserId(data.userId);
-            setUserName(data.userName || 'Admin');
-            setIsLoggedIn(true);
-          } else {
-            setIsLoggedIn(false);
-            navigate("/auth");
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching user ID:", error);
-          setIsLoggedIn(false);
-          navigate("/auth");
-        });
-    } else {
-      setIsLoggedIn(false);
-      navigate("/auth");
-    }
-  }, [email, navigate]);
+  // Initialize orders hook
+  const {
+    orders,
+    totalOrders,
+    isLoading,
+    error,
+    fetchOrders,
+    setOrders
+  } = useOrders();
 
+  // Use your existing pagination hook
+  const {
+    totalPages,
+    handlePageChange,
+    handleItemsPerPageChange,
+    getVisiblePageNumbers,
+  } = usePagination(totalOrders, ordersPerPage, currentPage, setCurrentPage, setOrdersPerPage);
+
+  const {
+    handleAcceptOrder,
+    handleDeleteOrder
+  } = useOrderActions(userId, userName);
+
+  const {
+    viewMode,
+    setViewMode,
+    getStatusColor,
+    getPaymentStatusColor,
+    formatDate,
+    formatDateTime
+  } = useOrderView('table');
+
+  // Fetch orders when pagination changes
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(currentPage, ordersPerPage);
   }, [currentPage, ordersPerPage]);
 
-  const fetchOrders = async () => {
-    setIsLoading(true);
+  // Enhanced order actions with status messages
+  const handleAcceptOrderWithFeedback = async (orderId) => {
     try {
-      const response = await axios.get(
-        `http://localhost/apii/components/adminOrders.php?page=${currentPage}&limit=${ordersPerPage}`
-      );
-      
-      const data = response.data;
-      console.log(data);
-      
-      if (data.orders) {
-        setOrders(data.orders);
-        setTotalOrders(data.total);
-      } else if (Array.isArray(data)) {
-        // Fallback for non-paginated response
-        setOrders(data);
-        setTotalOrders(data.length);
-      } else {
-        console.error('Unexpected response format:', data);
-        setOrders([]);
-        setTotalOrders(0);
-      }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      setOrders([]);
-      setTotalOrders(0);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPaymentStatusColor = (status) => {
-    return status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-  };
-
-  const handleAcceptOrder = async (orderId) => {
-    try {
-      const response = await axios.post('http://localhost/apii/components/updateClientOrderStatus.php', {
-        orderId: orderId,
-        status: 'completed',
-        payment_status: 'paid',
-        user_id: userId,
-        user_name: userName
-      });
-
-      if (response.data.success) {
+      const result = await handleAcceptOrder(orderId);
+      if (result.success) {
         setOrders(orders.map(order =>
           order.id === orderId
             ? { ...order, status: 'completed', payment_status: 'paid' }
             : order
         ));
-      } else {
-        console.error('Failed to update order:', response.data.message);
+        showSuccess('Order accepted successfully');
       }
     } catch (error) {
       console.error('Error updating order:', error);
+      showError('Failed to accept order. Please try again.');
     }
   };
 
-  const handleDeleteOrder = async (orderId) => {
+  const handleDeleteOrderWithFeedback = async (orderId) => {
     if (window.confirm('Are you sure you want to delete this order?')) {
       try {
-        const response = await axios.post('http://localhost/apii/components/deleteClientOrder.php', {
-          orderId: orderId,
-          user_id: userId,
-          user_name: userName
-        });
-
-        if (response.data.success) {
-          // Refresh orders after deletion
-          fetchOrders();
-        } else {
-          console.error('Failed to delete order:', response.data.message);
+        const result = await handleDeleteOrder(orderId);
+        if (result.success) {
+          showSuccess('Order deleted successfully');
+          fetchOrders(currentPage, ordersPerPage); // Refresh orders after deletion
         }
       } catch (error) {
         console.error('Error deleting order:', error);
+        showError('Failed to delete order. Please try again.');
       }
     }
   };
 
-  // Pagination functions
-  const totalPages = Math.ceil(totalOrders / ordersPerPage);
-  
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
+  // Calculate display range
+  const getDisplayRange = () => {
+    if (totalOrders === 0) {
+      return { start: 0, end: 0 };
     }
+    const start = (currentPage - 1) * ordersPerPage + 1;
+    const end = Math.min(currentPage * ordersPerPage, totalOrders);
+    return { start, end };
   };
 
-  const handleOrdersPerPageChange = (e) => {
-    setOrdersPerPage(Number(e.target.value));
-    setCurrentPage(1); // Reset to first page when changing items per page
-  };
-
-  const getVisiblePageNumbers = () => {
-    const delta = 2;
-    const range = [];
-    const rangeWithDots = [];
-
-    for (
-      let i = Math.max(2, currentPage - delta);
-      i <= Math.min(totalPages - 1, currentPage + delta);
-      i++
-    ) {
-      range.push(i);
-    }
-
-    if (currentPage - delta > 2) {
-      rangeWithDots.push(1, '...');
-    } else {
-      rangeWithDots.push(1);
-    }
-
-    rangeWithDots.push(...range);
-
-    if (currentPage + delta < totalPages - 1) {
-      rangeWithDots.push('...', totalPages);
-    } else if (totalPages > 1) {
-      rangeWithDots.push(totalPages);
-    }
-
-    return rangeWithDots;
-  };
+  const { start, end } = getDisplayRange();
 
   return (
     <AdminLayout currentPage="orders">
       <div className="flex-grow p-4 md:p-6">
         <div className="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
           <div className="container mx-auto px-4 py-6">
+            {/* Status Message Display */}
+            {statusMessage.message && (
+              <div className={`mb-4 p-3 rounded-lg ${
+                statusMessage.type === 'success' 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-red-100 text-red-700'
+              }`}>
+                {statusMessage.message}
+              </div>
+            )}
+
+            {/* Error Display */}
+            {error && (
+              <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                <div className="flex items-center">
+                  <span className="text-red-700">{error}</span>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900">Client Orders</h1>
               <div className="flex space-x-2">
@@ -224,7 +155,7 @@ const AdminOrders = () => {
                 <select
                   id="ordersPerPage"
                   value={ordersPerPage}
-                  onChange={handleOrdersPerPageChange}
+                  onChange={handleItemsPerPageChange}
                   className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-gray-500"
                 >
                   <option value={5}>5</option>
@@ -236,8 +167,7 @@ const AdminOrders = () => {
               
               {/* Orders count display */}
               <div className="text-sm text-gray-600">
-                Showing {orders.length === 0 ? 0 : (currentPage - 1) * ordersPerPage + 1} to{' '}
-                {Math.min(currentPage * ordersPerPage, totalOrders)} of {totalOrders} orders
+                Showing {start} to {end} of {totalOrders} orders
               </div>
             </div>
 
@@ -285,13 +215,13 @@ const AdminOrders = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.order_items}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.service_name || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.address}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.delivery_date).toLocaleDateString()}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.created_at).toLocaleString()}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(order.delivery_date)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(order.created_at)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <div className="flex space-x-2">
                             {order.status !== 'completed' && (
                               <button
-                                onClick={() => handleAcceptOrder(order.id)}
+                                onClick={() => handleAcceptOrderWithFeedback(order.id)}
                                 className="text-green-600 hover:text-green-900"
                                 title="Accept Order"
                               >
@@ -299,7 +229,7 @@ const AdminOrders = () => {
                               </button>
                             )}
                             <button
-                              onClick={() => handleDeleteOrder(order.id)}
+                              onClick={() => handleDeleteOrderWithFeedback(order.id)}
                               className="text-red-600 hover:text-red-900"
                               title="Delete Order"
                             >
@@ -348,12 +278,12 @@ const AdminOrders = () => {
 
                         <div className="flex justify-between">
                           <span className="text-gray-600">Delivery Date:</span>
-                          <span>{new Date(order.delivery_date).toLocaleDateString()}</span>
+                          <span>{formatDate(order.delivery_date)}</span>
                         </div>
 
                         <div className="flex justify-between">
                           <span className="text-gray-600">Created At:</span>
-                          <span>{new Date(order.created_at).toLocaleString()}</span>
+                          <span>{formatDateTime(order.created_at)}</span>
                         </div>
 
                         {order.address && (
@@ -383,14 +313,14 @@ const AdminOrders = () => {
                       <div className="mt-4 flex justify-end space-x-2">
                         {order.status !== 'completed' && (
                           <button
-                            onClick={() => handleAcceptOrder(order.id)}
+                            onClick={() => handleAcceptOrderWithFeedback(order.id)}
                             className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
                           >
                             Accept
                           </button>
                         )}
                         <button
-                          onClick={() => handleDeleteOrder(order.id)}
+                          onClick={() => handleDeleteOrderWithFeedback(order.id)}
                           className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
                         >
                           Delete

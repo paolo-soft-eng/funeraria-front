@@ -43,7 +43,6 @@ const AdminAnalytics = () => {
     startDate: '',
     endDate: '',
     serviceType: '',
-    clientType: '',
     paymentStatus: ''
   });
 
@@ -866,19 +865,6 @@ const AdminAnalytics = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Client Type</label>
-                    <select
-                      name="clientType"
-                      value={filters.clientType}
-                      onChange={handleFilterChange}
-                      className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                      <option value="">All Clients</option>
-                      <option value="user">Regular User</option>
-                    </select>
-                  </div>
-
-                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
                     <select
                       name="paymentStatus"
@@ -1243,11 +1229,6 @@ const AdminAnalytics = () => {
                       ? `service-${s.id}` === filters.serviceType
                       : `item-${s.id}` === filters.serviceType
                   )?.name || filters.serviceType}
-                </span>
-              )}
-              {filters.clientType && (
-                <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-blue-800 text-xs">
-                  Client: {filters.clientType}
                 </span>
               )}
               {filters.paymentStatus && (

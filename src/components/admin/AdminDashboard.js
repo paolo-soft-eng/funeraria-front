@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
-import axios from 'axios';
+import React from 'react';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import {
     Home,
@@ -11,7 +10,6 @@ import {
     Menu,
     X,
     User,
-    LogOut,
     Bell,
     Edit,
     Bug,
@@ -30,267 +28,39 @@ import {
 import { EmailContext } from '../utils/EmailContext';
 import LoadingWrapper from '../LoadingWrapper';
 
+// Import custom hooks
+import { useAdminAuth } from '../hooks/admin/useAdminAuth';
+import { useUserData } from '../hooks/admin/useUserData';
+import { useDashboardStats } from '../hooks/admin/useDashboardStats';
+import { useRecentActivities } from '../hooks/admin/useRecentActivities';
+import { useNotification } from '../hooks/admin/useNotifications';
+import { useSidebar } from '../hooks/admin/useSideBar';
+import { useDropdown } from '../hooks/admin/useDropDown';
+import { useLogout } from '../hooks/admin/useLogout';
+import { useActivityUtils } from '../hooks/admin/useActivityUtils';
+import { useNavigation } from '../hooks/admin/useNavigation';
+
 const AdminDashboard = () => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [isMobileView, setIsMobileView] = useState(false);
-    const [userData, setUserData] = useState(null);
     const navigate = useNavigate();
-    const dropdownRef = useRef(null);
-    const [notification, setNotification] = useState(null);
-    const { email } = useContext(EmailContext);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [userId, setUserId] = useState(null);
-    const [isValidatingAdmin, setIsValidatingAdmin] = useState(true);
-    const [recentActivities, setRecentActivities] = useState([]);
-    const [activitiesLoading, setActivitiesLoading] = useState(false);
-
-    const [dashboardStats, setDashboardStats] = useState({
-        totalOrders: 0,
-        totalClients: 0,
-        totalRevenue: 0,
-        newMessages: 0,
-        current_month_orders: 0,
-        current_month_clients: 0,
-        current_month_revenue: 0,
-        recent_messages: [],
-        upcoming_orders: [],
-        upcoming_appointments: []
-    });
-
-    // Admin validation function
-    const validateAdminAccess = async () => {
-        if (!email) {
-            showNotification('Access denied: No email found', 'error');
-            setTimeout(() => navigate('/auth'), 1500);
-            return false;
-        }
-
-        try {
-            const response = await axios.post('http://localhost/apii/components/getUserId.php', {
-                email: email
-            });
-
-            if (response.data.success && response.data.isAdmin) {
-                setIsValidatingAdmin(false);
-                return true;
-            } else {
-                showNotification('Access denied: Admin privileges required', 'error');
-                setTimeout(() => navigate('/auth'), 1500);
-                return false;
-            }
-        } catch (error) {
-            console.error('Error validating admin access:', error);
-            showNotification('Access denied: Unable to verify admin status', 'error');
-            setTimeout(() => navigate('/auth'), 1500);
-            return false;
-        }
-    };
-
-    useEffect(() => {
-        // Validate admin access first
-        validateAdminAccess();
-    }, [email, navigate]);
-
-    useEffect(() => {
-        const fetchDashboardStats = async () => {
-            if (!isValidatingAdmin && email) {
-                try {
-                    const response = await axios.post(
-                        'http://localhost/apii/components/fetchDashboardStats.php',
-                        { email } // Send the email from context
-                    );
-                    if (response.data.success) {
-                        setDashboardStats({
-                            totalOrders: response.data.data.total_orders || 0,
-                            totalClients: response.data.data.total_clients || 0,
-                            totalRevenue: response.data.data.total_revenue || 0,
-                            newMessages: response.data.data.new_messages || 0,
-                            current_month_orders: response.data.data.current_month_orders || 0,
-                            current_month_clients: response.data.data.current_month_clients || 0,
-                            current_month_revenue: response.data.data.current_month_revenue || 0,
-                            current_month_name: response.data.data.current_month_name || 'Current Month',
-                            upcoming_orders: response.data.data.upcoming_orders || [],
-                            upcoming_appointments: response.data.data.upcoming_appointments || [],
-                            recent_messages: response.data.data.recent_messages || []
-                        });
-                    } else {
-                        console.error('Failed to fetch dashboard stats:', response.data.error);
-                    }
-                } catch (error) {
-                    console.error('Error fetching dashboard stats:', error);
-                }
-            }
-        };
-
-        fetchDashboardStats();
-        // Set up polling every 5 minutes to refresh the stats
-        const intervalId = setInterval(fetchDashboardStats, 5 * 60 * 1000);
-
-        return () => clearInterval(intervalId);
-    }, [email, isValidatingAdmin]); // Add isValidatingAdmin to dependency array
-
-    // Check if mobile view on initial load and window resize
-    useEffect(() => {
-        const checkIfMobile = () => {
-            setIsMobileView(window.innerWidth < 1024);
-            if (window.innerWidth < 1024) {
-                setIsSidebarOpen(false);
-            } else {
-                setIsSidebarOpen(true);
-            }
-        };
-
-        checkIfMobile();
-        window.addEventListener('resize', checkIfMobile);
-
-        return () => {
-            window.removeEventListener('resize', checkIfMobile);
-        };
-    }, []);
-
-    useEffect(() => {
-        // Fetch user data including profile picture only after admin validation
-        const fetchUserData = async () => {
-            if (!isValidatingAdmin && email) {
-                try {
-                    const response = await axios.post('http://localhost/apii/components/fetchAdminProfile.php', { email });
-                    setUserData(response.data.data);
-
-                } catch (error) {
-                    console.error('Error fetching user data:', error);
-                }
-            }
-        };
-
-        fetchUserData();
-    }, [email, isValidatingAdmin]);
-
-    // Add login validation - only run after admin validation passes
-    useEffect(() => {
-        if (!isValidatingAdmin && email) {
-            // Fetch user ID based on email
-            fetch(`http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.userId) {
-                        setUserId(data.userId);
-                        setIsLoggedIn(true);
-                    } else {
-                        setIsLoggedIn(false);
-                        navigate('/auth');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching user ID:', error);
-                    setIsLoggedIn(false);
-                    navigate('/auth');
-                });
-        } else if (!isValidatingAdmin && !email) {
-            setIsLoggedIn(false);
-            navigate('/auth');
-        }
-    }, [email, navigate, isValidatingAdmin]);
-
-    const showNotification = (message, type = 'info') => {
-        setNotification({ message, type });
-        setTimeout(() => setNotification(null), 3000);
-    };
-
-    const toggleSidebar = () => {
-        setIsSidebarOpen(!isSidebarOpen);
-    };
-
-    const toggleDropdown = () => {
-        setIsDropdownOpen(!isDropdownOpen);
-    };
-
-    const handleNavClick = (path) => {
-        if (isMobileView) {
-            setIsSidebarOpen(false);
-        }
-        setIsDropdownOpen(false);
-        navigate(path);
-    };
-
-
-    const handleOrders = () => {
-        navigate("/dashboard-admin/orders");
-    }
-
-    const handleClient = () => {
-        navigate("/dashboard-admin/clients");
-    }
-
-    const handleReports = () => {
-        navigate("/dashboard-admin/reports");
-    }
-
-    const handleMessage = () => {
-        navigate("/dashboard-admin/messages");
-    }
-
-    const handleItems = () => {
-        navigate("/dashboard-admin/itemlists");
-    }
-
-    const handleLogout = async () => {
-        const userConfirmed = window.confirm("Are you sure you want to log out?");
-
-        if (userConfirmed) {
-            try {
-                showNotification('Logging out...', 'info');
-                await axios.post('http://localhost/apii/config/logout.php');
-                localStorage.removeItem('userEmail');
-                localStorage.removeItem('userRole');
-                showNotification('Successfully logged out!', 'success');
-                setTimeout(() => {
-                    navigate('/auth');
-                }, 1000);
-            } catch (error) {
-                console.error('Error logging out:', error);
-                showNotification('Failed to log out. Please try again.', 'error');
-            }
-        }
-    };
-
-    const handleEditProfile = () => {
-        navigate('/dashboard-admin/settings')
-    }
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsDropdownOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
-
-    const formatTime12Hour = (timeString) => {
-        if (!timeString) return '';
-
-        // Handle both "HH:MM:SS" and "HH:MM" formats
-        const timeParts = timeString.split(':');
-        let hours = parseInt(timeParts[0], 10);
-        const minutes = timeParts[1];
-
-        // Determine AM/PM
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-
-        // Convert to 12-hour format
-        hours = hours % 12;
-        hours = hours ? hours : 12; // 0 should be 12
-
-        // Remove leading zero from hours if present
-        const formattedHours = hours.toString();
-
-        return `${formattedHours}:${minutes} ${ampm}`;
-    };
+    
+    // Use custom hooks
+    const { isLoggedIn, isValidatingAdmin, email } = useAdminAuth();
+    const { userData } = useUserData(email, isValidatingAdmin);
+    const { dashboardStats, isLoading } = useDashboardStats(email, isValidatingAdmin);
+    const { recentActivities, activitiesLoading, fetchRecentActivities } = useRecentActivities(email, isValidatingAdmin);
+    const { notification, showNotification } = useNotification();
+    const { isSidebarOpen, isMobileView, toggleSidebar, closeSidebar } = useSidebar();
+    const { isDropdownOpen, dropdownRef, toggleDropdown, closeDropdown } = useDropdown();
+    const { handleLogout } = useLogout(showNotification);
+    const { getActivityIcon, getActivityColor, formatTime12Hour } = useActivityUtils();
+    const { 
+        handleOrders, 
+        handleClient, 
+        handleReports, 
+        handleMessage, 
+        handleItems, 
+        handleEditProfile 
+    } = useNavigation();
 
     // Main nav items with icons
     const mainNavItems = [
@@ -306,78 +76,12 @@ const AdminDashboard = () => {
         { name: 'settings', icon: <Settings size={20} />, label: 'Settings' },
     ];
 
-    // Sample data for activities
-    const fetchRecentActivities = async () => {
-        try {
-            setActivitiesLoading(true);
-            const response = await axios.get(
-                'http://localhost/apii/components/fetchRecentActivities.php?limit=7'
-            );
-
-            if (response.data.success) {
-                setRecentActivities(response.data.data);
-            } else {
-                console.error('Failed to fetch recent activities:', response.data.error);
-            }
-        } catch (error) {
-            console.error('Error fetching recent activities:', error);
-        } finally {
-            setActivitiesLoading(false);
+    const handleNavClick = (path) => {
+        if (isMobileView) {
+            closeSidebar();
         }
-    };
-
-    // Add this useEffect to fetch activities when component loads
-    useEffect(() => {
-        if (!isValidatingAdmin && email) {
-            fetchRecentActivities();
-            // Set up polling every 30 seconds to refresh activities
-            const intervalId = setInterval(fetchRecentActivities, 30 * 1000);
-            return () => clearInterval(intervalId);
-        }
-    }, [email, isValidatingAdmin]);
-
-    // Function to get activity icon based on type
-    const getActivityIcon = (type) => {
-        switch (type) {
-            case 'Order':
-                return <ShoppingCart size={16} className="text-indigo-600" />;
-            case 'Message':
-                return <MessageSquare size={16} className="text-blue-600" />;
-            case 'Client':
-                return <Users size={16} className="text-green-600" />;
-            case 'Item':
-                return <Edit size={16} className="text-purple-600" />;
-            case 'Appointment':
-                return <Calendar size={16} className="text-orange-600" />;
-            case 'Payment':
-                return <Activity size={16} className="text-emerald-600" />;
-            case 'System':
-                return <Settings size={16} className="text-gray-600" />;
-            default:
-                return <Activity size={16} className="text-gray-600" />;
-        }
-    };
-
-    // Function to get activity color based on type
-    const getActivityColor = (type) => {
-        switch (type) {
-            case 'Order':
-                return 'bg-indigo-50 border-indigo-200';
-            case 'Message':
-                return 'bg-blue-50 border-blue-200';
-            case 'Client':
-                return 'bg-green-50 border-green-200';
-            case 'Item':
-                return 'bg-purple-50 border-purple-200';
-            case 'Appointment':
-                return 'bg-orange-50 border-orange-200';
-            case 'Payment':
-                return 'bg-emerald-50 border-emerald-200';
-            case 'System':
-                return 'bg-gray-50 border-gray-200';
-            default:
-                return 'bg-gray-50 border-gray-200';
-        }
+        closeDropdown();
+        navigate(path);
     };
 
     if (!isLoggedIn && !isValidatingAdmin) {
@@ -432,7 +136,7 @@ const AdminDashboard = () => {
                         )}
                         <span className="font-medium">{notification.message}</span>
                         <button
-                            onClick={() => setNotification(null)}
+                            onClick={() => showNotification(null)}
                             className="ml-2 text-white hover:text-gray-200"
                         >
                             <X size={16} />
@@ -559,7 +263,7 @@ const AdminDashboard = () => {
                                         <Link
                                             to="/dashboard-admin/settings"
                                             className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                            onClick={() => setIsDropdownOpen(false)}
+                                            onClick={() => isDropdownOpen(false)}
                                         >
                                             <Settings size={16} className="mr-2" />
                                             <span>Settings</span>
@@ -569,7 +273,6 @@ const AdminDashboard = () => {
                                             onClick={handleLogout}
                                             className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                         >
-                                            <LogOut size={16} className="mr-2" />
                                             <span>Logout</span>
                                         </button>
                                     </div>

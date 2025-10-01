@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import AdminLayout from './AdminLayout';
 import { 
   Eye, 
@@ -12,154 +12,84 @@ import {
   Filter
 } from 'lucide-react';
 
+// Import custom hooks
+import { useReports } from '../hooks/admin/useReports';
+import { useReportFilters } from '../hooks/admin/useReportFilters';
+import { useReportModal } from '../hooks/admin/useReportModal';
+import { useReportUtils } from '../hooks/admin/useReportUtils';
+import { useStatusMessage } from '../hooks/admin/useStatusMessage';
+
 export const AdminReport = () => {
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [message, setMessage] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  // Use custom hooks
+  const {
+    reports,
+    loading,
+    error,
+    fetchReports,
+    updateReportStatus,
+    deleteReport
+  } = useReports();
 
-  const API_BASE_URL = 'http://localhost/apii/components/adminReport.php';
+  const {
+    searchTerm,
+    setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    filteredReports,
+    reportStats
+  } = useReportFilters(reports);
 
-  // Fetch all reports
-  const fetchReports = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const {
+    selectedReport,
+    isViewModalOpen,
+    openModal,
+    closeModal
+  } = useReportModal();
 
-      const response = await fetch(`${API_BASE_URL}?action=get_all_reports`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
+  const {
+    statusMessage,
+    showSuccess,
+    showError,
+    clearMessage
+  } = useStatusMessage();
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+  const {
+    getStatusInfo,
+    formatDate
+  } = useReportUtils();
 
-      const data = await response.json();
-
-      if (data.status === 'success') {
-        setReports(data.data || []);
-      } else {
-        throw new Error(data.message || 'Failed to fetch reports');
-      }
-    } catch (err) {
-      console.error('Error fetching reports:', err);
-      setError(err.message || 'Failed to load reports');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load reports on component mount
-  useEffect(() => {
-    fetchReports();
-  }, []);
-
-  // Handle report status update
+  // Handle report status update with message
   const handleStatusUpdate = async (reportId, newStatus) => {
     try {
-      const response = await fetch(API_BASE_URL, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'update_status',
-          report_id: reportId,
-          status: newStatus
-        }),
-      });
-
-      const data = await response.json();
+      const data = await updateReportStatus(reportId, newStatus);
       if (data.status === 'success') {
-        showMessage(`Report marked as ${newStatus}`, 'success');
+        showSuccess(`Report marked as ${newStatus}`);
         fetchReports(); // Refresh the list
       } else {
-        showMessage(data.message || 'Failed to update report status', 'error');
+        showError(data.message || 'Failed to update report status');
       }
     } catch (err) {
       console.error('Error updating report status:', err);
-      showMessage('Failed to update report status. Please try again.', 'error');
+      showError('Failed to update report status. Please try again.');
     }
   };
 
-  // Handle report deletion
+  // Handle report deletion with confirmation
   const handleDeleteReport = async (reportId) => {
     if (window.confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
       try {
-        const response = await fetch(API_BASE_URL, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'delete_report',
-            report_id: reportId
-          }),
-        });
-
-        const data = await response.json();
+        const data = await deleteReport(reportId);
         if (data.status === 'success') {
-          showMessage('Report deleted successfully', 'success');
+          showSuccess('Report deleted successfully');
           fetchReports(); // Refresh the list
         } else {
-          showMessage(data.message || 'Failed to delete report', 'error');
+          showError(data.message || 'Failed to delete report');
         }
       } catch (err) {
         console.error('Error deleting report:', err);
-        showMessage('Failed to delete report. Please try again.', 'error');
+        showError('Failed to delete report. Please try again.');
       }
     }
-  };
-
-  // Show message helper
-  const showMessage = (text, type = 'info') => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage(null), 5000);
-  };
-
-  // Filter reports based on search term and status
-  const filteredReports = reports.filter(report => {
-    const matchesSearch = 
-      report.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.user_id?.toString().includes(searchTerm);
-    
-    const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-
-  // Get status icon and color
-  const getStatusInfo = (status) => {
-    switch (status) {
-      case 'pending':
-        return { icon: <Clock size={16} />, color: 'text-yellow-600 bg-yellow-100', label: 'Pending' };
-      case 'resolved':
-        return { icon: <CheckCircle size={16} />, color: 'text-green-600 bg-green-100', label: 'Resolved' };
-      case 'rejected':
-        return { icon: <XCircle size={16} />, color: 'text-red-600 bg-red-100', label: 'Rejected' };
-      default:
-        return { icon: <AlertCircle size={16} />, color: 'text-gray-600 bg-gray-100', label: 'Unknown' };
-    }
-  };
-
-  // Format date
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   };
 
   if (loading) {
@@ -193,19 +123,14 @@ export const AdminReport = () => {
           </button>
         </div>
 
-        {/* Message Display */}
-        {message && (
-          <div className={`p-4 rounded-lg ${message.type === 'success' 
-            ? 'bg-green-50 text-green-700 border-l-4 border-green-500' 
-            : 'bg-red-50 text-red-700 border-l-4 border-red-500'}`}>
-            <div className="flex items-center">
-              {message.type === 'success' ? (
-                <CheckCircle size={20} className="mr-2" />
-              ) : (
-                <AlertCircle size={20} className="mr-2" />
-              )}
-              <span>{message.text}</span>
-            </div>
+        {/* Status Message Display */}
+        {statusMessage.message && (
+          <div className={`p-4 rounded-lg ${
+            statusMessage.type === 'success' 
+              ? 'bg-green-100 text-green-700' 
+              : 'bg-red-100 text-red-700'
+          }`}>
+            {statusMessage.message}
           </div>
         )}
 
@@ -316,10 +241,7 @@ export const AdminReport = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
                             <button
-                              onClick={() => {
-                                setSelectedReport(report);
-                                setIsViewModalOpen(true);
-                              }}
+                              onClick={() => openModal(report)}
                               className="text-blue-600 hover:text-blue-900 p-1"
                               title="View Details"
                             >
@@ -367,25 +289,19 @@ export const AdminReport = () => {
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{reports.length}</div>
+              <div className="text-2xl font-bold text-gray-900">{reportStats.total}</div>
               <div className="text-sm text-gray-500">Total Reports</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-600">
-                {reports.filter(r => r.status === 'pending').length}
-              </div>
+              <div className="text-2xl font-bold text-yellow-600">{reportStats.pending}</div>
               <div className="text-sm text-gray-500">Pending</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {reports.filter(r => r.status === 'resolved').length}
-              </div>
+              <div className="text-2xl font-bold text-green-600">{reportStats.resolved}</div>
               <div className="text-sm text-gray-500">Resolved</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {reports.filter(r => r.status === 'rejected').length}
-              </div>
+              <div className="text-2xl font-bold text-red-600">{reportStats.rejected}</div>
               <div className="text-sm text-gray-500">Rejected</div>
             </div>
           </div>
@@ -399,10 +315,7 @@ export const AdminReport = () => {
             <div className="flex justify-between items-center p-6 border-b">
               <h3 className="text-lg font-medium">Report Details</h3>
               <button
-                onClick={() => {
-                  setIsViewModalOpen(false);
-                  setSelectedReport(null);
-                }}
+                onClick={closeModal}
                 className="text-gray-500 hover:text-gray-700"
               >
                 <XCircle size={24} />
@@ -454,8 +367,7 @@ export const AdminReport = () => {
                   <button
                     onClick={() => {
                       handleStatusUpdate(selectedReport.id, 'resolved');
-                      setIsViewModalOpen(false);
-                      setSelectedReport(null);
+                      closeModal();
                     }}
                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
                   >
@@ -465,8 +377,7 @@ export const AdminReport = () => {
                   <button
                     onClick={() => {
                       handleStatusUpdate(selectedReport.id, 'rejected');
-                      setIsViewModalOpen(false);
-                      setSelectedReport(null);
+                      closeModal();
                     }}
                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center"
                   >
@@ -476,10 +387,7 @@ export const AdminReport = () => {
                 </>
               )}
               <button
-                onClick={() => {
-                  setIsViewModalOpen(false);
-                  setSelectedReport(null);
-                }}
+                onClick={closeModal}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
                 Close
