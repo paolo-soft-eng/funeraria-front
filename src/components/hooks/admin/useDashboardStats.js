@@ -12,6 +12,7 @@ export const useDashboardStats = (email, isValidatingAdmin) => {
         current_month_revenue: 0,
         recent_messages: [],
         upcoming_orders: [],
+        current_month_name: '',
         upcoming_appointments: []
     });
     const [isLoading, setIsLoading] = useState(false);

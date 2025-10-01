@@ -9,10 +9,6 @@ export const useProfile = (email) => {
     address: '',
     emergencyContact: '',
     role: 'admin',
-    notifications: {
-      email: true,
-      sms: false,
-    },
     profileImage: null
   });
   const [profilePreview, setProfilePreview] = useState(null);
@@ -21,7 +17,6 @@ export const useProfile = (email) => {
   useEffect(() => {
     if (email) {
       fetchProfileData();
-      fetchNotificationData();
     }
   }, [email]);
 
@@ -61,43 +56,12 @@ export const useProfile = (email) => {
     }
   };
 
-  const fetchNotificationData = async () => {
-    try {
-      const res = await fetch('http://localhost/apii/components/fetchNotifications.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-
-      if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-
-      const data = await res.json();
-      if (data.success) {
-        setFormData(prev => ({
-          ...prev,
-          notifications: {
-            email: data.data.notifications.email,
-            sms: data.data.notifications.sms
-          }
-        }));
-      }
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleCheckboxChange = (e) => {
-    const { name, checked } = e.target;
-    setFormData({
-      ...formData,
-      notifications: { ...formData.notifications, [name]: checked }
-    });
-  };
 
   const handleProfileImageChange = (e) => {
     const file = e.target.files[0];
@@ -128,6 +92,7 @@ export const useProfile = (email) => {
     formDataToSend.append('address', formData.address);
     formDataToSend.append('emergencyContact', formData.emergencyContact);
     formDataToSend.append('role', formData.role);
+    formDataToSend.append('adminCancel','adminCancel' )
 
     if (formData.profileImage instanceof File) {
       formDataToSend.append('profileImage', formData.profileImage);
@@ -149,49 +114,36 @@ export const useProfile = (email) => {
     return await res.json();
   };
 
-  const updateNotifications = async () => {
-    const res = await fetch('http://localhost/apii/components/updateNotifications.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: formData.email,
-        notifications: formData.notifications
-      })
-    });
-
-    if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-    return await res.json();
-  };
-
+  
   const removeProfileImage = async () => {
-    const res = await fetch('http://localhost/apii/components/removeProfileImage.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: formData.email })
-    });
+  const res = await fetch('http://localhost/apii/components/removeProfileImage.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: formData.email })
+  });
 
-    if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+  if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
 
-    const data = await res.json();
-    if (data.success) {
-      if (profilePreview && profilePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(profilePreview);
-      }
-      setFormData(prev => ({ ...prev, profileImage: null }));
-      setProfilePreview(null);
+  const data = await res.json();
+  
+  if (data.success) {
+    // Clear the profile image state
+    if (profilePreview && profilePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(profilePreview);
     }
-    return data;
-  };
+    setFormData(prev => ({ ...prev, profileImage: null }));
+    setProfilePreview(null);
+  }
+  return data;
+};
 
   return {
     formData,
     profilePreview,
     isLoading,
     handleInputChange,
-    handleCheckboxChange,
     handleProfileImageChange,
     updateProfile,
-    updateNotifications,
     removeProfileImage
   };
 };
