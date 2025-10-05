@@ -183,7 +183,7 @@ export default function FuneralManagementLanding() {
             playsInline
             className="w-full h-full object-cover"
           >
-            <source src="/vid.mp4" type="video/mp4" />
+            <source src="/assets/vid.mp4" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
           {/* Dark overlay for text readability */}
