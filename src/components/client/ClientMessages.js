@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Info, Phone, Video, Image, Camera, Send, Copy, Trash, CornerUpLeft, Menu, X, ZoomIn } from 'lucide-react';
+import { Info, Phone, Video, Image, Camera, Send, Copy, Trash, CornerUpLeft, Menu, X, ZoomIn, User } from 'lucide-react';
 import { EmailContext } from '../utils/EmailContext';
 
 // Import custom hooks
@@ -29,7 +29,7 @@ export default function ClientMessages() {
     clearMessages,
     setError: setMessagesError
   } = useMessages(userId, null);
-  
+
   const {
     admins,
     selectedAdmin,
@@ -115,52 +115,57 @@ export default function ClientMessages() {
 
         currentAddMessage(newMessage);
       }
+
+      // Handle message deletion from admin
+      if (data.type === 'message_deleted') {
+        currentRemoveMessage(data.messageId);
+      }
     };
 
     socket.addEventListener('message', handleMessage);
     return () => socket.removeEventListener('message', handleMessage);
-  }, [socket, processedMessageIds, currentAddMessage]);
+  }, [socket, processedMessageIds, currentAddMessage, currentRemoveMessage]);
 
   useEffect(() => {
-  if (selectedAdmin && userId && currentMessages.length > 0) {
-    // Mark messages as read after viewing
-    const hasUnreadMessages = currentMessages.some(msg => 
-      msg.sender === 'admin' && !msg.isRead
-    );
-    
-    if (hasUnreadMessages) {
-      markMessagesAsRead(selectedAdmin.id, userId);
-      currentMarkAsRead(); // Now this is defined
+    if (selectedAdmin && userId && currentMessages.length > 0) {
+      // Mark messages as read after viewing
+      const hasUnreadMessages = currentMessages.some(msg =>
+        msg.sender === 'admin' && !msg.isRead
+      );
+
+      if (hasUnreadMessages) {
+        markMessagesAsRead(selectedAdmin.id, userId);
+        currentMarkAsRead();
+      }
     }
-  }
-}, [selectedAdmin, userId, currentMessages, markMessagesAsRead, currentMarkAsRead]);
+  }, [selectedAdmin, userId, currentMessages, markMessagesAsRead, currentMarkAsRead]);
 
   // Handle admin selection
- const handleAdminClick = (admin) => {
-  setSelectedAdmin(admin);
-  currentClearMessages();
-  processedMessageIds.clear();
-  setShowSidebar(false);
-  
-  // Mark messages as read in the backend
-  markMessagesAsRead(admin.id, userId);
-  
-  if (userId) {
-    countMessages(admin.id, userId);
-  }
-};
+  const handleAdminClick = (admin) => {
+    setSelectedAdmin(admin);
+    currentClearMessages();
+    processedMessageIds.clear();
+    setShowSidebar(false);
+
+    // Mark messages as read in the backend
+    markMessagesAsRead(admin.id, userId);
+
+    if (userId) {
+      countMessages(admin.id, userId);
+    }
+  };
 
   // Message sending functions
   const sendMessage = async () => {
     if (!message.trim()) return;
-    
+
     const success = await sendMessageAction(
       message,
       selectedAdmin,
       currentAddMessage,
       countMessages
     );
-    
+
     if (success) {
       setMessage('');
     }
@@ -174,7 +179,7 @@ export default function ClientMessages() {
       currentAddMessage,
       countMessages
     );
-    
+
     if (success) {
       setMessage('');
       clearFile();
@@ -197,8 +202,14 @@ export default function ClientMessages() {
     copyMessage(text);
   };
 
-  const handleUnsendMessage = async (messageId) => {
-    await unsendMessage(messageId, currentRemoveMessage);
+  const handleUnsendMessage = async (msg) => {
+    // Only allow deleting user's own messages
+    if (msg.sender !== 'me') {
+      setMessageActionError('You can only delete your own messages');
+      return;
+    }
+
+    await unsendMessage(msg.id, currentRemoveMessage);
   };
 
   // Scroll to bottom effect
@@ -328,17 +339,21 @@ export default function ClientMessages() {
                       <img
                         src={`http://${window.location.hostname}/apii/components/${admin.image_path}`}
                         alt={admin.username}
-                        className="h-10 w-10 rounded-full"
+                        className="h-10 w-10 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="h-10 w-10 bg-gray-300 rounded-full"></div>
+                      <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                        <User size={20} className="text-gray-500" />
+                      </div>
                     )}
+
                     {admin.unreadCount > 0 && (
                       <div className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
                         {admin.unreadCount}
                       </div>
                     )}
                   </div>
+
                   <div className="flex-1">
                     <div className="flex justify-between items-center">
                       <p className="font-medium text-gray-900">{admin.username}</p>
@@ -499,6 +514,12 @@ export default function ClientMessages() {
                         style={{ wordWrap: 'break-word' }}
                       >
                         {msg.sender === 'me' ? 'You' : selectedAdmin.username}
+
+                        {msg.isReply && (
+                          <div className={`text-xs opacity-75 mb-1 border-l-2 ${msg.sender === 'me' ? 'border-blue-200' : 'border-blue-400'} pl-2 ${msg.sender === 'me' ? 'text-blue-200' : 'text-gray-600'}`}>
+                            Replying to: {msg.replyToPreview}
+                          </div>
+                        )}
                         {msg.imageUrl && (
                           <div className="relative mt-2 group">
                             <img
@@ -511,32 +532,62 @@ export default function ClientMessages() {
                               }}
                             />
                             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
-                                 onClick={(e) => {
-                                   e.stopPropagation();
-                                   handleImageClick(msg.imageUrl);
-                                 }}>
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleImageClick(msg.imageUrl);
+                              }}>
                               <ZoomIn size={24} className="text-white" />
                             </div>
                           </div>
                         )}
                         <p className="whitespace-pre-wrap">{msg.text}</p>
-                        <div className="flex items-center justify-end mt-1">
+                        <div className="flex items-center justify-start mt-1">
                           {msg.time && (
-                            <span className={`text-xs ${msg.sender === 'me' ? 'text-white' : 'text-black'}`}>
+                            <span className={`text-xs ${msg.sender === 'me' ? 'text-white' : 'text-black'} text-left`}>
                               {msg.time}
                             </span>
                           )}
                         </div>
+
                         {selectedMessage === msg && (
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-white p-2 rounded shadow flex space-x-2 border border-gray-300 z-10">
-                            <button onClick={() => handleCopyMessage(msg.text)}>
+                            <button
+                              onClick={() => handleCopyMessage(msg.text)}
+                              title="Copy message"
+                            >
                               <Copy size={18} className="text-gray-900" />
                             </button>
-                            <button onClick={() => setMessage(`Reply to: ${msg.text}\n`)}>
+                            <button
+                              onClick={() => {
+                                // Truncate long messages for the reply prefix
+                                const originalText = msg.text;
+                                const previewText = originalText.length > 30
+                                  ? `${originalText.substring(0, 30)}...`
+                                  : originalText;
+
+                                // Set the message with reply context and move cursor to end
+                                setMessage(`Replying to: "${previewText}"\n\n`);
+
+                                // Focus on the input field after a brief delay
+                                setTimeout(() => {
+                                  const input = document.querySelector('input[type="text"]');
+                                  if (input) {
+                                    input.focus();
+                                    // Move cursor to end (after the reply prefix)
+                                    input.setSelectionRange(input.value.length, input.value.length);
+                                  }
+                                }, 100);
+                              }}
+                              title="Reply to this message"
+                            >
                               <CornerUpLeft size={18} className="text-gray-900" />
                             </button>
+                            {/* Only show delete button for user's own messages */}
                             {msg.sender === 'me' && (
-                              <button onClick={() => handleUnsendMessage(msg.id)}>
+                              <button
+                                onClick={() => handleUnsendMessage(msg)}
+                                title="Delete message"
+                              >
                                 <Trash size={18} className="text-red-500" />
                               </button>
                             )}
@@ -621,15 +672,15 @@ export default function ClientMessages() {
             >
               <X size={32} />
             </button>
-            
+
             <img
               src={enlargedImage}
               alt="Enlarged view"
               className="max-w-[70vw] max-h-[70vh] object-contain rounded-lg shadow-2xl"
               onClick={closeEnlargedImage}
             />
-            
-            <div 
+
+            <div
               className="absolute inset-0 -z-10"
               onClick={closeEnlargedImage}
             />
@@ -639,4 +690,3 @@ export default function ClientMessages() {
     </div>
   );
 }
-    
