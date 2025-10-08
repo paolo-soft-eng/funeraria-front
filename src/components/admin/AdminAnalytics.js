@@ -299,8 +299,8 @@ const AdminAnalytics = () => {
             margin-right: 0;
           }
           .logo img {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             object-fit: contain;
             border-radius: 50%;
             border: 4px solid #ffffff;
@@ -407,7 +407,7 @@ const AdminAnalytics = () => {
         <div class="header">
           <!-- Logo -->
           <div class="logo">
-            <img src="/gomez_icon.jpg" alt="Funeraria Gomez Logo" />
+            <img src="/assets/gomez_logo.jpg" alt="Funeraria Gomez Logo" />
           </div>
           
           <!-- Header Text -->
