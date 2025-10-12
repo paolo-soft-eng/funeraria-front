@@ -14,6 +14,7 @@ import { useUserInterface } from '../hooks/client/useUserInterface';
 export default function ClientMessages() {
   const [message, setMessage] = useState('');
   const { email } = useContext(EmailContext);
+  const [replyContext, setReplyContext] = useState(null);
   const messagesEndRef = useRef(null);
 
   // Custom hooks
@@ -88,7 +89,6 @@ export default function ClientMessages() {
     setError: setCurrentMessagesError
   } = useMessages(userId, selectedAdmin);
 
-  // WebSocket message handler
   useEffect(() => {
     if (!socket) return;
 
@@ -110,7 +110,8 @@ export default function ClientMessages() {
           text: data.message,
           sender: 'admin',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          imageUrl: data.imageUrl || null
+          imageUrl: data.imageUrl || null,
+          replyToId: data.replyToId || null // Add this
         };
 
         currentAddMessage(newMessage);
@@ -146,6 +147,7 @@ export default function ClientMessages() {
     currentClearMessages();
     processedMessageIds.clear();
     setShowSidebar(false);
+    setReplyContext(null); // Clear reply context
 
     // Mark messages as read in the backend
     markMessagesAsRead(admin.id, userId);
@@ -163,13 +165,16 @@ export default function ClientMessages() {
       message,
       selectedAdmin,
       currentAddMessage,
-      countMessages
+      countMessages,
+      replyContext
     );
 
     if (success) {
       setMessage('');
+      setReplyContext(null);
     }
   };
+
 
   const sendImageMessage = async () => {
     const success = await sendImageMessageAction(
@@ -177,15 +182,16 @@ export default function ClientMessages() {
       selectedFile,
       selectedAdmin,
       currentAddMessage,
-      countMessages
+      countMessages,
+      replyContext // Pass reply context
     );
 
     if (success) {
       setMessage('');
       clearFile();
+      setReplyContext(null); // Clear reply context
     }
   };
-
   // Event handlers
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -502,24 +508,39 @@ export default function ClientMessages() {
                               className="h-8 w-8 object-cover"
                             />
                           ) : (
-                            <div className="h-8 w-8 bg-gray-300 rounded-full"></div>
+                            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                        <User size={18} className="text-gray-500" />
+                      </div>
                           )}
                         </div>
                       )}
-                      <div className={`max-w-xs md:max-w-md p-3 rounded-lg relative ${msg.sender === 'me'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-200 text-black'
-                        }`}
+                      <div
+                        className={`max-w-xs md:max-w-md p-3 rounded-lg relative ${msg.sender === 'me'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-200 text-black'
+                          }`}
                         onClick={() => handleMessageClick(msg)}
                         style={{ wordWrap: 'break-word' }}
                       >
-                        {msg.sender === 'me' ? 'You' : selectedAdmin.username}
-
-                        {msg.isReply && (
-                          <div className={`text-xs opacity-75 mb-1 border-l-2 ${msg.sender === 'me' ? 'border-blue-200' : 'border-blue-400'} pl-2 ${msg.sender === 'me' ? 'text-blue-200' : 'text-gray-600'}`}>
-                            Replying to: {msg.replyToPreview}
+                        {/* Reply Preview */}
+                        {msg.replyTo && (
+                          <div className={`text-xs mb-2 border-l-2 pl-2 ${msg.sender === 'me' ? 'border-blue-200 text-blue-200' : 'border-blue-400 text-gray-600'}`}>
+                            <div className="font-medium">
+                              Replying to {msg.replyTo.sender === 'me' ? 'yourself' : msg.replyTo.senderName}
+                            </div>
+                            <div className="truncate opacity-75">
+                              {msg.replyTo.text.length > 50
+                                ? `${msg.replyTo.text.substring(0, 50)}...`
+                                : msg.replyTo.text
+                              }
+                            </div>
                           </div>
                         )}
+
+                        <div className="font-medium mb-1">
+                          {msg.sender === 'me' ? 'You' : selectedAdmin.username}
+                        </div>
+
                         {msg.imageUrl && (
                           <div className="relative mt-2 group">
                             <img
@@ -540,10 +561,12 @@ export default function ClientMessages() {
                             </div>
                           </div>
                         )}
+
                         <p className="whitespace-pre-wrap">{msg.text}</p>
+
                         <div className="flex items-center justify-start mt-1">
                           {msg.time && (
-                            <span className={`text-xs ${msg.sender === 'me' ? 'text-white' : 'text-black'} text-left`}>
+                            <span className={`text-xs ${msg.sender === 'me' ? 'text-blue-200' : 'text-gray-500'} text-left`}>
                               {msg.time}
                             </span>
                           )}
@@ -558,31 +581,11 @@ export default function ClientMessages() {
                               <Copy size={18} className="text-gray-900" />
                             </button>
                             <button
-                              onClick={() => {
-                                // Truncate long messages for the reply prefix
-                                const originalText = msg.text;
-                                const previewText = originalText.length > 30
-                                  ? `${originalText.substring(0, 30)}...`
-                                  : originalText;
-
-                                // Set the message with reply context and move cursor to end
-                                setMessage(`Replying to: "${previewText}"\n\n`);
-
-                                // Focus on the input field after a brief delay
-                                setTimeout(() => {
-                                  const input = document.querySelector('input[type="text"]');
-                                  if (input) {
-                                    input.focus();
-                                    // Move cursor to end (after the reply prefix)
-                                    input.setSelectionRange(input.value.length, input.value.length);
-                                  }
-                                }, 100);
-                              }}
+                              onClick={() => setReplyContext(msg)}
                               title="Reply to this message"
                             >
                               <CornerUpLeft size={18} className="text-gray-900" />
                             </button>
-                            {/* Only show delete button for user's own messages */}
                             {msg.sender === 'me' && (
                               <button
                                 onClick={() => handleUnsendMessage(msg)}
@@ -601,9 +604,32 @@ export default function ClientMessages() {
               </div>
             )}
           </div>
-
-          {/* Input Area */}
           <div className="p-4 border-t border-gray-300 bg-white">
+            {/* Reply Context Indicator */}
+            {replyContext && (
+              <div className="mb-3 p-3 bg-blue-50 border-l-4 border-blue-500 rounded flex justify-between items-center">
+                <div className="flex-1">
+                  <div className="flex items-center text-xs text-blue-600 font-medium mb-1">
+                    <CornerUpLeft size={14} className="mr-1" />
+                    Replying to {replyContext.sender === 'me' ? 'yourself' : replyContext.senderName}
+                  </div>
+                  <p className="text-sm text-gray-700">
+                    {replyContext.text.length > 60
+                      ? `${replyContext.text.substring(0, 60)}...`
+                      : replyContext.text
+                    }
+                  </p>
+                </div>
+                <button
+                  onClick={() => setReplyContext(null)}
+                  className="ml-2 text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-blue-100"
+                  title="Cancel reply"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+
             <input
               type="file"
               ref={fileInputRef}
@@ -643,7 +669,11 @@ export default function ClientMessages() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={selectedAdmin ? "Message" : "Select an admin to start messaging"}
+                placeholder={
+                  replyContext
+                    ? "Type your reply..."
+                    : selectedAdmin ? "Message" : "Select an admin to start messaging"
+                }
                 disabled={!selectedAdmin}
                 className="flex-1 bg-gray-200 rounded-full py-2 px-4 focus:outline-none text-gray-800"
               />
