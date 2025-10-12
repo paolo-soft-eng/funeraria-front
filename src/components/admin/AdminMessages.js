@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import axios from 'axios';
-import { MessageSquare, Trash2, Send, ArrowLeft, X, ZoomIn, Image, Camera } from 'lucide-react';
+import { MessageSquare, Trash2, Send, ArrowLeft, X, ZoomIn, Image, Camera, CornerUpLeft, Copy } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { EmailContext } from '../utils/EmailContext';
 import { useNavigate } from 'react-router-dom';
@@ -17,17 +17,21 @@ const AdminMessages = () => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [enlargedImage, setEnlargedImage] = useState(null);
-  
-  // New states for image handling
+
+  // Image handling states
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showCamera, setShowCamera] = useState(false);
-  
+
+  // Reply functionality states
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  
+
   const { email } = useContext(EmailContext);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);
@@ -53,16 +57,15 @@ const AdminMessages = () => {
     }
   };
 
-  // Add login validation
+  // Login validation
   useEffect(() => {
     if (email) {
-      // Fetch user ID based on email
       fetch(`http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`)
         .then(response => response.json())
         .then(data => {
           if (data.userId) {
             setUserId(data.userId);
-            setUserName(data.userName || 'Admin'); // Set the actual username
+            setUserName(data.userName || 'Admin');
             setIsLoggedIn(true);
           } else {
             setIsLoggedIn(false);
@@ -80,16 +83,24 @@ const AdminMessages = () => {
     }
   }, [email, navigate]);
 
-  // Fetch all message senders when component mounts
+  // Fetch senders and establish WebSocket
   useEffect(() => {
     fetchSenders();
 
-    // Establish WebSocket connection
     const ws = new WebSocket('ws://localhost:8080');
     ws.onopen = () => {
       console.log('WebSocket connected');
       setIsConnected(true);
       setSocket(ws);
+
+      if (userId) {
+        const registerMessage = {
+          type: 'register',
+          userId: 'admin_' + userId,
+          isAdmin: true
+        };
+        ws.send(JSON.stringify(registerMessage));
+      }
     };
 
     ws.onclose = () => {
@@ -105,7 +116,44 @@ const AdminMessages = () => {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'message') {
-        setMessages(prev => [...prev, data]);
+        // Check if this message is for the current conversation
+        const isForCurrentUser = selectedUser &&
+          ((data.isAdmin && data.senderId === 'admin_' + userId && selectedUser.user_id === data.receiverId) ||
+            (!data.isAdmin && data.senderId === selectedUser.user_id));
+
+        if (isForCurrentUser || data.isOwnMessage) {
+          setMessages(prev => {
+            // If this is a confirmation for our optimistic update, replace the temp message
+            if (data.tempId) {
+              const filtered = prev.filter(msg => msg.id !== data.tempId);
+              return [...filtered, {
+                id: data.id,
+                message: data.message,
+                timestamp: data.timestamp,
+                image_path: data.imageUrl,
+                is_admin_message: data.is_admin_message ? 1 : 0,
+                reply_to_id: data.replyToId,
+                reply_to_message: data.replyToMessage,
+                reply_sender_name: data.replySenderName
+              }];
+            }
+
+            // Avoid duplicates for regular messages
+            if (prev.some(msg => msg.id === data.id)) {
+              return prev;
+            }
+            return [...prev, {
+              id: data.id,
+              message: data.message,
+              timestamp: data.timestamp,
+              image_path: data.imageUrl,
+              is_admin_message: data.is_admin_message ? 1 : 0,
+              reply_to_id: data.replyToId,
+              reply_to_message: data.replyToMessage,
+              reply_sender_name: data.replySenderName
+            }];
+          });
+        }
       }
     };
 
@@ -114,23 +162,23 @@ const AdminMessages = () => {
         ws.close();
       }
     };
-  }, []);
+  }, [userId]);
 
-  // Scroll to bottom of messages when messages change
+  // Scroll to bottom
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages]);
 
-  // Fetch user messages when selected user changes
+  // Fetch user messages when selected
   useEffect(() => {
     if (selectedUser) {
       fetchUserMessages(selectedUser.user_id);
     }
   }, [selectedUser]);
 
-  // Close enlarged image when pressing Escape key
+  // Close enlarged image on Escape
   useEffect(() => {
     const handleEscapeKey = (event) => {
       if (event.key === 'Escape' && enlargedImage) {
@@ -179,7 +227,7 @@ const AdminMessages = () => {
       setLoading(true);
       const response = await axios.get(`${API_URL}/user/${userId}`, {
         params: {
-          adminEmail: email // Add admin email to the request
+          adminEmail: email
         }
       });
       setMessages(response.data.messages || []);
@@ -194,10 +242,51 @@ const AdminMessages = () => {
   const handleUserSelect = (user) => {
     setSelectedUser(user);
     setError(null);
+    setReplyingTo(null);
+    setSelectedMessage(null);
   };
 
   const handleReplyChange = (e) => {
     setReplyText(e.target.value);
+  };
+
+  // Message interaction functions
+  const handleMessageClick = (message) => {
+    setSelectedMessage(selectedMessage?.id === message.id ? null : message);
+  };
+
+  const handleCopyMessage = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      console.log('Message copied to clipboard');
+    }).catch(err => {
+      console.error('Failed to copy message: ', err);
+    });
+  };
+
+  const handleReplyToMessage = (message) => {
+    const isAdminMsg = message.is_admin_message === "1" || message.is_admin_message === 1;
+
+    setReplyingTo({
+      id: message.id,
+      text: message.message,
+      sender: isAdminMsg ? 'You' : selectedUser.name,
+      senderName: isAdminMsg ? 'You' : selectedUser.name
+    });
+
+    setSelectedMessage(null);
+
+    // Focus on input
+    setTimeout(() => {
+      const input = document.querySelector('input[type="text"]');
+      if (input) {
+        input.focus();
+      }
+    }, 100);
+  };
+
+  const cancelReply = () => {
+    setReplyingTo(null);
+    setReplyText('');
   };
 
   // Image handling functions
@@ -305,7 +394,6 @@ const AdminMessages = () => {
     try {
       setLoading(true);
 
-      // Upload image first
       const formData = new FormData();
       formData.append('image', selectedFile);
 
@@ -322,38 +410,45 @@ const AdminMessages = () => {
 
       const imageUrl = uploadData.imageUrl;
 
-      // Send message with image
-      const response = await axios.post(API_URL, {
+      const messageData = {
         action: 'reply',
         userId: selectedUser.user_id,
         message: replyText || 'Image message',
         adminEmail: email,
         imageUrl: imageUrl
-      });
+      };
+
+      // Add reply reference if replying
+      if (replyingTo) {
+        messageData.replyTo = replyingTo.id;
+      }
+
+      const response = await axios.post(API_URL, messageData);
 
       if (response.data.success) {
         fetchUserMessages(selectedUser.user_id);
         setReplyText('');
         setSelectedFile(null);
         setPreviewUrl(null);
+        setReplyingTo(null);
 
-        // Log activity for image message
         addActivity(
           'Message',
           `Sent image message to client '${selectedUser.name}'`,
           selectedUser.user_id
         );
 
-        // Send message via WebSocket
+        // Send via WebSocket
         if (socket && isConnected) {
           socket.send(JSON.stringify({
             type: 'message',
-            senderId: 'admin',
+            senderId: 'admin_' + userId,
             receiverId: selectedUser.user_id,
             message: replyText || 'Image message',
             imageUrl: imageUrl,
             isAdmin: true,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            replyToId: replyingTo?.id || null
           }));
         }
       }
@@ -369,7 +464,6 @@ const AdminMessages = () => {
     e.preventDefault();
 
     if (selectedFile) {
-      // If there's an image, send image message
       await sendImageMessage();
       return;
     }
@@ -377,41 +471,97 @@ const AdminMessages = () => {
     if (!replyText.trim()) return;
 
     try {
-      const response = await axios.post(API_URL, {
-        action: 'reply',
-        userId: selectedUser.user_id,
+      const messageId = 'temp-' + Date.now();
+
+      // OPTIMISTIC UPDATE: Add message to UI immediately
+      const tempMessage = {
+        id: messageId,
         message: replyText,
-        adminEmail: email
-      });
+        timestamp: new Date().toISOString(),
+        is_admin_message: 1,
+        reply_to_id: replyingTo?.id || null,
+        sender_name: "You",
+        // Include reply information for display
+        reply_to_message: replyingTo?.text || null,
+        reply_sender_name: replyingTo?.senderName || null
+      };
 
-      if (response.data.success) {
-        fetchUserMessages(selectedUser.user_id);
-        setReplyText('');
+      setMessages(prev => [...prev, tempMessage]);
+      const messageText = replyText;
+      const replyToId = replyingTo?.id || null;
 
-        // Log activity for text message
+      // Clear input immediately for better UX
+      setReplyText('');
+      setReplyingTo(null);
+
+      // Ensure WebSocket is connected and registered
+      if (socket && isConnected) {
+        const registerMessage = {
+          type: 'register',
+          userId: 'admin_' + userId,
+          isAdmin: true
+        };
+        socket.send(JSON.stringify(registerMessage));
+
+        // Send the actual message
+        const messageData = {
+          type: 'message',
+          senderId: 'admin_' + userId,
+          receiverId: selectedUser.user_id,
+          message: messageText,
+          isAdmin: true,
+          timestamp: new Date().toISOString(),
+          replyToId: replyToId,
+          tempId: messageId // Include temp ID to replace optimistic update
+        };
+
+        socket.send(JSON.stringify(messageData));
+
         addActivity(
           'Message',
-          `Sent message to client '${selectedUser.name}': "${replyText.substring(0, 50)}${replyText.length > 50 ? '...' : ''}"`,
+          `Sent message to client '${selectedUser.name}': "${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"`,
           selectedUser.user_id
         );
-
-        // Send message via WebSocket
-        if (socket && isConnected) {
-          socket.send(JSON.stringify({
-            type: 'message',
-            senderId: 'admin',
-            receiverId: selectedUser.user_id,
-            message: replyText,
-            isAdmin: true,
-            timestamp: new Date().toISOString()
-          }));
-        }
+      } else {
+        // Fallback to HTTP if WebSocket fails
+        // Remove temp message before HTTP request
+        setMessages(prev => prev.filter(msg => msg.id !== messageId));
+        await sendViaHTTP(messageText, replyToId, messageId);
       }
     } catch (err) {
       console.error('Error sending reply:', err);
       setError('Failed to send reply. Please try again.');
+      // Refresh messages on error
+      fetchUserMessages(selectedUser.user_id);
     }
   };
+
+  const sendViaHTTP = async (messageText, replyToId, tempMessageId) => {
+  const messageData = {
+    action: 'reply',
+    userId: selectedUser.user_id,
+    message: messageText,
+    adminEmail: email
+  };
+
+  if (replyToId) {
+    messageData.replyTo = replyToId;
+  }
+
+  const response = await axios.post(API_URL, messageData);
+
+  if (response.data.success) {
+    // Remove the temp message and refresh to get the real message
+    setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
+    fetchUserMessages(selectedUser.user_id);
+
+    addActivity(
+      'Message',
+      `Sent message to client '${selectedUser.name}': "${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"`,
+      selectedUser.user_id
+    );
+  }
+};
 
   const handleDeleteMessage = async (messageId) => {
     if (!window.confirm('Are you sure you want to delete this message?')) {
@@ -420,13 +570,18 @@ const AdminMessages = () => {
 
     try {
       const messageToDelete = messages.find(msg => msg.id === messageId);
+      const isAdminMsg = messageToDelete?.is_admin_message === "1" || messageToDelete?.is_admin_message === 1;
+
+      if (!isAdminMsg) {
+        setError('You can only delete your own messages');
+        return;
+      }
+
       const response = await axios.delete(`${API_URL}/${messageId}`);
 
       if (response.data.success) {
-        // Remove the deleted message from the messages array
         setMessages(prev => prev.filter(msg => msg.id !== messageId));
-        
-        // Log activity for message deletion
+
         if (messageToDelete) {
           addActivity(
             'Message',
@@ -437,7 +592,11 @@ const AdminMessages = () => {
       }
     } catch (err) {
       console.error('Error deleting message:', err);
-      setError('Failed to delete message. Please try again.');
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError('Failed to delete message. Please try again.');
+      }
     }
   };
 
@@ -446,7 +605,9 @@ const AdminMessages = () => {
     setMessages([]);
     setSelectedFile(null);
     setPreviewUrl(null);
-    fetchSenders(); // Refresh senders list
+    setReplyingTo(null);
+    setSelectedMessage(null);
+    fetchSenders();
   };
 
   const formatDate = (dateString) => {
@@ -499,7 +660,6 @@ const AdminMessages = () => {
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {!selectedUser ? (
-            // Senders List View
             <div>
               <div className="p-4 border-b">
                 <h2 className="text-lg font-semibold">Client Messages</h2>
@@ -558,7 +718,6 @@ const AdminMessages = () => {
               )}
             </div>
           ) : (
-            // Conversation View
             <div className="flex flex-col h-[calc(100vh-12rem)]">
               <div className="p-4 border-b flex items-center">
                 <button
@@ -573,6 +732,31 @@ const AdminMessages = () => {
                 </div>
               </div>
 
+              {/* Reply Indicator */}
+              {replyingTo && (
+                <div className="p-3 bg-blue-50 border-l-4 border-blue-500 flex justify-between items-center">
+                  <div className="flex-1">
+                    <div className="flex items-center text-xs text-blue-600 font-medium mb-1">
+                      <CornerUpLeft size={14} className="mr-1" />
+                      Replying to {replyingTo.sender}
+                    </div>
+                    <p className="text-sm text-blue-600">
+                      {replyingTo.text.length > 60
+                        ? `${replyingTo.text.substring(0, 60)}...`
+                        : replyingTo.text
+                      }
+                    </p>
+                  </div>
+                  <button
+                    onClick={cancelReply}
+                    className="ml-2 text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100"
+                    title="Cancel reply"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {loading ? (
@@ -586,30 +770,52 @@ const AdminMessages = () => {
                     <p className="text-gray-600">No messages in this conversation</p>
                   </div>
                 ) : (
-                  messages.map((msg) => {
+                  messages.map((msg, index) => {
                     const isAdminMsg = msg.is_admin_message === "1" || msg.is_admin_message === 1;
 
                     return (
                       <div
-                        key={msg.id}
+                        key={msg.id || `msg-${index}`}
                         className={`flex ${isAdminMsg ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[75%] rounded-lg p-3 ${isAdminMsg ? "bg-indigo-600 text-white" : "bg-gray-100 text-black"
+                          className={`max-w-[75%] rounded-lg p-3 relative ${isAdminMsg ? "bg-blue-500 text-white" : "bg-gray-100 text-black"
                             }`}
+                          onClick={() => handleMessageClick(msg)}
                         >
                           <div className="flex justify-between items-start mb-1">
                             <span className="font-medium">
                               {isAdminMsg ? "You" : selectedUser.name}
                             </span>
-                            <button
-                              onClick={() => handleDeleteMessage(msg.id)}
-                              className="ml-2 opacity-50 hover:opacity-100"
-                              title="Delete message"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                            {isAdminMsg && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteMessage(msg.id);
+                                }}
+                                className="ml-2 opacity-50 hover:opacity-100"
+                                title="Delete message"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
                           </div>
+
+                          {/* Reply Preview */}
+                          {msg.reply_to_id && msg.reply_to_message && (
+                            <div className={`text-xs mb-2 border-l-2 pl-2 ${isAdminMsg ? 'border-blue-200 text-blue-200' : 'border-blue-400 text-gray-600'}`}>
+                              <div className="font-medium">
+                                Replying to {msg.reply_sender_id === userId ? 'yourself' : msg.reply_sender_name}
+                              </div>
+                              <div className="truncate opacity-75">
+                                {msg.reply_to_message.length > 50
+                                  ? `${msg.reply_to_message.substring(0, 50)}...`
+                                  : msg.reply_to_message
+                                }
+                              </div>
+                            </div>
+                          )}
+
                           <p className="whitespace-pre-line">{msg.message}</p>
                           {msg.image_path && (
                             <div className="relative mt-2 group">
@@ -617,21 +823,51 @@ const AdminMessages = () => {
                                 src={`${msg.image_path}`}
                                 alt="Attached"
                                 className="w-60 h-auto rounded cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => handleImageClick(msg.image_path)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleImageClick(msg.image_path);
+                                }}
                               />
-                              {/* Hover overlay with zoom icon */}
                               <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
-                                   onClick={() => handleImageClick(msg.image_path)}>
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleImageClick(msg.image_path);
+                                }}>
                                 <ZoomIn size={24} className="text-white" />
                               </div>
                             </div>
                           )}
                           <div
-                            className={`text-xs mt-1 ${isAdminMsg ? "text-indigo-200" : "text-gray-500"
+                            className={`text-xs mt-1 ${isAdminMsg ? "text-white" : "text-black"
                               }`}
                           >
                             {formatDate(msg.timestamp)}
                           </div>
+
+                          {/* Message actions menu */}
+                          {selectedMessage?.id === msg.id && (
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-white p-2 rounded shadow flex space-x-2 border border-gray-300 z-10">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopyMessage(msg.message);
+                                  setSelectedMessage(null);
+                                }}
+                                title="Copy message"
+                              >
+                                <Copy size={18} className="text-gray-900" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleReplyToMessage(msg);
+                                }}
+                                title="Reply to this message"
+                              >
+                                <CornerUpLeft size={18} className="text-gray-900" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -640,9 +876,8 @@ const AdminMessages = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Reply Form with Image Support */}
+              {/* Reply Form */}
               <form onSubmit={handleReplySubmit} className="p-4 border-t">
-                {/* Image Preview */}
                 {previewUrl && (
                   <div className="mb-4 relative">
                     <img
@@ -664,7 +899,6 @@ const AdminMessages = () => {
                 )}
 
                 <div className="flex items-center space-x-2">
-                  {/* Camera Button */}
                   <button
                     type="button"
                     onClick={() => setShowCamera(true)}
@@ -673,7 +907,6 @@ const AdminMessages = () => {
                     <Camera size={20} className="text-gray-600" />
                   </button>
 
-                  {/* File Input Button */}
                   <button
                     type="button"
                     onClick={handleFileInputClick}
@@ -682,7 +915,6 @@ const AdminMessages = () => {
                     <Image size={20} className="text-gray-600" />
                   </button>
 
-                  {/* Hidden File Input */}
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -691,16 +923,18 @@ const AdminMessages = () => {
                     className="hidden"
                   />
 
-                  {/* Text Input */}
                   <input
                     type="text"
                     value={replyText}
                     onChange={handleReplyChange}
-                    placeholder="Type your reply..."
+                    placeholder={
+                      replyingTo
+                        ? "Type your reply..."
+                        : "Type your message..."
+                    }
                     className="flex-1 border rounded-l-lg px-4 py-2"
                   />
 
-                  {/* Send Button */}
                   <button
                     type="submit"
                     className="bg-indigo-600 text-white px-4 py-2 rounded-r-lg"
@@ -753,7 +987,6 @@ const AdminMessages = () => {
         {enlargedImage && (
           <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
             <div className="relative max-w-full max-h-full">
-              {/* Close button */}
               <button
                 onClick={closeEnlargedImage}
                 className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors mt-4"
@@ -761,17 +994,15 @@ const AdminMessages = () => {
               >
                 <X size={32} />
               </button>
-              
-              {/* Enlarged image */}
+
               <img
                 src={enlargedImage}
                 alt="Enlarged view"
                 className="max-w-[70vw] max-h-[70vh] object-contain rounded-lg shadow-2xl"
                 onClick={closeEnlargedImage}
               />
-              
-              {/* Click outside overlay */}
-              <div 
+
+              <div
                 className="absolute inset-0 -z-10"
                 onClick={closeEnlargedImage}
               />
