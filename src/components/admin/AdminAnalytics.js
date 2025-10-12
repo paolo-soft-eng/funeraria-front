@@ -466,7 +466,7 @@ const AdminAnalytics = () => {
             <div class="signature">
               <p style="margin: 0 0 10px 0; font-weight: bold; color: #000;">Prepared by:</p>
               <div class="signature-line"></div>
-              <p style="margin: 0; font-size: 12px; color: #666; texr-align: center;">Administrator Signature</p>
+              <p style="margin: 0 60px; font-size: 12px; color: black; font-weight: bold;">Administrator Signature</p>
             </div>
           </div>
         </div>
