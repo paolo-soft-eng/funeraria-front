@@ -103,9 +103,9 @@ const AdminOrders = () => {
 
   return (
     <AdminLayout currentPage="orders">
-      <div className="flex-grow p-4 md:p-6">
+      <div className="flex-grow p-3">
         <div className="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
-          <div className="container mx-auto px-4 py-6">
+          <div className="container mx-auto px-4 py-3">
             {/* Status Message Display */}
             {statusMessage.message && (
               <div className={`mb-4 p-3 rounded-lg ${
@@ -212,7 +212,7 @@ const AdminOrders = () => {
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.order_items}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.order_items || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.service_name || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.address}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(order.delivery_date)}</td>

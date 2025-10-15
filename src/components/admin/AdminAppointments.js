@@ -1,6 +1,6 @@
 import React from 'react';
 import AdminLayout from './AdminLayout';
-import { FaTable, FaThLarge, FaUser } from 'react-icons/fa';
+import { FaTable, FaThLarge, FaUser, FaCalendarAlt, FaClock, FaEnvelope } from 'react-icons/fa';
 import { useResponsiveView, useAppointments, useApiConfig } from '../hooks/admin/useAppointments';
 
 const AdminAppointments = () => {
@@ -11,43 +11,57 @@ const AdminAppointments = () => {
     const handleStatusChange = async (appointmentId, newStatus) => {
         const result = await updateAppointmentStatus(appointmentId, newStatus);
         if (!result.success) {
-            // Error is already set by the hook
             console.error('Failed to update status:', result.error);
         }
     };
 
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString();
+        return new Date(dateString).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
     };
 
     const getStatusColor = (status) => {
         switch (status) {
             case 'finished':
-                return 'bg-green-100 text-green-800';
+                return 'bg-emerald-50 text-emerald-700 border-emerald-200';
             case 'scheduled':
-                return 'bg-yellow-100 text-yellow-800';
+                return 'bg-amber-50 text-amber-700 border-amber-200';
             default:
-                return 'bg-blue-100 text-blue-800';
+                return 'bg-blue-50 text-blue-700 border-blue-200';
+        }
+    };
+
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case 'finished':
+                return '✓';
+            case 'scheduled':
+                return '○';
+            default:
+                return '●';
         }
     };
 
     const UserAvatar = ({ profilePicture, userName, size = 'md' }) => {
         const sizeClasses = {
-            sm: 'h-10 w-10',
-            md: 'h-12 w-12'
+            sm: 'h-11 w-11',
+            md: 'h-14 w-14'
         };
 
         return (
-            <div className={`flex-shrink-0 ${sizeClasses[size]}`}>
+            <div className={`flex-shrink-0 ${sizeClasses[size]} relative`}>
                 {profilePicture ? (
                     <img
-                        className={`${sizeClasses[size]} rounded-full object-cover`}
+                        className={`${sizeClasses[size]} rounded-full object-cover ring-2 ring-white shadow-sm`}
                         src={getImageUrl(profilePicture)}
                         alt={userName}
                     />
                 ) : (
-                    <div className={`${sizeClasses[size]} rounded-full bg-gray-200 flex items-center justify-center`}>
-                        <FaUser className={`text-gray-400 ${size === 'md' ? 'text-xl' : ''}`} />
+                    <div className={`${sizeClasses[size]} rounded-full bg-gray-400 flex items-center justify-center ring-2 ring-white shadow-sm`}>
+                        <FaUser className={`text-white ${size === 'md' ? 'text-xl' : 'text-lg'}`} />
                     </div>
                 )}
             </div>
@@ -55,7 +69,8 @@ const AdminAppointments = () => {
     };
 
     const StatusBadge = ({ status }) => (
-        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(status)}`}>
+        <span className={`px-3 py-1 inline-flex items-center gap-1.5 text-xs font-medium rounded-full border ${getStatusColor(status)}`}>
+            <span className="font-semibold">{getStatusIcon(status)}</span>
             {status}
         </span>
     );
@@ -64,7 +79,7 @@ const AdminAppointments = () => {
         <select
             value={currentStatus}
             onChange={(e) => handleStatusChange(appointmentId, e.target.value)}
-            className={`rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${className}`}
+            className={`rounded-lg border-gray-300 shadow-sm text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 ${className}`}
         >
             <option value="finished">Finished</option>
             <option value="scheduled">Scheduled</option>
@@ -72,98 +87,117 @@ const AdminAppointments = () => {
     );
 
     const TableView = () => (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                    {appointments.map((appointment) => (
-                        <tr key={appointment.id}>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center">
-                                    <UserAvatar 
-                                        profilePicture={appointment.profile_picture}
-                                        userName={appointment.user_name}
-                                        size="sm"
-                                    />
-                                    <div className="ml-4">
-                                        <div className="text-sm font-medium text-gray-900">{appointment.user_name}</div>
-                                        <div className="text-sm text-gray-500">{appointment.user_email}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-900">
-                                    {formatDate(appointment.appointment_date)}
-                                </div>
-                                <div className="text-sm text-gray-500">{appointment.appointment_time}</div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {appointment.purpose}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                                <StatusBadge status={appointment.status} />
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <StatusSelect 
-                                    appointmentId={appointment.id}
-                                    currentStatus={appointment.status}
-                                />
-                            </td>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                        <tr>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Client</th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date & Time</th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Purpose</th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-100">
+                        {appointments.map((appointment, index) => (
+                            <tr key={appointment.id} className="hover:bg-gray-50 transition-colors duration-150">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center">
+                                        <UserAvatar 
+                                            profilePicture={appointment.profile_picture}
+                                            userName={appointment.user_name}
+                                            size="sm"
+                                        />
+                                        <div className="ml-4">
+                                            <div className="text-sm font-semibold text-gray-900">{appointment.user_name}</div>
+                                            <div className="text-sm text-gray-500 flex items-center gap-1">
+                                                <FaEnvelope className="w-3 h-3" />
+                                                {appointment.user_email}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex items-center gap-1.5 text-sm font-medium text-gray-900">
+                                        <FaCalendarAlt className="w-3.5 h-3.5 text-gray-400" />
+                                        {formatDate(appointment.appointment_date)}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 text-sm text-gray-500 mt-1">
+                                        <FaClock className="w-3.5 h-3.5 text-gray-400" />
+                                        {appointment.appointment_time}
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className="text-sm text-gray-700">{appointment.purpose}</span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <StatusBadge status={appointment.status} />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <StatusSelect 
+                                        appointmentId={appointment.id}
+                                        currentStatus={appointment.status}
+                                    />
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 
     const CardView = () => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {appointments.map((appointment) => (
-                <div key={appointment.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200">
-                    <div className="flex items-center mb-4">
+                <div key={appointment.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:border-gray-200 transition-all duration-300 transform hover:-translate-y-1">
+                    <div className="flex items-start mb-5">
                         <UserAvatar 
                             profilePicture={appointment.profile_picture}
                             userName={appointment.user_name}
                             size="md"
                         />
                         <div className="ml-4 flex-1 min-w-0">
-                            <h3 className="text-lg font-semibold text-gray-900 truncate">{appointment.user_name}</h3>
-                            <p className="text-sm text-gray-500 truncate">{appointment.user_email}</p>
-                        </div>
-                        <StatusBadge status={appointment.status} />
-                    </div>
-
-                    <div className="space-y-3">
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Date:</span>
-                            <span>{formatDate(appointment.appointment_date)}</span>
-                        </div>
-
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Time:</span>
-                            <span>{appointment.appointment_time}</span>
-                        </div>
-
-                        <div className="mt-3 pt-3 border-t">
-                            <p className="text-sm text-gray-600">
-                                <span className="font-medium">Purpose:</span> {appointment.purpose}
+                            <h3 className="text-lg font-bold text-gray-900 truncate mb-1">{appointment.user_name}</h3>
+                            <p className="text-sm text-gray-500 truncate flex items-center gap-1.5">
+                                <FaEnvelope className="w-3 h-3" />
+                                {appointment.user_email}
                             </p>
                         </div>
                     </div>
 
-                    <div className="mt-4">
+                    <div className="space-y-3 mb-5">
+                        <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                            <span className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                                <FaCalendarAlt className="w-4 h-4 text-gray-500" />
+                                Date
+                            </span>
+                            <span className="text-sm font-semibold text-gray-900">{formatDate(appointment.appointment_date)}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                            <span className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                                <FaClock className="w-4 h-4 text-gray-500" />
+                                Time
+                            </span>
+                            <span className="text-sm font-semibold text-gray-900">{appointment.appointment_time}</span>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-3 border border-indigo-100">
+                            <p className="text-sm text-gray-700">
+                                <span className="font-semibold text-indigo-900">Purpose:</span>
+                                <span className="ml-2">{appointment.purpose}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                        <StatusBadge status={appointment.status} />
                         <StatusSelect 
                             appointmentId={appointment.id}
                             currentStatus={appointment.status}
-                            className="w-full"
+                            className="text-xs"
                         />
                     </div>
                 </div>
@@ -173,20 +207,31 @@ const AdminAppointments = () => {
 
     return (
         <AdminLayout currentPage='appointments'>
-            <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-semibold">Appointments Management</h1>
+            <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+                <div className="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 mb-1">Appointments</h1>
+                        <p className="text-sm text-gray-600">Manage and track all client appointments</p>
+                    </div>
                     {!isMobile && (
-                        <div className="flex space-x-2">
+                        <div className="flex gap-2 bg-white rounded-lg shadow-sm p-1 border border-gray-200">
                             <button
                                 onClick={() => setViewMode('table')}
-                                className={`p-2 rounded-md ${viewMode === 'table' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
+                                className={`p-2.5 rounded-md transition-all duration-200 ${
+                                    viewMode === 'table' 
+                                        ? 'bg-indigo-500 text-white shadow-sm' 
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                }`}
                             >
                                 <FaTable className="w-5 h-5" />
                             </button>
                             <button
                                 onClick={() => setViewMode('card')}
-                                className={`p-2 rounded-md ${viewMode === 'card' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-600'}`}
+                                className={`p-2.5 rounded-md transition-all duration-200 ${
+                                    viewMode === 'card' 
+                                        ? 'bg-indigo-500 text-white shadow-sm' 
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                }`}
                             >
                                 <FaThLarge className="w-5 h-5" />
                             </button>
@@ -195,16 +240,26 @@ const AdminAppointments = () => {
                 </div>
 
                 {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-                        {error}
+                    <div className="bg-red-50 border-l-4 border-red-500 text-red-800 px-5 py-4 rounded-lg mb-6 shadow-sm">
+                        <div className="flex items-center">
+                            <span className="font-semibold mr-2">Error:</span>
+                            <span>{error}</span>
+                        </div>
                     </div>
                 )}
 
                 {loading ? (
-                    <div className="text-center py-4 text-sm text-gray-600">Loading appointments...</div>
+                    <div className="flex flex-col items-center justify-center py-16">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
+                        <p className="text-sm text-gray-600 font-medium">Loading appointments...</p>
+                    </div>
                 ) : appointments.length === 0 ? (
-                    <div className="text-center py-6 text-gray-500 text-sm italic">
-                        No appointments yet
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                            <FaCalendarAlt className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No appointments yet</h3>
+                        <p className="text-sm text-gray-500">Appointments will appear here once clients book them</p>
                     </div>
                 ) : (
                     viewMode === 'table' ? <TableView /> : <CardView />
