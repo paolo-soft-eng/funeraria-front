@@ -6,16 +6,53 @@ const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidating, setIsValidating] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [tokenValid, setTokenValid] = useState(false);
+  const [tokenError, setTokenError] = useState('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
   useEffect(() => {
-    if (!token) {
-      setError('Invalid reset token');
-    }
+    const validateToken = async () => {
+      if (!token) {
+        setTokenError('Invalid reset token');
+        setTokenValid(false);
+        setIsValidating(false);
+        return;
+      }
+
+      try {
+        const response = await axios.post('http://localhost/apii/components/validate-reset-token.php', {
+          token
+        });
+
+        if (response.data.valid) {
+          setTokenValid(true);
+          setTokenError('');
+        } else {
+          setTokenValid(false);
+          setTokenError(response.data.message || 'Invalid reset token');
+        }
+      } catch (error) {
+        setTokenValid(false);
+        const errorMsg = error.response?.data?.message || 'Unable to validate reset token';
+        setTokenError(errorMsg);
+        
+        // Check for specific error reasons
+        if (error.response?.data?.reason === 'already_used') {
+          setTokenError('This reset link has already been used. Please request a new password reset.');
+        } else if (error.response?.data?.reason === 'expired') {
+          setTokenError('This reset link has expired. Please request a new password reset.');
+        }
+      } finally {
+        setIsValidating(false);
+      }
+    };
+
+    validateToken();
   }, [token]);
 
   const handleSubmit = async (e) => {
@@ -36,25 +73,63 @@ const ResetPassword = () => {
       return;
     }
 
+    // Check password strength
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+
+    if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+      setError('Password must contain at least one uppercase letter, one lowercase letter, and one number');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await axios.post('http://localhost/apii/components/reset-password.php', {
         token,
         password
       });
 
-      setMessage(response.data.message);
-      // Redirect to login page after 3 seconds
-      setTimeout(() => {
-        navigate('/auth');
-      }, 3000);
+      if (response.data.success) {
+        setMessage(response.data.message);
+        // Redirect to login page after 3 seconds
+        setTimeout(() => {
+          navigate('/auth');
+        }, 3000);
+      }
     } catch (error) {
-      setError(error.response?.data?.message || 'An error occurred. Please try again.');
+      const errorMsg = error.response?.data?.message || 'An error occurred. Please try again.';
+      setError(errorMsg);
+      
+      // If token was already used, disable the form
+      if (errorMsg.includes('already been used') || errorMsg.includes('already used')) {
+        setTokenValid(false);
+        setTokenError(errorMsg);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!token) {
+  // Show loading state while validating token
+  if (isValidating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+        <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+          <div className="text-center">
+            <svg className="animate-spin h-12 w-12 text-gray-800 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <h2 className="text-xl font-semibold text-gray-800">Validating reset link...</h2>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if token is invalid
+  if (!tokenValid) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
         <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
@@ -65,12 +140,18 @@ const ResetPassword = () => {
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Invalid Reset Link</h2>
-            <p className="text-gray-600 mb-6">This password reset link is invalid or has expired.</p>
+            <p className="text-gray-600 mb-6">{tokenError || 'This password reset link is invalid or has expired.'}</p>
             <button
               onClick={() => navigate('/forgot-password')}
-              className="text-blue-600 hover:text-blue-500 font-medium"
+              className="w-full px-4 py-3 text-white bg-gray-800 rounded-lg hover:bg-black focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              Request a new reset link
+              Request a New Reset Link
+            </button>
+            <button
+              onClick={() => navigate('/auth')}
+              className="mt-4 text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none transition-colors duration-200"
+            >
+              Back to Login
             </button>
           </div>
         </div>
@@ -78,6 +159,7 @@ const ResetPassword = () => {
     );
   }
 
+  // Show password reset form if token is valid
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
@@ -121,8 +203,10 @@ const ResetPassword = () => {
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 outline-gray-400 transition-all duration-200 bg-gray-50"
                 placeholder="Enter new password"
                 required
+                disabled={isLoading}
               />
             </div>
+            <p className="mt-1 text-xs text-gray-500">Must be at least 8 characters with uppercase, lowercase, and number</p>
           </div>
 
           <div className="group">
@@ -140,6 +224,7 @@ const ResetPassword = () => {
                 className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-200 outline-gray-400 transition-all duration-200 bg-gray-50"
                 placeholder="Confirm new password"
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -176,4 +261,4 @@ const ResetPassword = () => {
   );
 };
 
-export default ResetPassword; 
+export default ResetPassword;
