@@ -424,7 +424,7 @@ export default function FuneralManagementLanding() {
             <button className="bg-white text-gray-800 hover:bg-gray-100 py-4 px-10 rounded-lg transition-all duration-300 shadow-lg font-semibold text-lg">
               Request a Consultation
             </button>
-            <button className="border-2 border-white hover:bg-white hover:text-gray-800 text-white py-4 px-10 rounded-lg transition-all duration-300 font-semibold text-lg">
+            <button className="border-2 border-white hover:bg-white hover:text-gray-800 text-white py-4 px-10 rounded-lg transition-all duration-300 font-semibold text-lg" onClick={handleNavigate}>
               View Our Services
             </button>
           </div>

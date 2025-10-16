@@ -42,7 +42,7 @@ import { useNavigation } from '../hooks/admin/useNavigation';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
-    
+
     // Use custom hooks
     const { isLoggedIn, isValidatingAdmin, email } = useAdminAuth();
     const { userData } = useUserData(email, isValidatingAdmin);
@@ -53,13 +53,13 @@ const AdminDashboard = () => {
     const { isDropdownOpen, dropdownRef, toggleDropdown, closeDropdown } = useDropdown();
     const { handleLogout } = useLogout(showNotification);
     const { getActivityIcon, getActivityColor, formatTime12Hour } = useActivityUtils();
-    const { 
-        handleOrders, 
-        handleClient, 
-        handleReports, 
-        handleMessage, 
-        handleItems, 
-        handleEditProfile 
+    const {
+        handleOrders,
+        handleClient,
+        handleReports,
+        handleMessage,
+        handleItems,
+        handleEditProfile
     } = useNavigation();
 
     // Main nav items with icons
@@ -200,6 +200,11 @@ const AdminDashboard = () => {
                                         to={`/dashboard-admin/${item.name}`}
                                         className={`flex items-center px-4 py-3 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
                                             }`}
+                                        onClick={() => {
+                                            if (isMobileView) {
+                                                closeSidebar();
+                                            }
+                                        }}
                                     >
                                         <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
                                         {isSidebarOpen && <span>{item.label}</span>}

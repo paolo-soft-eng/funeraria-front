@@ -192,12 +192,12 @@ const ClientDashboard = () => {
         }`}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-center p-4">
             <Link to="/dashboard-client/home" className="flex items-center">
               {isSidebarOpen ? (
                 <h1 className="text-2xl font-bold">Funeraria Gomez</h1>
               ) : (
-                <span className="text-2xl font-bold ">FG</span>
+                <span className="text-2xl font-bold">FG</span>
               )}
             </Link>
             {isMobileView && (
@@ -235,7 +235,7 @@ const ClientDashboard = () => {
                 <li key={item.name}>
                   <Link
                     to={`/dashboard-client/${item.name}`}
-                    className={`flex items-center px-4 py-3 hover:bg-gray-700 transition-colors${
+                    className={`flex items-center px-4 py-3 hover:bg-gray-700 transition-colors ${
                       isSidebarOpen ? 'justify-start' : 'justify-center'
                     }`}
                   >

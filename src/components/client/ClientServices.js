@@ -25,8 +25,8 @@ const ClientServices = () => {
 
     const colors = {
       low: 'bg-blue-50 text-blue-600',
-      medium: 'bg-purple-50 text-purple-600',
-      high: 'bg-indigo-50 text-indigo-600'
+      medium: 'bg-blue-50 text-blue-600',
+      high: 'bg-blue-50 text-blue-600'
     };
 
     const colorClass = inclusionsCount <= 3 ? colors.low :

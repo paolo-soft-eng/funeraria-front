@@ -36,7 +36,7 @@ const AdminLayout = ({ children, currentPage }) => {
   const dropdownRef = useRef(null);
   const { email } = useContext(EmailContext);
 
-   const showNotification = (message, type = 'info') => {
+  const showNotification = (message, type = 'info') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   };
@@ -50,10 +50,10 @@ const AdminLayout = ({ children, currentPage }) => {
     }
 
     try {
-      const response = await axios.post('http://localhost/apii/components/getUserId.php', { 
-        email: email 
+      const response = await axios.post('http://localhost/apii/components/getUserId.php', {
+        email: email
       });
-      
+
       if (response.data.success && response.data.isAdmin) {
         setIsValidatingAdmin(false);
         return true;
@@ -135,7 +135,7 @@ const AdminLayout = ({ children, currentPage }) => {
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userRole');
         showNotification('Successfully logged out!', 'success');
-        
+
         // Delay navigation to show success message
         setTimeout(() => {
           navigate('/auth');
@@ -181,40 +181,39 @@ const AdminLayout = ({ children, currentPage }) => {
 
 
   return (
-      <div className="flex h-screen bg-gray-50 text-gray-800">
-        {notification && (
-                <div className="fixed top-4 right-4 z-50 animate-fade-in">
-                  <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${
-                    notification.type === 'success' ? 'bg-green-500 text-white' :
-                    notification.type === 'error' ? 'bg-red-500 text-white' :
-                    notification.type === 'warning' ? 'bg-yellow-500 text-white' :
-                    'bg-blue-500 text-white'
-                  }`}>
-                    {notification.type === 'success' && (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                      </svg>
-                    )}
-                    {notification.type === 'error' && (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                      </svg>
-                    )}
-                    {notification.type === 'info' && (
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                      </svg>
-                    )}
-                    <span className="font-medium">{notification.message}</span>
-                    <button 
-                      onClick={() => setNotification(null)}
-                      className="ml-2 text-white hover:text-gray-200"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                </div>
-              )}
+    <div className="flex h-screen bg-gray-50 text-gray-800">
+      {notification && (
+        <div className="fixed top-4 right-4 z-50 animate-fade-in">
+          <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${notification.type === 'success' ? 'bg-green-500 text-white' :
+            notification.type === 'error' ? 'bg-red-500 text-white' :
+              notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+                'bg-blue-500 text-white'
+            }`}>
+            {notification.type === 'success' && (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            )}
+            {notification.type === 'error' && (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            )}
+            {notification.type === 'info' && (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            )}
+            <span className="font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-2 text-white hover:text-gray-200"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
       {isSidebarOpen && isMobileView && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-20" onClick={toggleSidebar}></div>
       )}
@@ -224,10 +223,10 @@ const AdminLayout = ({ children, currentPage }) => {
           }`}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between p-4">
+          <div className="flex items-center justify-center p-4">
             <Link to="/dashboard-admin/home" className="flex items-center">
               {isSidebarOpen ? (
-                <h1 className="text-xl font-bold">Gomez Funeraria</h1>
+                <h1 className="text-xl font-bold">Funeraria Gomez</h1>
               ) : (
                 <span className="text-2xl font-bold">FG</span>
               )}
@@ -264,7 +263,11 @@ const AdminLayout = ({ children, currentPage }) => {
                     to={`/dashboard-admin/${item.name}`}
                     className={`flex items-center px-4 py-3 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
                       }`}
-                    onClick={() => handleNavClick(`/dashboard-admin/${item.name}`)}
+                    onClick={(e) => {
+                      if (isMobileView) {
+                        setIsSidebarOpen(false);
+                      }
+                    }}
                   >
                     <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
                     {isSidebarOpen && <span>{item.label}</span>}
