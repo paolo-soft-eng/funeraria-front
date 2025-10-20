@@ -217,13 +217,13 @@ const AdminClients = () => {
                       <td className="px-4 py-2">
                         <ProfilePicture client={client} size="small" />
                       </td>
-                      <td className="px-4 py-2">{client.id}</td>
-                      <td className="px-4 py-2">{client.username}</td>
-                      <td className="px-4 py-2">{client.first_name} {client.last_name}</td>
-                      <td className="px-4 py-2">{client.email}</td>
-                      <td className="px-4 py-2">{client.telephone}</td>
-                      <td className="px-4 py-2">{client.address}</td>
-                      <td className="px-4 py-2">{client.emergency_contact}</td>
+                      <td className="px-4 py-2">{client.id || "N/A"}</td>
+                      <td className="px-4 py-2">{client.username || "N/A"}</td>
+                      <td className="px-4 py-2">{client.first_name || client.last_name || "N/A"}</td>
+                      <td className="px-4 py-2">{client.email || "N/A"}</td>
+                      <td className="px-4 py-2">{client.telephone || "N/A"}</td>
+                      <td className="px-4 py-2">{client.address || "N/A"}</td>
+                      <td className="px-4 py-2">{client.emergency_contact || "N/A"}</td>
                       <td className="px-4 py-2">{new Date(client.created_at).toLocaleDateString()}</td>
                       <td className="px-4 py-2">
                         <span className={`px-2 py-1 rounded text-white text-xs ${client.status === "disabled" ? "bg-red-500" : "bg-green-500"}`}>
@@ -266,11 +266,11 @@ const AdminClients = () => {
                       </div>
                     </div>
                     <div className="mt-3 space-y-2 text-sm text-gray-600">
-                      <p><span className="font-medium">Name:</span> {client.first_name} {client.last_name}</p>
-                      <p><span className="font-medium">Email:</span> {client.email}</p>
-                      <p><span className="font-medium">Phone:</span> {client.telephone}</p>
-                      <p><span className="font-medium">Address:</span> {client.address}</p>
-                      <p><span className="font-medium">Emergency:</span> {client.emergency_contact}</p>
+                      <p><span className="font-medium">Name:</span> {client.first_name || client.last_name || "N/A"}</p>
+                      <p><span className="font-medium">Email:</span> {client.email || "N/A"}</p>
+                      <p><span className="font-medium">Phone:</span> {client.telephone || "N/A"}</p>
+                      <p><span className="font-medium">Address:</span> {client.address || "N/A"}</p>
+                      <p><span className="font-medium">Emergency:</span> {client.emergency_contact || "N/A"}</p>
                       <p><span className="font-medium">Created:</span> {new Date(client.created_at).toLocaleDateString()}</p>
                     </div>
                     <div className="mt-4 flex items-center justify-between">
