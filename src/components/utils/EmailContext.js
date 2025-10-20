@@ -13,7 +13,6 @@ export const EmailProvider = ({ children }) => {
         localStorage.setItem('userEmail', email);
     }, [email]);
 
-    console.log('EmailProvider initialized with email:', email);
 
     return (
         <EmailContext.Provider value={{ email, setEmail }}>

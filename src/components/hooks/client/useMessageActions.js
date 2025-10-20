@@ -22,8 +22,6 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
       // Extract the actual message ID (not the full object)
       const replyToId = replyContext?.id || null;
       
-      console.log('Sending message with reply_to_id:', replyToId);
-      console.log('Full reply context:', replyContext);
 
       const newMessage = {
         id: messageId,

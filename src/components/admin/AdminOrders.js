@@ -14,7 +14,7 @@ const AdminOrders = () => {
   // Use custom hooks
   const { userId, userName } = useAuth();
   const { statusMessage, showSuccess, showError, clearMessage } = useStatusMessage();
-  
+
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
@@ -108,11 +108,10 @@ const AdminOrders = () => {
           <div className="container mx-auto px-4 py-3">
             {/* Status Message Display */}
             {statusMessage.message && (
-              <div className={`mb-4 p-3 rounded-lg ${
-                statusMessage.type === 'success' 
-                  ? 'bg-green-100 text-green-700' 
+              <div className={`mb-4 p-3 rounded-lg ${statusMessage.type === 'success'
+                  ? 'bg-green-100 text-green-700'
                   : 'bg-red-100 text-red-700'
-              }`}>
+                }`}>
                 {statusMessage.message}
               </div>
             )}
@@ -127,7 +126,11 @@ const AdminOrders = () => {
             )}
 
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">Client Orders</h1>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Client Orders</h1>
+                <p className='text-gray-600 text-sm mb-0'>manage and track customer orders</p>
+              </div>
+
               <div className="flex space-x-2">
                 <button
                   onClick={() => setViewMode('table')}
@@ -145,6 +148,7 @@ const AdminOrders = () => {
                 </button>
               </div>
             </div>
+
 
             {/* Orders per page selector */}
             <div className="flex justify-between items-center mb-4">
@@ -164,7 +168,7 @@ const AdminOrders = () => {
                   <option value={50}>50</option>
                 </select>
               </div>
-              
+
               {/* Orders count display */}
               <div className="text-sm text-gray-600">
                 Showing {start} to {end} of {totalOrders} orders
@@ -172,7 +176,7 @@ const AdminOrders = () => {
             </div>
 
             {isLoading && <p className="text-gray-500 py-4">Loading orders...</p>}
-            
+
             {!isLoading && viewMode === 'table' ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -365,11 +369,10 @@ const AdminOrders = () => {
                         ) : (
                           <button
                             onClick={() => handlePageChange(pageNum)}
-                            className={`px-3 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${
-                              currentPage === pageNum
+                            className={`px-3 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${currentPage === pageNum
                                 ? 'bg-gray-600 text-white'
                                 : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                            }`}
+                              }`}
                           >
                             {pageNum}
                           </button>

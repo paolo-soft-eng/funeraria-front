@@ -210,7 +210,7 @@ const AdminAppointments = () => {
             <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
                 <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 mb-1">Appointments</h1>
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Appointments</h1>
                         <p className="text-sm text-gray-600">Manage and track all client appointments</p>
                     </div>
                     {!isMobile && (

@@ -5,20 +5,7 @@ export async function recordPayment(paymentData) {
     if (!paymentIntentId && !sourceId && !checkoutSessionId) {
       throw new Error('Either paymentIntentId, sourceId, or checkoutSessionId must be provided');
     }
-
-    console.log('Recording payment with data:', {
-      userId: paymentData.userId,
-      paymentIntentId: paymentIntentId || null,
-      sourceId: sourceId || null,
-      serviceId: paymentData.serviceId || null,
-      checkoutSessionId: checkoutSessionId || null,
-      amount: paymentData.amount,
-      hasAddress: !!paymentData.address,
-      hasItems: Array.isArray(paymentData.items) && paymentData.items.length > 0,
-      deliveryDate: paymentData.deliveryDate || null,
-      orderId: paymentData.orderId || null
-    });
-
+    
     const response = await fetch('http://localhost/apii/components/record-payment.php', {
       method: 'POST',
       headers: {
@@ -58,13 +45,6 @@ export async function recordPayment(paymentData) {
     if (!result.success) {
       throw new Error(result.error || 'Payment recording failed');
     }
-
-    console.log('✅ Payment recorded successfully:', {
-      orderId: result.orderId,
-      paymentType: result.paymentType,
-      transactionId: result.transactionId,
-      serviceId: result.serviceId || null
-    });
 
     return result;
 

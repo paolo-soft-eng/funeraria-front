@@ -42,7 +42,6 @@ const SuperAdmin = () => {
       const data = await response.json();
 
       const usersWithStatus = data.map(user => {
-        console.log(`User ${user.id} status from DB:`, user.status);
         return {
           ...user,
           status: user.status || 'disabled'
@@ -265,8 +264,6 @@ const SuperAdmin = () => {
       const currentUser = users.find(user => user.id === userId);
       const effectiveCurrentStatus = currentUser?.status || 'disabled';
 
-      console.log('Toggling status for user:', userId, 'Current status:', effectiveCurrentStatus);
-
       const newStatus = effectiveCurrentStatus === 'active' ? 'disabled' : 'active';
 
       const response = await fetch('http://localhost/apii/components/superadmin/toggleAdminStatus.php', {
@@ -281,7 +278,6 @@ const SuperAdmin = () => {
       });
 
       const data = await response.json();
-      console.log('Server response:', data);
 
       if (!response.ok) {
         throw new Error(data.message || `HTTP error! status: ${response.status}`);

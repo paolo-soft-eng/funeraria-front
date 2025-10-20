@@ -111,7 +111,7 @@ export const AdminReport = () => {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Bug Reports</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">Bug Reports</h1>
             <p className="text-gray-600">Manage and respond to user bug reports</p>
           </div>
           <button

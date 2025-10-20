@@ -662,7 +662,7 @@ const AdminMessages = () => {
           {!selectedUser ? (
             <div>
               <div className="p-4 border-b">
-                <h2 className="text-lg font-semibold">Client Messages</h2>
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Client Messages</h2>
                 <p className="text-gray-600 text-sm">View and respond to client inquiries</p>
               </div>
 

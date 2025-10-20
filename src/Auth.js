@@ -61,7 +61,6 @@ const Auth = () => {
     const url = isLogin ? 'http://localhost/apii/components/login.php' : 'http://localhost/apii/components/register.php';
 
     try {
-      console.log("Form Data:", formData);
       const response = await axios.post(url, formData);
 
       if (response && response.data) {

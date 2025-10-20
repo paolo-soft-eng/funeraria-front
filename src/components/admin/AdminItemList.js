@@ -89,9 +89,10 @@ const AdminItemList = () => {
       <div className="container mx-auto px-4 py-6">
         {/* Add/Update Form */}
         <div className="bg-white rounded-lg shadow-md p-4 md:p-6 mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
             Manage Items
           </h1>
+          <p className="text-gray-600 text-sm mb-7">manage and track menu items</p>
 
           <h2 className="text-xl font-semibold mb-4">
             {formData.id ? "Update Item" : "Add New Item"}

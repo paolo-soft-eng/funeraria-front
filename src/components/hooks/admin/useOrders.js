@@ -16,7 +16,6 @@ export const useOrders = () => {
       );
       
       const data = response.data;
-      console.log('Orders data:', data);
       
       if (data.orders) {
         setOrders(data.orders);

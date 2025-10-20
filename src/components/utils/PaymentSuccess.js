@@ -22,7 +22,6 @@ const PaymentSuccess = () => {
   // Extract identifiers ONCE when component mounts
   useEffect(() => {
     const extractedIdentifiers = extractPaymentIdentifiers(searchParams, location.state);
-    console.log('Initial identifiers extraction:', extractedIdentifiers);
     setIdentifiers(extractedIdentifiers);
   }, [searchParams, location.state]); // Only depend on these
 
@@ -75,7 +74,6 @@ const PaymentSuccess = () => {
       identifiers.userId = storedData.userId || storedData.user_id;
     }
 
-    console.log('Final extracted identifiers:', identifiers);
     return identifiers;
   }
 
@@ -169,7 +167,6 @@ const PaymentSuccess = () => {
     const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     try {
-      console.log(`Checking payment status (${type}): ${endpoint}`);
 
       const response = await fetch(endpoint, {
         signal: controller.signal,
@@ -205,15 +202,12 @@ const PaymentSuccess = () => {
   async function verifyPaymentWithRetry(identifier, type = 'intent', maxRetries = 4) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Payment verification attempt ${attempt}/${maxRetries}:`, identifier, `(${type})`);
 
         const result = await checkPaymentStatus(identifier, type);
-        console.log(`Payment status result (attempt ${attempt}):`, result);
 
         return result;
 
       } catch (err) {
-        console.error(`Payment verification attempt ${attempt} failed:`, err);
 
         if (attempt === maxRetries) {
           throw new Error(`Payment verification failed after ${maxRetries} attempts: ${err.message}`);
@@ -229,7 +223,6 @@ const PaymentSuccess = () => {
   // Fixed recordPaymentInDatabase function - around line 245
   async function recordPaymentInDatabase(paymentData, verificationType = 'session') {
     try {
-      console.log("Recording payment in database:", paymentData);
 
       const { paymentIntentId, sourceId, sessionId, userId: extractedUserId } = identifiers;
 
@@ -247,36 +240,28 @@ const PaymentSuccess = () => {
       if (sessionId && (sessionId.startsWith('cs_') || sessionId.startsWith('sess_'))) {
         identifier = sessionId;
         actualVerificationType = 'session';
-        console.log("Checkout session detected:", sessionId);
       }
       // PRIORITY 2: Use source ID for e-wallet payments
       else if (sourceId && sourceId.startsWith('src_')) {
         identifier = sourceId;
         actualVerificationType = 'source';
-        console.log("E-wallet source detected:", sourceId);
       }
       // PRIORITY 3: Use payment intent for card payments
       else if (paymentIntentId && paymentIntentId.startsWith('pi_')) {
         identifier = paymentIntentId;
         actualVerificationType = 'intent';
-        console.log("Payment intent detected:", paymentIntentId);
       }
       else {
-        // Last resort: check stored data
-        console.log('Stored payment data:', storedData);
 
         if (storedData.sessionId) {
           identifier = storedData.sessionId;
           actualVerificationType = 'session';
-          console.log("Using stored session ID:", identifier);
         } else if (storedData.sourceId || storedData.source_id) {
           identifier = storedData.sourceId || storedData.source_id;
           actualVerificationType = 'source';
-          console.log("Using stored source ID:", identifier);
         } else if (storedData.paymentIntentId || storedData.payment_intent_id) {
           identifier = storedData.paymentIntentId || storedData.payment_intent_id;
           actualVerificationType = 'intent';
-          console.log("Using stored payment intent:", identifier);
         } else {
           updateState({
             error: "Payment verification failed: No payment identifier found. Please check your order history or contact support.",
@@ -292,24 +277,20 @@ const PaymentSuccess = () => {
       // Priority 1: From passed paymentData
       if (paymentData.serviceId) {
         serviceId = paymentData.serviceId;
-        console.log("Using serviceId from paymentData:", serviceId);
       }
       // Priority 2: From location.state (when coming from funeral order payment)
       else if (location.state?.serviceId) {
         serviceId = location.state.serviceId;
-        console.log("Using serviceId from location.state:", serviceId);
       }
       // Priority 3: From stored data
       else if (storedData.serviceId) {
         serviceId = storedData.serviceId;
-        console.log("Using serviceId from storedData:", serviceId);
       }
       // Priority 4: Extract from cart items if they contain service info
       else if (storedData.items && storedData.items.length > 0) {
         const firstItem = storedData.items[0];
         if (firstItem.service_id || firstItem.serviceId) {
           serviceId = firstItem.service_id || firstItem.serviceId;
-          console.log("Using serviceId from cart items:", serviceId);
         }
       }
 
@@ -328,31 +309,24 @@ const PaymentSuccess = () => {
         recordData.checkoutSessionId = sessionId;
         recordData.paymentIntentId = null; // Will be populated by backend
         recordData.sourceId = null;
-        console.log("Using checkout session flow with session ID:", sessionId);
-        console.log("serviceId being sent:", recordData.serviceId);
 
       } else if (actualVerificationType === 'source') {
         // For e-wallet sources
         recordData.sourceId = sourceId;
         recordData.paymentIntentId = null;
         recordData.checkoutSessionId = null;
-        console.log("Using e-wallet source flow with source ID:", sourceId);
-        console.log("serviceId being sent:", recordData.serviceId);
 
       } else {
         // For payment intents
         recordData.paymentIntentId = paymentIntentId;
         recordData.sourceId = null;
         recordData.checkoutSessionId = null;
-        console.log("Using payment intent flow with intent ID:", paymentIntentId);
-        console.log("serviceId being sent:", recordData.serviceId);
       }
 
       if (!recordData.paymentIntentId && !recordData.sourceId && !recordData.checkoutSessionId) {
         throw new Error("No valid payment identifier available for recording");
       }
 
-      console.log("Final record data being sent:", recordData);
 
       // Use the external recordPayment function
       const result = await recordPayment(recordData);
@@ -372,12 +346,10 @@ const PaymentSuccess = () => {
   const verifyAndRecord = useCallback(async () => {
     // Don't proceed until identifiers are loaded
     if (!identifiers) {
-      console.log('Waiting for identifiers to be loaded...');
       return;
     }
 
     try {
-      console.log('Starting payment verification with identifiers:', identifiers);
 
       const { paymentIntentId, sourceId, sessionId, userId: extractedUserId } = identifiers;
 
@@ -392,37 +364,30 @@ const PaymentSuccess = () => {
       if (sessionId && (sessionId.startsWith('cs_') || sessionId.startsWith('sess_'))) {
         identifier = sessionId;
         verificationType = 'session';
-        console.log("Checkout session detected:", sessionId);
       }
       // PRIORITY 2: Use source ID for e-wallet payments
       else if (sourceId && sourceId.startsWith('src_')) {
         identifier = sourceId;
         verificationType = 'source';
-        console.log("E-wallet source detected:", sourceId);
       }
       // PRIORITY 3: Use payment intent for card payments
       else if (paymentIntentId && paymentIntentId.startsWith('pi_')) {
         identifier = paymentIntentId;
         verificationType = 'intent';
-        console.log("Payment intent detected:", paymentIntentId);
       }
       else {
         // Last resort: check stored data
         const storedData = getStoredPaymentData();
-        console.log('Stored payment data:', storedData);
 
         if (storedData.sessionId) {
           identifier = storedData.sessionId;
           verificationType = 'session';
-          console.log("Using stored session ID:", identifier);
         } else if (storedData.sourceId || storedData.source_id) {
           identifier = storedData.sourceId || storedData.source_id;
           verificationType = 'source';
-          console.log("Using stored source ID:", identifier);
         } else if (storedData.paymentIntentId || storedData.payment_intent_id) {
           identifier = storedData.paymentIntentId || storedData.payment_intent_id;
           verificationType = 'intent';
-          console.log("Using stored payment intent:", identifier);
         } else {
           updateState({
             error: "Payment verification failed: No payment identifier found. Please check your order history or contact support.",
@@ -434,14 +399,12 @@ const PaymentSuccess = () => {
 
       // Wait for webhook processing for e-wallet payments
       if (verificationType === 'source') {
-        console.log("Waiting for e-wallet webhook processing...");
         await delay(3000);
       }
 
       // Verify payment status with the actual identifier
       try {
         statusResult = await verifyPaymentWithRetry(identifier, verificationType);
-        console.log("Payment verification result:", statusResult);
       } catch (error) {
         console.error("Payment verification failed:", error);
 
@@ -483,8 +446,6 @@ const PaymentSuccess = () => {
               const storedData = getStoredPaymentData();
               const actualPaymentIntentId = statusResult.session?.payment_intent_id || null;
 
-              console.log("Checkout session paid - using actual payment intent:", actualPaymentIntentId);
-              console.log("Session data:", statusResult.session);
               let serviceId = null;
               if (storedData.serviceId) {
                 serviceId = storedData.serviceId;
@@ -571,7 +532,6 @@ const PaymentSuccess = () => {
             deliveryDate: storedData.deliveryDate || storedData.delivery_date,
             items: storedData.items || []
           };
-          console.log("E-wallet record data with serviceId:", recordData);
 
           // In the e-wallet source verification section
           try {
@@ -596,7 +556,6 @@ const PaymentSuccess = () => {
           return;
         }
         else if (statusResult.success && ['processing', 'pending'].includes(statusResult.status)) {
-          console.log("E-wallet payment still processing");
           updateState({
             paymentDetails: {
               status: 'processing',
@@ -699,7 +658,6 @@ const PaymentSuccess = () => {
 
           if (recordResult.success) {
             cleanupStoredData();
-            console.log("Payment successfully recorded in database");
           } else {
             throw new Error(recordResult.error || "Database recording failed");
           }
@@ -731,7 +689,6 @@ const PaymentSuccess = () => {
   // Run verification when identifiers are ready
   useEffect(() => {
     if (identifiers) {
-      console.log('Identifiers loaded, starting verification:', identifiers);
       verifyAndRecord();
     }
   }, [identifiers, verifyAndRecord]);
@@ -814,7 +771,6 @@ const PaymentSuccess = () => {
         payload.paymentIntentId = intentId;
       }
 
-      console.log("Resume payment payload:", payload);
 
       const response = await fetch(endpoint, {
         method: "POST",

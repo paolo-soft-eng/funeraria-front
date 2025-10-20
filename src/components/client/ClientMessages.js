@@ -99,7 +99,6 @@ export default function ClientMessages() {
         const messageId = data.messageId || `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
         if (processedMessageIds.has(messageId)) {
-          console.log(`Skipping duplicate message with ID: ${messageId}`);
           return;
         }
 

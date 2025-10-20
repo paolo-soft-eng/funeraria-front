@@ -108,7 +108,6 @@ export const fetchCaskets = async () => {
         let data;
         try {
             data = await response.json();
-            console.log('Fetched caskets data:', data);
 
             if (!Array.isArray(data)) {
                 console.warn('API did not return an array for caskets:', data);
@@ -155,7 +154,6 @@ export const fetchChapels = async () => {
         let data;
         try {
             data = await response.json();
-            console.log('Fetched chapels data:', data);
 
             if (!Array.isArray(data)) {
                 console.warn('API did not return an array for chapels:', data);

@@ -184,7 +184,6 @@ const PaymentForm = ({
         try {
             sessionStorage.setItem('checkoutSessionId', sessionData.checkout_session_id);
             localStorage.setItem('lastCheckoutSessionId', sessionData.checkout_session_id);
-            console.log('Stored checkout session ID:', sessionData.checkout_session_id);
         } catch (e) {
             console.warn('Failed to store checkout session ID:', e);
         }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import useCart from '../hooks/useCart';
 import useOrders from '../hooks/useOrders';
-import CartItem from '../client/CartItem';
+import ClientCartItem from '../client/ClientCartItem';
 import FuneralOrders from '../client/ClientFuneralOrders';
 import PaymentForm from '../client/ClientPaymentForm';
 
@@ -78,7 +78,6 @@ const ClientCart = () => {
 
         // Get the service ID from the order
         const serviceId = getServiceId(order);
-        console.log(serviceId);
         
 
         let totalAmount = 0;
@@ -165,7 +164,7 @@ const ClientCart = () => {
     return (
         <div className="flex flex-col min-h-screen">
             <div className="container mx-auto p-4 flex-grow">
-                <h1 className="text-3xl font-bold text-center mb-6 text-white-300">Funeraria Gomez Payment</h1>
+                <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl sm:tracking-tight lg:text-5xl text-center">Funeraria Gomez Payment</h1>
 
                 {error && (
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow">
@@ -218,7 +217,7 @@ const ClientCart = () => {
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200">
                                                 {cartItems.map(item => (
-                                                    <CartItem
+                                                    <ClientCartItem
                                                         key={item.id}
                                                         item={item}
                                                         editingItemId={editingItemId}

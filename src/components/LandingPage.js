@@ -108,7 +108,6 @@ export default function FuneralManagementLanding() {
 
   const handleNavigate = () => {
     navigate('/auth');
-    console.log('Navigate to auth');
   }
 
   const handleStory = ()=>{
@@ -458,7 +457,7 @@ export default function FuneralManagementLanding() {
                   <div className="bg-gray-700 p-3 rounded-full mr-4">
                     <Mail className="h-6 w-6 text-gray-300" />
                   </div>
-                  <span className="text-lg">support@funerariagomez.com</span>
+                  <span className="text-lg">info@funegomezudtohan.com</span>
                 </div>
 
                 <div className="flex items-center">

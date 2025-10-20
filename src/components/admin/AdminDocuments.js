@@ -338,7 +338,7 @@ const AdminDocuments = () => {
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Documents Dashboard</h1>
+                                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Admin Documents Dashboard</h1>
                                 <p className="text-gray-600">Preview, print, and manage client documents</p>
                             </div>
                             <div className="flex flex-wrap gap-3">

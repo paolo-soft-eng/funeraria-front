@@ -108,7 +108,11 @@ const AdminClients = () => {
       <div className="p-4 md:p-6">
         <div className="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-lg font-bold text-gray-900">Client Management</h1>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Client Management</h1>
+            <p className='text-gray-600 text-sm mb-5'>manage and track customers</p>
+            </div>
+            
             {!isMobile && (
               <div className="flex space-x-2">
                 <button
