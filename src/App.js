@@ -28,14 +28,15 @@ const AdminDocuments = lazy(() => import('./components/admin/AdminDocuments'));
 const LandingPage = lazy(() => import('./components/LandingPage'));
 const SuperAdmin = lazy(() => import('./components/superadmin/SuperAdmin'));
 const SuperAdminReport = lazy(() => import('./components/superadmin/SuperAdminReport'));
-const SuperAdminPerformance = lazy(() => import('./components/superadmin/SuperAdminPerformance'));
 const ErrorPage = lazy(() => import('./components/ErrorPage'));
 const ForgotPassword = lazy(() => import('./components/utils/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/utils/ResetPassword'));
 const PaymentSuccess = lazy(() => import('./components/utils/PaymentSuccess'));
 const PaymentFailed = lazy(() => import('./components/utils/PaymentFailed'));
-const OurStory = lazy(()=> import('./components/OurStory'))
-
+const OurStory = lazy(()=> import('./components/OurStory'));
+const ContactSupport = lazy(()=> import('./components/ContactSupport'));
+const PrivacyPolicy = lazy(()=> import('./components/PrivacyPolicy'));
+const TermOfService = lazy(()=> import('./components/TermOfService'));
 
 const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
@@ -59,6 +60,21 @@ const App = () => {
               <Route path='/story' element={
                 <LoadingWrapper>
                   <OurStory/>
+                </LoadingWrapper>
+              }/>
+              <Route path='/contact-support' element={
+                <LoadingWrapper>
+                  <ContactSupport/>
+                </LoadingWrapper>
+              }/>
+              <Route path='/privacy-policy' element={
+                <LoadingWrapper>
+                  <PrivacyPolicy/>
+                </LoadingWrapper>
+              }/>
+              <Route path='/term-of-service' element={
+                <LoadingWrapper>
+                  <TermOfService/>
                 </LoadingWrapper>
               }/>
               <Route path="/forgot-password" element={
@@ -238,13 +254,6 @@ const App = () => {
                   </LoadingWrapper>
                 </Suspense>
               } />
-              {/* <Route path='/super-admin/performance' element={
-                <Suspense fallback={<LoadingScreen />}>
-                  <LoadingWrapper>
-                    <SuperAdminPerformance/>
-                  </LoadingWrapper>
-                </Suspense>
-              } /> */}
             </Routes>
           </Suspense>
         </Router>
