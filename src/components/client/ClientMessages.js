@@ -342,7 +342,7 @@ export default function ClientMessages() {
                   <div className="h-10 w-10 rounded-full mr-3 relative">
                     {admin.image_path ? (
                       <img
-                        src={`http://${window.location.hostname}/apii/components/${admin.image_path}`}
+                        src={`http://${window.location.hostname}/funeraria/api/components/${admin.image_path}`}
                         alt={admin.username}
                         className="h-10 w-10 rounded-full object-cover"
                       />
@@ -502,7 +502,7 @@ export default function ClientMessages() {
                         <div className="h-8 w-8 bg-gray-300 rounded-full mr-3 flex-shrink-0 self-end overflow-hidden">
                           {selectedAdmin.image_path ? (
                             <img
-                              src={`http://${window.location.hostname}/apii/components/${selectedAdmin.image_path}`}
+                              src={`http://${window.location.hostname}/funeraria/api/components/${selectedAdmin.image_path}`}
                               alt={selectedAdmin.username}
                               className="h-8 w-8 object-cover"
                             />

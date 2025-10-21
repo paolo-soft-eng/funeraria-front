@@ -78,7 +78,7 @@ const ClientDashboard = () => {
 
   const fetchProfileImage = async () => {
     try {
-      const response = await axios.get(`http://localhost/apii/components/client_picture.php?email=${email}`);
+      const response = await axios.get(`http://localhost/funeraria/api/components/client_picture.php?email=${email}`);
       if (response.data && response.data.success) {
         if (response.data.image_path) {
           setProfileImage(response.data.image_path);
@@ -106,7 +106,7 @@ const ClientDashboard = () => {
     if (userConfirmed) {
       try {
         showNotification('Logging out...', 'info');
-        await axios.post('http://localhost/apii/config/logout.php');
+        await axios.post('http://localhost/funeraria/api/config/logout.php');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userRole');
         showNotification('Successfully logged out!', 'success');
@@ -211,7 +211,7 @@ const ClientDashboard = () => {
             {profileImage ? (
               <div className="rounded-full p-1 flex items-center justify-center overflow-hidden">
                 <img 
-                  src={`http://localhost/apii/components/${profileImage}`} 
+                  src={`http://localhost/funeraria/api/components/${profileImage}`} 
                   alt="Profile" 
                   className="rounded-full w-9 h-9 object-cover"
                 />
@@ -273,7 +273,7 @@ const ClientDashboard = () => {
                   {profileImage ? (
                     <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
                       <img 
-                        src={`http://localhost/apii/components/${profileImage}`} 
+                        src={`http://localhost/funeraria/api/components/${profileImage}`} 
                         alt="Profile" 
                         className="w-full h-full object-cover"
                       />

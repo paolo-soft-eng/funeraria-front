@@ -128,12 +128,12 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                             {casket.image && (
                               <div className="h-48 w-full">
                                 <img
-                                  src={`${API_BASE_URL}/apii/components/uploads/caskets/${casket.image}`}
+                                  src={`${API_BASE_URL}/funeraria/api/components/uploads/caskets/${casket.image}`}
                                   alt={casket.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     e.target.onerror = null;
-                                    e.target.src = `${API_BASE_URL}/apii/components/uploads/default.jpg`;
+                                    e.target.src = `${API_BASE_URL}/funeraria/api/components/uploads/default.jpg`;
                                   }}
                                 />
                               </div>
@@ -175,12 +175,12 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                             {chapel.image && (
                               <div className="h-48 w-full">
                                 <img
-                                  src={`${API_BASE_URL}/apii/components/uploads/chapels/${chapel.image}`}
+                                  src={`${API_BASE_URL}/funeraria/api/components/uploads/chapels/${chapel.image}`}
                                   alt={chapel.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     e.target.onerror = null;
-                                    e.target.src = `${API_BASE_URL}/apii/components/uploads/default.jpg`;
+                                    e.target.src = `${API_BASE_URL}/funeraria/api/components/uploads/default.jpg`;
                                   }}
                                 />
                               </div>
