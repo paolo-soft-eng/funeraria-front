@@ -302,7 +302,7 @@ const AdminItemList = () => {
                         <td className="px-4 py-3 text-sm text-gray-800">
                           {item.image_path ? (
                             <img
-                              src={`http://localhost/apii/components/${item.image_path}`}
+                              src={`http://localhost/funeraria/api/components/${item.image_path}`}
                               alt={item.name}
                               className="w-16 h-16 object-cover rounded-md"
                             />

@@ -178,7 +178,7 @@ const AdminDashboard = () => {
                     <div className={`px-4 py-6 ${isSidebarOpen ? 'flex items-center' : 'flex flex-col items-center'}`}>
                         <div className="rounded-full  flex items-center justify-center">
                             {userData && userData.profileImage ? (
-                                <img src={`http://localhost/apii/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
+                                <img src={`http://localhost/funeraria/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
                             ) : (
                                 <User size={isSidebarOpen ? 24 : 18} />
                             )}
@@ -254,7 +254,7 @@ const AdminDashboard = () => {
                                 >
                                     <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700">
                                         {userData && userData.profileImage ? (
-                                            <img src={`http://localhost/apii/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-8 h-8 object-cover" />
+                                            <img src={`http://localhost/funeraria/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-8 h-8 object-cover" />
                                         ) : (
                                             <User size={18} />
                                         )}
@@ -367,7 +367,7 @@ const AdminDashboard = () => {
                                     <div className="flex flex-col items-center mb-6">
                                         <div className="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
                                             {userData && userData.profileImage ? (
-                                                <img src={`http://localhost/apii/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-24 h-24 object-cover" />
+                                                <img src={`http://localhost/funeraria/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-24 h-24 object-cover" />
                                             ) : (
                                                 <User size={48} />
                                             )}
@@ -471,7 +471,7 @@ const AdminDashboard = () => {
                                                         <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
                                                             {message.sender_image_path ? (
                                                                 <img
-                                                                    src={`http://localhost/apii/components/${message.sender_image_path}`}
+                                                                    src={`http://localhost/funeraria/api/components/${message.sender_image_path}`}
                                                                     alt="Profile"
                                                                     className="rounded-full w-10 h-10 object-cover"
                                                                 />

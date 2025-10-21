@@ -116,7 +116,7 @@ const AdminAnalytics = () => {
   useEffect(() => {
     const fetchServiceTypes = async () => {
       try {
-        const response = await fetch('http://localhost/apii/components/analytics.php?action=service-types');
+        const response = await fetch('http://localhost/funeraria/api/components/analytics.php?action=service-types');
         const result = await response.json();
 
         if (result.success) {
@@ -144,7 +144,7 @@ const AdminAnalytics = () => {
         ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== ''))
       });
 
-      const response = await fetch(`http://localhost/apii/components/analytics.php?${queryParams}`);
+      const response = await fetch(`http://localhost/funeraria/api/components/analytics.php?${queryParams}`);
       const result = await response.json();
 
       if (result.success) {

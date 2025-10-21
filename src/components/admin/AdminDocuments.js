@@ -16,7 +16,7 @@ const AdminDocuments = () => {
     const fetchDocuments = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost/apii/components/adminDocuments.php', {
+            const response = await fetch('http://localhost/funeraria/api/components/adminDocuments.php', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -80,11 +80,11 @@ const AdminDocuments = () => {
     };
 
     const getDocumentUrl = (doc, action = 'file') => {
-        return `http://localhost/apii/components/documents.php?${action}=${encodeURIComponent(doc.document_path)}`;
+        return `http://localhost/funeraria/api/components/documents.php?${action}=${encodeURIComponent(doc.document_path)}`;
     };
 
     const getPreviewUrl = (doc) => {
-        return `http://localhost/apii/components/adminDocuments.php?preview=${encodeURIComponent(doc.document_path)}`;
+        return `http://localhost/funeraria/api/components/adminDocuments.php?preview=${encodeURIComponent(doc.document_path)}`;
     };
 
     const isPreviewable = (type) => {

@@ -294,7 +294,7 @@ const AdminSettings = () => {
                               <img
                                 src={profilePreview.startsWith('blob:')
                                   ? profilePreview
-                                  : `http://localhost/apii/components/${profilePreview}`}
+                                  : `http://localhost/funeraria/api/components/${profilePreview}`}
                                 alt="Profile"
                                 className="h-full w-full object-cover"
                               />
@@ -636,8 +636,8 @@ const AdminSettings = () => {
                     </p>
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <p className="font-medium">Funeraria Gomez Support Team</p>
-                      <p className="text-blue-600">support@funerariagomez.com</p>
-                      <p className="text-blue-600">(555) 987-6543</p>
+                      <p className="text-blue-600">info@funegomezudtohan.com</p>
+                      <p className="text-blue-600">0909 669 7792</p>
                       <p className="text-sm text-gray-500 mt-2">Monday-Friday, 8am-5pm</p>
                     </div>
                   </div>
