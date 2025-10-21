@@ -58,7 +58,7 @@ const Auth = () => {
       return;
     }
 
-    const url = isLogin ? 'http://localhost/apii/components/login.php' : 'http://localhost/apii/components/register.php';
+    const url = isLogin ? 'http://localhost/funeraria/api/components/login.php' : 'http://localhost/funeraria/api/components/register.php';
 
     try {
       const response = await axios.post(url, formData);
@@ -148,7 +148,7 @@ const Auth = () => {
 
       // Send to backend for verification/registration
       const response = await axios.post(
-        'http://localhost/apii/components/google-auth.php',
+        'http://localhost/funeraria/api/components/google-auth.php',
         googleData
       );
 

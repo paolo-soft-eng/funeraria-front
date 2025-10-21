@@ -65,7 +65,7 @@ export default function FuneralManagementLanding() {
     }
 
     try {
-      const response = await fetch('http://localhost/apii/components/contact_submit.php', {
+      const response = await fetch('http://localhost/funeraria/api/components/contact_submit.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
