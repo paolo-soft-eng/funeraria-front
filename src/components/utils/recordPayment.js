@@ -6,7 +6,7 @@ export async function recordPayment(paymentData) {
       throw new Error('Either paymentIntentId, sourceId, or checkoutSessionId must be provided');
     }
     
-    const response = await fetch('http://localhost/apii/components/record-payment.php', {
+    const response = await fetch('http://localhost/funeraria/api/components/record-payment.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
