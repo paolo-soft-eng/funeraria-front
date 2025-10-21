@@ -12,7 +12,7 @@ export const useAuth = () => {
   useEffect(() => {
     if (email) {
       fetch(
-        `http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(email)}`
+        `http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(email)}`
       )
         .then((res) => res.json())
         .then((data) => {

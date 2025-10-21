@@ -10,7 +10,7 @@ export const useBugReport = (email) => {
     setBugReportStatus(null);
 
     try {
-      const res = await fetch('http://localhost/apii/components/adminBug.php', {
+      const res = await fetch('http://localhost/funeraria/api/components/adminBug.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

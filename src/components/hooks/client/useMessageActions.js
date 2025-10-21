@@ -4,7 +4,7 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const API_BASE_URL = 'http://localhost/apii/components/send_message.php';
+  const API_BASE_URL = 'http://localhost/funeraria/api/components/send_message.php';
 
   const sendMessage = useCallback(async (message, selectedAdmin, addMessage, countMessages, replyContext = null) => {
     if (!message.trim() || !selectedAdmin || !socket || !isConnected) {
@@ -88,7 +88,7 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
         formData.append('reply_to_id', replyContext.id);
       }
 
-      const uploadResponse = await fetch('http://localhost/apii/components/send_message.php', {
+      const uploadResponse = await fetch('http://localhost/funeraria/api/components/send_message.php', {
         method: 'POST',
         body: formData
       });

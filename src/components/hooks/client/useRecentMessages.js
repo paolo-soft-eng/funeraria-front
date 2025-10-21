@@ -15,7 +15,7 @@ export const useRecentMessages = (email) => {
         
         try {
             const response = await axios.post(
-                'http://localhost/apii/components/fetchRecentMessages.php',
+                'http://localhost/funeraria/api/components/fetchRecentMessages.php',
                 { email }
             );
 
@@ -35,7 +35,7 @@ export const useRecentMessages = (email) => {
     const markAsRead = async (messageId) => {
         try {
             const response = await axios.post(
-                'http://localhost/apii/components/markMessageAsRead.php',
+                'http://localhost/funeraria/api/components/markMessageAsRead.php',
                 { message_id: messageId, email }
             );
 

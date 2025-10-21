@@ -11,7 +11,7 @@ export const useItems = (currentPage, itemsPerPage) => {
     try {
       setIsLoading(true);
       const res = await axios.get(
-        `http://localhost/apii/components/itemlist.php?page=${currentPage}&limit=${itemsPerPage}`
+        `http://localhost/funeraria/api/components/itemlist.php?page=${currentPage}&limit=${itemsPerPage}`
       );
 
       if (res.data.items) {

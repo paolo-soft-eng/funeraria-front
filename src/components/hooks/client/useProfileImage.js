@@ -7,7 +7,7 @@ export const useProfileImage = (email, setUsername) => {
 
         const fetchProfile = async () => {
             try {
-                const response = await axios.get(`http://localhost/apii/components/client_picture.php?email=${email}`);
+                const response = await axios.get(`http://localhost/funeraria/api/components/client_picture.php?email=${email}`);
                 if (response.data?.success && response.data.username) {
                     setUsername(response.data.username);
                 }

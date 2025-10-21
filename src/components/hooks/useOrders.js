@@ -22,7 +22,7 @@ const useOrders = () => {
         setOrdersLoading(true);
         try {
             const response = await fetch(
-                `http://localhost/apii/components/fetchOrders.php?customer_email=${encodeURIComponent(email)}`,
+                `http://localhost/funeraria/api/components/fetchOrders.php?customer_email=${encodeURIComponent(email)}`,
                 {
                     method: 'GET',
                     headers: {
@@ -59,7 +59,7 @@ const useOrders = () => {
         }
 
         try {
-            const response = await fetch('http://localhost/apii/components/deleteOrder.php', {
+            const response = await fetch('http://localhost/funeraria/api/components/deleteOrder.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

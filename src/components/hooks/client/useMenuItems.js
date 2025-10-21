@@ -8,7 +8,7 @@ export const useMenuItems = () => {
     useEffect(() => {
         const fetchItems = async () => {
             try {
-                const response = await fetch('http://localhost/apii/components/fetchItems.php');
+                const response = await fetch('http://localhost/funeraria/api/components/fetchItems.php');
                 const data = await response.json();
                 setItems(data);
                 setLoading(false);

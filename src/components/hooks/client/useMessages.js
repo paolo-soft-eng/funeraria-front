@@ -7,7 +7,7 @@ export const useMessages = (userId, selectedAdmin) => {
   const [messageCount, setMessageCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const API_BASE_URL = 'http://localhost/apii/components/send_message.php';
+  const API_BASE_URL = 'http://localhost/funeraria/api/components/send_message.php';
 
   const fetchMessages = useCallback(async () => {
     if (!userId || !selectedAdmin) return;

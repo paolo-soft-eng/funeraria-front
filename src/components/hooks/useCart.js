@@ -35,7 +35,7 @@ const useCart = () => {
     const fetchUserId = async (userEmail) => {
         try {
             const response = await fetch(
-                `http://localhost/apii/components/getUserId.php?email=${encodeURIComponent(userEmail)}`
+                `http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(userEmail)}`
             );
             if (!response.ok) {
                 throw new Error('Failed to fetch user ID');
@@ -58,7 +58,7 @@ const useCart = () => {
         setIsOrderCart(false);
         setCartLoading(true);
         try {
-            const response = await fetch(`http://localhost/apii/components/fetchCart.php?userId=${userId}`);
+            const response = await fetch(`http://localhost/funeraria/api/components/fetchCart.php?userId=${userId}`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -92,7 +92,7 @@ const useCart = () => {
         };
 
         try {
-            const response = await fetch('http://localhost/apii/components/updatedCartItem.php', {
+            const response = await fetch('http://localhost/funeraria/api/components/updatedCartItem.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -132,7 +132,7 @@ const useCart = () => {
         };
 
         try {
-            const response = await fetch('http://localhost/apii/components/deleteCartItem.php', {
+            const response = await fetch('http://localhost/funeraria/api/components/deleteCartItem.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

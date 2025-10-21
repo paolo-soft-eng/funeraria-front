@@ -57,7 +57,7 @@ export const useItemForm = (userId, userName, fetchItems) => {
       }
 
       await axios.post(
-        'http://localhost/apii/components/itemlist.php',
+        'http://localhost/funeraria/api/components/itemlist.php',
         formDataToSend,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -91,7 +91,7 @@ export const useItemForm = (userId, userName, fetchItems) => {
 
       const res = await axios({
         method: 'POST',
-        url: 'http://localhost/apii/components/itemlist.php?_method=PUT',
+        url: 'http://localhost/funeraria/api/components/itemlist.php?_method=PUT',
         data: formDataToSend,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -119,7 +119,7 @@ export const useItemForm = (userId, userName, fetchItems) => {
       try {
         setIsLoading(true);
         await axios.delete(
-          `http://localhost/apii/components/itemlist.php?id=${id}&user_id=${userId}&user_name=${encodeURIComponent(userName)}`
+          `http://localhost/funeraria/api/components/itemlist.php?id=${id}&user_id=${userId}&user_name=${encodeURIComponent(userName)}`
         );
         fetchItems();
         toast.success('Item deleted successfully 🗑️');
@@ -143,7 +143,7 @@ export const useItemForm = (userId, userName, fetchItems) => {
     });
 
     if (item.image_path) {
-      setImagePreview(`http://localhost/apii/components/${item.image_path}`);
+      setImagePreview(`http://localhost/funeraria/api/components/${item.image_path}`);
     } else {
       setImagePreview(null);
     }

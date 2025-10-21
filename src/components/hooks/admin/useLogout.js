@@ -10,7 +10,7 @@ export const useLogout = (showNotification) => {
         if (userConfirmed) {
             try {
                 showNotification('Logging out...', 'info');
-                await axios.post('http://localhost/apii/config/logout.php');
+                await axios.post('http://localhost/funeraria/api/config/logout.php');
                 localStorage.removeItem('userEmail');
                 localStorage.removeItem('userRole');
                 showNotification('Successfully logged out!', 'success');

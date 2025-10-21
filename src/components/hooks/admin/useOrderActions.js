@@ -3,7 +3,7 @@ import axios from 'axios';
 export const useOrderActions = (userId, userName, fetchOrders) => {
   const handleAcceptOrder = async (orderId) => {
     try {
-      const response = await axios.post('http://localhost/apii/components/updateClientOrderStatus.php', {
+      const response = await axios.post('http://localhost/funeraria/api/components/updateClientOrderStatus.php', {
         orderId: orderId,
         status: 'completed',
         payment_status: 'paid',
@@ -24,7 +24,7 @@ export const useOrderActions = (userId, userName, fetchOrders) => {
 
   const handleDeleteOrder = async (orderId) => {
     try {
-      const response = await axios.post('http://localhost/apii/components/deleteClientOrder.php', {
+      const response = await axios.post('http://localhost/funeraria/api/components/deleteClientOrder.php', {
         orderId: orderId,
         user_id: userId,
         user_name: userName
