@@ -21,7 +21,7 @@ const SuperAdminReport = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost/apii/components/superAdminReport.php?action=get_all_reports');
+      const response = await fetch('http://localhost/funeraria/api/components/superAdminReport.php?action=get_all_reports');
       
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -49,7 +49,7 @@ const SuperAdminReport = () => {
 
   const handleUpdateStatus = async (reportId, newStatus) => {
     try {
-      const response = await fetch('http://localhost/apii/components/superAdminReport.php', {
+      const response = await fetch('http://localhost/funeraria/api/components/superAdminReport.php', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -86,7 +86,7 @@ const SuperAdminReport = () => {
   const handleDeleteReport = async (reportId) => {
     if (window.confirm('Are you sure you want to delete this report?')) {
       try {
-        const response = await fetch('http://localhost/apii/components/superAdminReport.php', {
+        const response = await fetch('http://localhost/funeraria/api/components/superAdminReport.php', {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -207,7 +207,7 @@ const SuperAdminReport = () => {
 
     if (userConfirmed) {
       try {
-        await axios.post('http://localhost/apii/config/logout.php');
+        await axios.post('http://localhost/funeraria/api/config/logout.php');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userRole');
         navigate('/');

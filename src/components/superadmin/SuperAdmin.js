@@ -33,7 +33,7 @@ const SuperAdmin = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost/apii/components/superadmin/users.php');
+      const response = await fetch('http://localhost/funeraria/api/components/superadmin/users.php');
 
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -64,7 +64,7 @@ const SuperAdmin = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        const response = await fetch(`http://localhost/apii/components/superadmin/delete_user.php?id=${id}`, {
+        const response = await fetch(`http://localhost/funeraria/api/components/superadmin/delete_user.php?id=${id}`, {
           method: 'DELETE',
         });
 
@@ -133,7 +133,7 @@ const SuperAdmin = () => {
     if (!validateForm()) return;
 
     try {
-      const response = await fetch('http://localhost/apii/components/superadmin/add_admin.php', {
+      const response = await fetch('http://localhost/funeraria/api/components/superadmin/add_admin.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -266,7 +266,7 @@ const SuperAdmin = () => {
 
       const newStatus = effectiveCurrentStatus === 'active' ? 'disabled' : 'active';
 
-      const response = await fetch('http://localhost/apii/components/superadmin/toggleAdminStatus.php', {
+      const response = await fetch('http://localhost/funeraria/api/components/superadmin/toggleAdminStatus.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -306,7 +306,7 @@ const SuperAdmin = () => {
 
     if (userConfirmed) {
       try {
-        await axios.post('http://localhost/apii/config/logout.php');
+        await axios.post('http://localhost/funeraria/api/config/logout.php');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userRole');
         navigate('/auth');
