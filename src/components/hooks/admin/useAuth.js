@@ -22,17 +22,17 @@ export const useAuth = () => {
             setIsLoggedIn(true);
           } else {
             setIsLoggedIn(false);
-            navigate('/auth');
+            navigate('/gomez/auth');
           }
         })
         .catch((err) => {
           console.error('Error fetching user ID:', err);
           setIsLoggedIn(false);
-          navigate('/auth');
+          navigate('/gomez/auth');
         });
     } else {
       setIsLoggedIn(false);
-      navigate('/auth');
+      navigate('/gomez/auth');
     }
   }, [email, navigate]);
 

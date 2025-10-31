@@ -10,7 +10,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   // If no user role is found, redirect to auth
   if (!userRole) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/gomez/auth" replace />;
   }
 
   // Check if user's role is allowed to access this route
@@ -18,13 +18,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     // Redirect based on role
     switch (userRole) {
       case 'client':
-        return <Navigate to="/dashboard-client" replace />;
+        return <Navigate to="/gomez/dashboard-client" replace />;
       case 'admin':
-        return <Navigate to="/dashboard-admin/home" replace />;
+        return <Navigate to="/gomez/dashboard-admin/home" replace />;
       case 'superadmin':
-        return <Navigate to="/super-admin" replace />;
+        return <Navigate to="/gomez/super-admin" replace />;
       default:
-        return <Navigate to="/auth" replace />;
+        return <Navigate to="/gomez/auth" replace />;
     }
   }
 

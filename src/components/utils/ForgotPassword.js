@@ -104,7 +104,7 @@ const ForgotPassword = () => {
               Please check your email for instructions to reset your password.
             </p>
             <button
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/gomez/auth')}
               className="w-full px-4 py-3 text-white bg-gray-800 rounded-lg hover:bg-black focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-300 font-medium text-center flex items-center justify-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               Back to Login
@@ -115,7 +115,7 @@ const ForgotPassword = () => {
         {!isSuccess && (
           <div className="mt-6 text-center">
             <button
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/gomez/auth')}
               className="text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none transition-colors duration-200"
             >
               Back to Login

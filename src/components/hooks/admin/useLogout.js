@@ -15,7 +15,7 @@ export const useLogout = (showNotification) => {
                 localStorage.removeItem('userRole');
                 showNotification('Successfully logged out!', 'success');
                 setTimeout(() => {
-                    navigate('/auth');
+                    navigate('/gomez/auth');
                 }, 1000);
             } catch (error) {
                 console.error('Error logging out:', error);

@@ -12,7 +12,7 @@ export const useAdminAuth = () => {
 
     const validateAdminAccess = async () => {
         if (!email) {
-            setTimeout(() => navigate('/auth'), 1500);
+            setTimeout(() => navigate('/gomez/auth'), 1500);
             return false;
         }
 
@@ -25,12 +25,12 @@ export const useAdminAuth = () => {
                 setIsValidatingAdmin(false);
                 return true;
             } else {
-                setTimeout(() => navigate('/auth'), 1500);
+                setTimeout(() => navigate('/gomez/auth'), 1500);
                 return false;
             }
         } catch (error) {
             console.error('Error validating admin access:', error);
-            setTimeout(() => navigate('/auth'), 1500);
+            setTimeout(() => navigate('/gomez/auth'), 1500);
             return false;
         }
     };
@@ -49,17 +49,17 @@ export const useAdminAuth = () => {
                         setIsLoggedIn(true);
                     } else {
                         setIsLoggedIn(false);
-                        navigate('/auth');
+                        navigate('/gomez/auth');
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching user ID:', error);
                     setIsLoggedIn(false);
-                    navigate('/auth');
+                    navigate('/gomez/auth');
                 });
         } else if (!isValidatingAdmin && !email) {
             setIsLoggedIn(false);
-            navigate('/auth');
+            navigate('/gomez/auth');
         }
     }, [email, navigate, isValidatingAdmin]);
 

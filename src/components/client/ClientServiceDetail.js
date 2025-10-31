@@ -21,6 +21,14 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
     customer_phone: ''
   });
 
+  // Helper function to format numbers with commas and no decimals
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-PH', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
   const handleCasketSelect = (casket) => {
     setSelectedCaskets(prev => {
       const isSelected = prev.some(c => c.id === casket.id);
@@ -128,12 +136,12 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                             {casket.image && (
                               <div className="h-48 w-full">
                                 <img
-                                  src={`${API_BASE_URL}/funeraria/api/components/uploads/caskets/${casket.image}`}
+                                  src={`${API_BASE_URL}/api/components/uploads/caskets/${casket.image}`}
                                   alt={casket.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     e.target.onerror = null;
-                                    e.target.src = `${API_BASE_URL}/funeraria/api/components/uploads/default.jpg`;
+                                    e.target.src = `${API_BASE_URL}/api/components/uploads/default.jpg`;
                                   }}
                                 />
                               </div>
@@ -143,7 +151,8 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                               <p className="text-gray-600 mt-1">{casket.description}</p>
                               {service.name?.toLowerCase().includes('customized') && (
                                 <>
-                                  <p className="text-gray-900 font-semibold mt-2">₱{parseFloat(casket.price).toFixed(2)}</p>
+                                  {/* UPDATED: Removed decimal points */}
+                                  <p className="text-gray-900 font-semibold mt-2">₱{formatCurrency(parseFloat(casket.price))}</p>
                                   <div className="mt-2">
                                     <span className={`inline-block px-3 py-1 rounded-full text-sm ${selectedCaskets.some(c => c.id === casket.id)
                                         ? 'bg-gray-900 text-white'
@@ -175,12 +184,12 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                             {chapel.image && (
                               <div className="h-48 w-full">
                                 <img
-                                  src={`${API_BASE_URL}/funeraria/api/components/uploads/chapels/${chapel.image}`}
+                                  src={`${API_BASE_URL}/api/components/uploads/chapels/${chapel.image}`}
                                   alt={chapel.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     e.target.onerror = null;
-                                    e.target.src = `${API_BASE_URL}/funeraria/api/components/uploads/default.jpg`;
+                                    e.target.src = `${API_BASE_URL}/api/components/uploads/default.jpg`;
                                   }}
                                 />
                               </div>
@@ -190,7 +199,8 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                               <p className="text-gray-600 mt-1">{chapel.description}</p>
                               {service.name?.toLowerCase().includes('customized') && (
                                 <>
-                                  <p className="text-gray-900 font-semibold mt-2">₱{parseFloat(chapel.price).toFixed(2)}</p>
+                                  {/* UPDATED: Removed decimal points */}
+                                  <p className="text-gray-900 font-semibold mt-2">₱{formatCurrency(parseFloat(chapel.price))}</p>
                                   <div className="mt-2">
                                     <span className={`inline-block px-3 py-1 rounded-full text-sm ${selectedChapels.some(c => c.id === chapel.id)
                                         ? 'bg-gray-900 text-white'
@@ -212,7 +222,8 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
 
               <div className="border-t border-gray-200 pt-6 mt-6">
                 <div className="flex justify-between items-center mb-6">
-                  <p className="text-2xl font-bold text-gray-900">₱{service.price_range}</p>
+                  {/* UPDATED: Service price range without decimals */}
+                  <p className="text-2xl font-bold text-gray-900">₱{formatCurrency(parseFloat(service.price_range))}</p>
                   {!isLoggedIn ? (
                     <div className="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-r-lg">
                       <p className="font-medium">Please log in to place an order.</p>

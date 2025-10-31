@@ -1,12 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
+
 import AdminLayout from './AdminLayout';
-import { FaTable, FaThLarge, FaUser, FaCalendarAlt, FaClock, FaEnvelope } from 'react-icons/fa';
+import { 
+    FaTable, 
+    FaThLarge, 
+    FaUser, 
+    FaCalendarAlt, 
+    FaClock, 
+    FaEnvelope, 
+    FaChevronLeft, 
+    FaChevronRight 
+} from 'react-icons/fa';
 import { useResponsiveView, useAppointments, useApiConfig } from '../hooks/admin/useAppointments';
+import { usePagination } from '../hooks/admin/usePagination';
 
 const AdminAppointments = () => {
     const { isMobile, viewMode, setViewMode } = useResponsiveView();
     const { appointments, loading, error, setError, updateAppointmentStatus } = useAppointments();
     const { getImageUrl } = useApiConfig();
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(5);
+
+    // Initialize pagination hook
+    const {
+        totalPages,
+        handlePageChange,
+        handleItemsPerPageChange,
+        getVisiblePageNumbers,
+    } = usePagination(
+        appointments.length,
+        itemsPerPage,
+        currentPage,
+        setCurrentPage,
+        setItemsPerPage
+    );
+
+    // Paginate data
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedAppointments = appointments.slice(startIndex, startIndex + itemsPerPage);
 
     const handleStatusChange = async (appointmentId, newStatus) => {
         const result = await updateAppointmentStatus(appointmentId, newStatus);
@@ -100,7 +133,7 @@ const AdminAppointments = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                        {appointments.map((appointment, index) => (
+                        {paginatedAppointments.map((appointment) => (
                             <tr key={appointment.id} className="hover:bg-gray-50 transition-colors duration-150">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
@@ -150,7 +183,7 @@ const AdminAppointments = () => {
 
     const CardView = () => (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {appointments.map((appointment) => (
+            {paginatedAppointments.map((appointment) => (
                 <div key={appointment.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:border-gray-200 transition-all duration-300 transform hover:-translate-y-1">
                     <div className="flex items-start mb-5">
                         <UserAvatar 
@@ -208,30 +241,32 @@ const AdminAppointments = () => {
     return (
         <AdminLayout currentPage='appointments'>
             <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Appointments</h1>
-                        <p className="text-sm text-gray-600">Manage and track all client appointments</p>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+                    <div className="flex-1">
+                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 tracking-tight">Appointments</h1>
+                        <p className="text-base text-gray-600 font-medium">Manage and track all client appointments</p>
                     </div>
                     {!isMobile && (
-                        <div className="flex gap-2 bg-white rounded-lg shadow-sm p-1 border border-gray-200">
+                        <div className="flex gap-2 bg-white rounded-xl shadow-md p-1.5 border border-gray-200">
                             <button
                                 onClick={() => setViewMode('table')}
-                                className={`p-2.5 rounded-md transition-all duration-200 ${
+                                className={`p-3 rounded-lg transition-all duration-200 ${
                                     viewMode === 'table' 
-                                        ? 'bg-indigo-500 text-white shadow-sm' 
+                                        ? 'bg-indigo-600 text-white shadow-md' 
                                         : 'text-gray-600 hover:bg-gray-100'
                                 }`}
+                                title="Table View"
                             >
                                 <FaTable className="w-5 h-5" />
                             </button>
                             <button
                                 onClick={() => setViewMode('card')}
-                                className={`p-2.5 rounded-md transition-all duration-200 ${
+                                className={`p-3 rounded-lg transition-all duration-200 ${
                                     viewMode === 'card' 
-                                        ? 'bg-indigo-500 text-white shadow-sm' 
+                                        ? 'bg-indigo-600 text-white shadow-md' 
                                         : 'text-gray-600 hover:bg-gray-100'
                                 }`}
+                                title="Card View"
                             >
                                 <FaThLarge className="w-5 h-5" />
                             </button>
@@ -262,7 +297,62 @@ const AdminAppointments = () => {
                         <p className="text-sm text-gray-500">Appointments will appear here once clients book them</p>
                     </div>
                 ) : (
-                    viewMode === 'table' ? <TableView /> : <CardView />
+                    <>
+                        {viewMode === 'table' ? <TableView /> : <CardView />}
+
+                        {/* Pagination Section */}
+                        {appointments.length > 0 && (
+                            <div className="flex flex-col sm:flex-row justify-between items-center mt-8 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                {/* Items per page */}
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm text-gray-600 font-medium">Items per page:</label>
+                                    <select
+                                        value={itemsPerPage}
+                                        onChange={handleItemsPerPageChange}
+                                        className="border border-gray-300 rounded-md text-sm p-1.5 focus:ring-2 focus:ring-indigo-200"
+                                    >
+                                        {[5, 10, 20, 50].map(num => (
+                                            <option key={num} value={num}>{num}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Page navigation */}
+                                <div className="flex items-center gap-2 mt-3 sm:mt-0">
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className="p-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                    >
+                                        <FaChevronLeft className="w-3 h-3" />
+                                    </button>
+
+                                    {getVisiblePageNumbers().map((page, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => typeof page === 'number' && handlePageChange(page)}
+                                            disabled={page === '...'}
+                                            className={`px-3 py-1 text-sm rounded-md border ${
+                                                page === currentPage
+                                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                                            } ${page === '...' ? 'cursor-default opacity-60' : ''}`}
+                                        >
+                                            {page}
+                                        </button>
+                                    ))}
+
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className="p-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                    >
+                                        <FaChevronRight className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </AdminLayout>

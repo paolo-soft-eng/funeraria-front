@@ -45,6 +45,13 @@ const AdminItemList = () => {
     deleteItem,
   } = useItemForm(userId, userName, fetchItems);
 
+  const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-PH', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    };
+
   // Login Required Screen
   if (!isLoggedIn) {
     return (
@@ -72,7 +79,7 @@ const AdminItemList = () => {
             </p>
             <div className="mt-6">
               <a
-                href="/auth"
+                href="/gomez/auth"
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Go to Login
@@ -321,7 +328,7 @@ const AdminItemList = () => {
                           {item.details}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-800">
-                          ₱{parseFloat(item.price).toFixed(2)}
+                          ₱{formatCurrency(item.price)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-800">
                           {item.stock}

@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Calendar, FileText, Users, MessageSquare, Clock, MapPin, ChevronRight, X, Mail } from 'lucide-react';
+import { Calendar, FileText, Users, MessageSquare, Clock, MapPin, ChevronRight, X, Mail, LogOutIcon } from 'lucide-react';
 import { EmailContext } from '../utils/EmailContext';
 import { useUser } from '../hooks/client/useUser';
 import { useAppointmentsAndOrders } from '../hooks/client/useOrdersAndAppointments';
@@ -169,7 +169,7 @@ const ClientHome = () => {
                         <p className="mt-2 text-gray-600">Please log in to access your dashboard.</p>
                         <div className="mt-6">
                             <a
-                                href="/auth"
+                                href="/gomez/auth"
                                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             >
                                 Go to Login

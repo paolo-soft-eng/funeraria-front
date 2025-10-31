@@ -156,8 +156,8 @@ const PaymentForm = ({
                     amount: amountInCentavos,
                     currency: 'PHP',
                     payment_method: state.paymentMethod, // Specify the exact method
-                    successUrl: `${window.location.origin}/payment-success?payment_intent=${encodeURIComponent(intentId)}`,
-                    cancelUrl: `${window.location.origin}/payment-failed`,
+                    successUrl: `${window.location.origin}/gomez/payment-success?payment_intent=${encodeURIComponent(intentId)}`,
+                    cancelUrl: `${window.location.origin}/gomez/payment-failed`,
                     billing: {
                         name: state.billingData.name || '',
                         email: state.billingData.email || '',

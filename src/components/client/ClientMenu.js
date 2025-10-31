@@ -146,7 +146,7 @@ const ClientMenu = () => {
                         <p className="text-gray-600">Select from our range of dignified menu items</p>
                     </div>
                     <Link
-                        to="/dashboard-client/cart"
+                        to="/gomez/dashboard-client/cart"
                         className="mt-4 sm:mt-0 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 w-full sm:w-auto text-center font-medium"
                     >
                         View Cart
@@ -195,7 +195,7 @@ const ClientMenu = () => {
                                     <h2 className="text-xl font-semibold mb-3 text-gray-800">{item.name}</h2>
                                     <p className="text-gray-600 mb-4 text-sm leading-relaxed">{item.details}</p>
                                     <div className="flex items-center justify-between mb-4">
-                                        <p className="text-gray-900 font-bold text-xl">₱{parseFloat(item.price).toFixed(2)}</p>
+                                        <p className="text-gray-900 font-bold text-xl">₱{parseFloat(item.price)}</p>
                                         <p className={`text-sm ${parseInt(item.stock) < 5 ? 'text-red-600' : 'text-gray-500'}`}>
                                             Stock: {item.stock}
                                         </p>

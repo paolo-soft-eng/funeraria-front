@@ -47,7 +47,7 @@ const App = () => {
         <Router>
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
-              <Route path="/auth" element={
+              <Route path="/gomez/auth" element={
                 <LoadingWrapper>
                   <Auth />
                 </LoadingWrapper>
@@ -57,48 +57,48 @@ const App = () => {
                   <LandingPage/>
                 </LoadingWrapper>
               }/>
-              <Route path='/story' element={
+              <Route path='/gomez/story' element={
                 <LoadingWrapper>
                   <OurStory/>
                 </LoadingWrapper>
               }/>
-              <Route path='/contact-support' element={
+              <Route path='/gomez/contact-support' element={
                 <LoadingWrapper>
                   <ContactSupport/>
                 </LoadingWrapper>
               }/>
-              <Route path='/privacy-policy' element={
+              <Route path='/gomez/privacy-policy' element={
                 <LoadingWrapper>
                   <PrivacyPolicy/>
                 </LoadingWrapper>
               }/>
-              <Route path='/term-of-service' element={
+              <Route path='/gomez/term-of-service' element={
                 <LoadingWrapper>
                   <TermOfService/>
                 </LoadingWrapper>
               }/>
-              <Route path="/forgot-password" element={
+              <Route path="/gomez/forgot-password" element={
                 <LoadingWrapper>
                   <ForgotPassword />
                 </LoadingWrapper>
               } />
-              <Route path="/reset-password" element={
+              <Route path="/gomez/reset-password" element={
                 <LoadingWrapper>
                   <ResetPassword />
                 </LoadingWrapper>
               } />
-              <Route path="/payment-success" element={
+              <Route path="/gomez/payment-success" element={
                 <LoadingWrapper>
                   <PaymentSuccess />
                 </LoadingWrapper>
               } />
-              <Route path="/payment-failed" element={
+              <Route path="/gomez/payment-failed" element={
                 <LoadingWrapper>
                   <PaymentFailed />
                 </LoadingWrapper>
               } />
 
-              <Route path="/dashboard-client" element={
+              <Route path="/gomez/dashboard-client" element={
                 <ProtectedRoute allowedRoles={['client']}>
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientDashboard />
@@ -143,7 +143,7 @@ const App = () => {
                 } />
               </Route>
 
-              <Route path='/dashboard-admin/home' element={
+              <Route path='/gomez/dashboard-admin/home' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Suspense fallback={<LoadingScreen />}>
                     <LoadingWrapper>
@@ -152,7 +152,7 @@ const App = () => {
                   </Suspense>
                 </ProtectedRoute>
               } />
-              <Route path='/dashboard-admin/settings' element={
+              <Route path='/gomez/dashboard-admin/settings' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Suspense fallback={<LoadingScreen />}>
                     <LoadingWrapper>
@@ -161,7 +161,7 @@ const App = () => {
                   </Suspense>
                 </ProtectedRoute>
               } />
-              <Route path='/dashboard-admin/orders' element={
+              <Route path='/gomez/dashboard-admin/orders' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Suspense fallback={<LoadingScreen />}>
                     <LoadingWrapper>
@@ -170,7 +170,7 @@ const App = () => {
                   </Suspense>
                 </ProtectedRoute>
               } />
-              <Route path='/dashboard-admin/itemlists' element={
+              <Route path='/gomez/dashboard-admin/itemlists' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Suspense fallback={<LoadingScreen />}>
                     <LoadingWrapper>
@@ -179,7 +179,7 @@ const App = () => {
                   </Suspense>
                 </ProtectedRoute>
               } />
-              <Route path='/dashboard-admin/clients' element={
+              <Route path='/gomez/dashboard-admin/clients' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Suspense fallback={<LoadingScreen />}>
                     <LoadingWrapper>
@@ -188,7 +188,7 @@ const App = () => {
                   </Suspense>
                 </ProtectedRoute>
               } />
-              <Route path='/dashboard-admin/messages' element={
+              <Route path='/gomez/dashboard-admin/messages' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Suspense fallback={<LoadingScreen />}>
                     <LoadingWrapper>
@@ -197,7 +197,7 @@ const App = () => {
                   </Suspense>
                 </ProtectedRoute>
               } />
-              <Route path='/dashboard-admin/appointments' element={
+              <Route path='/gomez/dashboard-admin/appointments' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Suspense fallback={<LoadingScreen />}>
                     <LoadingWrapper>
@@ -206,7 +206,7 @@ const App = () => {
                   </Suspense>
                 </ProtectedRoute>
               } />
-              <Route path='/dashboard-admin/analytics' element={
+              <Route path='/gomez/dashboard-admin/analytics' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Suspense fallback={<LoadingScreen />}>
                     <LoadingWrapper>
@@ -215,7 +215,7 @@ const App = () => {
                   </Suspense>
                 </ProtectedRoute>
               } />
-              <Route path='/dashboard-admin/reports' element={
+              <Route path='/gomez/dashboard-admin/reports' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Suspense fallback={<LoadingScreen />}>
                     <LoadingWrapper>
@@ -224,7 +224,7 @@ const App = () => {
                   </Suspense>
                 </ProtectedRoute>
               } />
-              <Route path='/dashboard-admin/documents' element={
+              <Route path='/gomez/dashboard-admin/documents' element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <Suspense fallback={<LoadingScreen />}>
                     <LoadingWrapper>
@@ -240,14 +240,14 @@ const App = () => {
                   </LoadingWrapper>
                 </Suspense>
               } />
-              <Route path='/super-admin' element={
+              <Route path='/gomez/super-admin' element={
                 <Suspense fallback={<LoadingScreen />}>
                   <LoadingWrapper>
                     <SuperAdmin/>
                   </LoadingWrapper>
                 </Suspense>
               } />
-              <Route path='/super-admin/reports' element={
+              <Route path='/gomez/super-admin/reports' element={
                 <Suspense fallback={<LoadingScreen />}>
                   <LoadingWrapper>
                     <SuperAdminReport/>

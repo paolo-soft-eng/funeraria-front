@@ -51,6 +51,15 @@ const AdminOrders = () => {
     formatDateTime
   } = useOrderView('table');
 
+  // Helper function to format numbers with commas and no decimals
+  const formatCurrency = (amount) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-PH', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(numAmount);
+  };
+
   // Fetch orders when pagination changes
   useEffect(() => {
     fetchOrders(currentPage, ordersPerPage);
@@ -200,7 +209,8 @@ const AdminOrders = () => {
                       <tr key={order.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.id}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.username || 'N/A'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₱{order.total_amount}</td>
+                        {/* UPDATED: Format total amount without decimals */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">₱{formatCurrency(order.total_amount)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
                             {order.status}
@@ -262,7 +272,8 @@ const AdminOrders = () => {
                       <div className="space-y-3">
                         <div className="flex justify-between">
                           <span className="text-gray-600">Total Amount:</span>
-                          <span className="font-semibold">₱{order.total_amount}</span>
+                          {/* UPDATED: Format total amount without decimals */}
+                          <span className="font-semibold">₱{formatCurrency(order.total_amount)}</span>
                         </div>
 
                         <div className="flex justify-between">

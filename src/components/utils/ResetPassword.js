@@ -94,7 +94,7 @@ const ResetPassword = () => {
         setMessage(response.data.message);
         // Redirect to login page after 3 seconds
         setTimeout(() => {
-          navigate('/auth');
+          navigate('/gomez/auth');
         }, 3000);
       }
     } catch (error) {
@@ -142,13 +142,13 @@ const ResetPassword = () => {
             <h2 className="text-2xl font-bold text-gray-800 mb-2">Invalid Reset Link</h2>
             <p className="text-gray-600 mb-6">{tokenError || 'This password reset link is invalid or has expired.'}</p>
             <button
-              onClick={() => navigate('/forgot-password')}
+              onClick={() => navigate('/gomez/forgot-password')}
               className="w-full px-4 py-3 text-white bg-gray-800 rounded-lg hover:bg-black focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               Request a New Reset Link
             </button>
             <button
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/gomez/auth')}
               className="mt-4 text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none transition-colors duration-200"
             >
               Back to Login
@@ -250,7 +250,7 @@ const ResetPassword = () => {
 
         <div className="mt-6 text-center">
           <button
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate('/gomez/auth')}
             className="text-sm font-medium text-gray-600 hover:text-gray-500 focus:outline-none transition-colors duration-200"
           >
             Back to Login

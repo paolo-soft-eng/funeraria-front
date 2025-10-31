@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Outlet, Link } from 'react-router-dom';
 import {
     Home,
@@ -20,15 +20,14 @@ import {
     Calendar1,
     Settings,
     BarChart2,
+    AlertTriangle,
     Calendar,
-    Paperclip,
-    LucideLogOut,
+    LogOut, // Fixed: Changed from LogOutIcon to LogOut
     LogOutIcon
 } from 'lucide-react';
 import { EmailContext } from '../utils/EmailContext';
 import LoadingWrapper from '../LoadingWrapper';
 
-// Import custom hooks
 import { useAdminAuth } from '../hooks/admin/useAdminAuth';
 import { useUserData } from '../hooks/admin/useUserData';
 import { useDashboardStats } from '../hooks/admin/useDashboardStats';
@@ -52,6 +51,7 @@ const AdminDashboard = () => {
     const { isSidebarOpen, isMobileView, toggleSidebar, closeSidebar } = useSidebar();
     const { isDropdownOpen, dropdownRef, toggleDropdown, closeDropdown } = useDropdown();
     const { handleLogout } = useLogout(showNotification);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const { getActivityIcon, getActivityColor, formatTime12Hour } = useActivityUtils();
     const {
         handleOrders,
@@ -76,13 +76,25 @@ const AdminDashboard = () => {
         { name: 'settings', icon: <Settings size={20} />, label: 'Settings' },
     ];
 
-    const handleNavClick = (path) => {
-        if (isMobileView) {
-            closeSidebar();
-        }
-        closeDropdown();
-        navigate(path);
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-PH', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
     };
+    const handleLogoutClick = () => {
+        setShowLogoutModal(true);
+    };
+
+    const handleLogoutConfirm = () => {
+        handleLogout();
+        setShowLogoutModal(false);
+    };
+
+    const handleLogoutCancel = () => {
+        setShowLogoutModal(false);
+    };
+
 
     if (!isLoggedIn && !isValidatingAdmin) {
         return (
@@ -97,7 +109,7 @@ const AdminDashboard = () => {
                             <p className="mt-2 text-gray-600">Please log in to access the admin dashboard.</p>
                             <div className="mt-6">
                                 <a
-                                    href="/auth"
+                                    href="/gomez/auth"
                                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                                 >
                                     Go to Login
@@ -112,6 +124,39 @@ const AdminDashboard = () => {
 
     return (
         <div className="flex h-screen bg-gray-50 text-gray-800">
+            {/* Logout Modal */}
+            {showLogoutModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full animate-fade-in">
+                        <div className="p-6">
+                            <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                                <AlertTriangle className="text-red-600" size={24} />
+                            </div>
+                            <h3 className="text-xl font-semibold text-gray-900 text-center mb-2">
+                                Confirm Logout
+                            </h3>
+                            <p className="text-gray-600 text-center mb-6">
+                                Are you sure you want to log out? You'll need to sign in again to access your account.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleLogoutCancel}
+                                    className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleLogoutConfirm}
+                                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {notification && (
                 <div className="fixed top-4 right-4 z-50 animate-fade-in">
                     <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${notification.type === 'success' ? 'bg-green-500 text-white' :
@@ -159,12 +204,12 @@ const AdminDashboard = () => {
             >
                 <div className="flex flex-col h-full">
                     {/* Logo */}
-                    <div className="flex items-center justify-between p-4">
-                        <Link to="/dashboard-admin/home" className="flex items-center">
+                    <div className="flex items-center justify-evenly p-4">
+                        <Link to="/gomez/dashboard-admin/home" className="flex items-center">
                             {isSidebarOpen ? (
                                 <h1 className="text-xl font-bold">Funeraria Gomez</h1>
                             ) : (
-                                <span className="text-2xl font-bold">FG</span>
+                                <span className="text-2xl font-bold text-center">FG</span>
                             )}
                         </Link>
                         {isMobileView && (
@@ -197,8 +242,8 @@ const AdminDashboard = () => {
                             {mainNavItems.map((item) => (
                                 <li key={item.name}>
                                     <Link
-                                        to={`/dashboard-admin/${item.name}`}
-                                        className={`flex items-center px-4 py-3 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
+                                        to={`/gomez/dashboard-admin/${item.name}`}
+                                        className={`flex items-center px-4 py-2 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
                                             }`}
                                         onClick={() => {
                                             if (isMobileView) {
@@ -217,11 +262,11 @@ const AdminDashboard = () => {
                     {/* Logout Button */}
                     <div className="p-4 mt-auto">
                         <button
-                            onClick={handleLogout}
-                            className={`flex items-center text-indigo-200 hover:text-white transition-colors ${isSidebarOpen ? 'justify-start w-full' : 'justify-center w-full'
+                            onClick={handleLogoutClick}
+                            className={`flex items-center text-red-600 hover:text-red-500 transition-colors ${isSidebarOpen ? 'justify-start w-full' : 'justify-center w-full'
                                 }`}
                         >
-                            <LogOutIcon size={20} className={isSidebarOpen ? 'mr-3' : ''} />
+                            <LogOut size={20} className={isSidebarOpen ? 'mr-3' : ''} />
                             {isSidebarOpen && <span>Logout</span>}
                         </button>
                     </div>
@@ -266,7 +311,7 @@ const AdminDashboard = () => {
                                 {isDropdownOpen && (
                                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
                                         <Link
-                                            to="/dashboard-admin/settings"
+                                            to="/gomez/dashboard-admin/settings"
                                             className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                             onClick={() => isDropdownOpen(false)}
                                         >
@@ -275,11 +320,13 @@ const AdminDashboard = () => {
                                         </Link>
                                         <div className="border-t border-gray-100 my-1"></div>
                                         <button
-                                            onClick={handleLogout}
+                                            onClick={handleLogoutClick}
                                             className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                         >
-                                            <span>Logout</span>
+                                            <LogOut size={16} className="mr-2" />
+                                            {isSidebarOpen && <span>Logout</span>}
                                         </button>
+
                                     </div>
                                 )}
                             </div>
@@ -349,14 +396,16 @@ const AdminDashboard = () => {
                                     <div className="flex justify-between items-center">
                                         <div>
                                             <p className="text-sm text-gray-500 mb-1">Total Revenue</p>
-                                            <h3 className="text-2xl font-bold">₱ {dashboardStats.totalRevenue.toFixed(2)}</h3>
+                                            {/* Updated line below */}
+                                            <h3 className="text-2xl font-bold">₱ {formatCurrency(dashboardStats.totalRevenue)}</h3>
                                         </div>
                                         <div className="bg-emerald-100 p-3 rounded-full">
                                             <Activity size={20} className="text-emerald-600" />
                                         </div>
                                     </div>
                                     <div className="mt-4 text-xs text-emerald-600 flex items-center">
-                                        <span>₱ {dashboardStats.current_month_revenue.toFixed(2)} earned this {dashboardStats.current_month_name}</span>
+                                        {/* Updated line below */}
+                                        <span>₱ {formatCurrency(dashboardStats.current_month_revenue)} earned this {dashboardStats.current_month_name}</span>
                                     </div>
                                 </div>
                             </div>
@@ -575,7 +624,7 @@ const AdminDashboard = () => {
                                                     </div>
                                                     <div className="mt-3 text-sm">
                                                         <span className="font-medium">Amount: </span>
-                                                        <span className="font-semibold text-gray-900">₱{typeof order.total_amount === 'number' ? order.total_amount.toFixed(2) : parseFloat(order.total_amount).toFixed(2)}</span>
+                                                        <span className="font-semibold text-gray-900">₱{typeof order.total_amount === 'number' ? formatCurrency(order.total_amount) : formatCurrency(order.total_amount)}</span>
                                                     </div>
                                                 </div>
                                             ))}
@@ -635,7 +684,7 @@ const AdminDashboard = () => {
                                             )}
                                         </div>
                                         <div className="mt-6 text-center">
-                                            <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-2 px-4 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors duration-300" onClick={() => navigate('/dashboard-admin/appointments')}>
+                                            <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-2 px-4 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors duration-300" onClick={() => navigate('/gomez/dashboard-admin/appointments')}>
                                                 View All Appointments
                                             </button>
                                         </div>
@@ -644,7 +693,7 @@ const AdminDashboard = () => {
                                     {/* Quick Actions */}
                                     <div className="bg-white rounded-lg shadow-sm p-6">
                                         <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <button className="p-4 bg-indigo-50 rounded-lg text-center hover:bg-indigo-100 transition-colors flex flex-col items-center" onClick={handleOrders}>
                                                 <ShoppingCart size={24} className="text-indigo-600 mb-2" />
                                                 <span className="text-sm font-medium text-gray-800">New Order</span>
@@ -678,13 +727,13 @@ const AdminDashboard = () => {
                             </p>
                         </div>
                         <div className="flex flex-wrap justify-center gap-4">
-                            <a href="#" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
+                            <a href="/gomez/term-of-service" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
                                 Terms of Service
                             </a>
-                            <a href="#" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
+                            <a href="/gomez/privacy-policy" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
                                 Privacy Policy
                             </a>
-                            <a href="#" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
+                            <a href="/gomez/contact-support" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
                                 Contact Support
                             </a>
                         </div>

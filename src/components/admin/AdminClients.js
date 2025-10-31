@@ -17,11 +17,11 @@ const AdminClients = () => {
   // Use custom hooks
   const { isLoggedIn, userId, userName } = useAuth();
   const { viewMode, isMobile, setViewMode } = useViewMode('table');
-  
+
   // Add state for itemsPerPage and currentPage
   const [itemsPerPage, setItemsPerPage] = React.useState(isMobile ? 6 : 10);
   const [currentPage, setCurrentPage] = React.useState(1);
-  
+
   const {
     searchTerm,
     searchInput,
@@ -72,12 +72,15 @@ const AdminClients = () => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1);
   };
-  
 
-  // Fix: Calculate display range manually since usePagination doesn't provide it
+
   const getDisplayRange = () => {
+    const totalItems = clients.totalCount || 0;
+    if (totalItems === 0) {
+      return { start: 0, end: 0 };
+    }
     const start = (currentPage - 1) * itemsPerPage + 1;
-    const end = Math.min(currentPage * itemsPerPage, clients.totalCount || 0);
+    const end = Math.min(currentPage * itemsPerPage, totalItems);
     return { start, end };
   };
 
@@ -92,7 +95,7 @@ const AdminClients = () => {
           <p className="mt-2 text-gray-600">Please log in to access the admin dashboard.</p>
           <div className="mt-6">
             <a
-              href="/auth"
+              href="/gomez/auth"
               className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition"
             >
               Go to Login
@@ -110,9 +113,9 @@ const AdminClients = () => {
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Client Management</h1>
-            <p className='text-gray-600 text-sm mb-5'>manage and track customers</p>
+              <p className='text-gray-600 text-sm mb-5'>manage and track customers</p>
             </div>
-            
+
             {!isMobile && (
               <div className="flex space-x-2">
                 <button
@@ -172,8 +175,11 @@ const AdminClients = () => {
               <span className="text-sm text-gray-600">Show:</span>
               <select
                 value={itemsPerPage}
-                // Fix: Use the custom handler instead of the one from usePagination
-                onChange={(e) => handleItemsPerPageChangeCustom(Number(e.target.value))}
+                onChange={(e) => {
+                  const newItemsPerPage = Number(e.target.value);
+                  setItemsPerPage(newItemsPerPage);
+                  setCurrentPage(1); // Reset to first page when changing items per page
+                }}
                 className="px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value={5}>5</option>
@@ -322,7 +328,7 @@ const AdminClients = () => {
               <div className="text-sm text-gray-600">
                 Showing {start} to {end} of {totalItems} clients
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
@@ -338,13 +344,12 @@ const AdminClients = () => {
                     key={index}
                     onClick={() => typeof page === 'number' && handlePageChange(page)}
                     disabled={page === '...'}
-                    className={`px-3 py-2 border rounded text-sm ${
-                      page === currentPage 
-                        ? 'bg-blue-500 text-white border-blue-500' 
-                        : page === '...' 
-                          ? 'cursor-default' 
+                    className={`px-3 py-2 border rounded text-sm ${page === currentPage
+                        ? 'bg-blue-500 text-white border-blue-500'
+                        : page === '...'
+                          ? 'cursor-default'
                           : 'hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     {page}
                   </button>
@@ -389,11 +394,10 @@ const AdminClients = () => {
                 Cancel
               </button>
               <button
-                className={`px-4 py-2 rounded text-white text-sm ${
-                  selectedClient.action === "disable"
+                className={`px-4 py-2 rounded text-white text-sm ${selectedClient.action === "disable"
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-green-600 hover:bg-green-700"
-                }`}
+                  }`}
                 onClick={handleConfirmAction}
               >
                 {selectedClient.action === "disable" ? "Disable" : "Enable"}

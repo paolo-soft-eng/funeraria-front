@@ -111,7 +111,7 @@ const AdminAnalytics = () => {
     if (!loading) {
       fetchAnalyticsData();
     }
-  }, [timeRange, filters]);
+  }, [timeRange]);
 
   useEffect(() => {
     const fetchServiceTypes = async () => {
@@ -160,15 +160,40 @@ const AdminAnalytics = () => {
       setLoading(false);
     }
   };
+  const handleApplyFilters = () => {
+    fetchAnalyticsData();
+    setIsFilterOpen(false); // Optional: close filter panel after applying
+  };
 
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
+
+    // Validate dates
+    if (name === 'startDate' && filters.endDate && value > filters.endDate) {
+      // If start date is after end date, clear end date
+      setFilters(prev => ({
+        ...prev,
+        [name]: value,
+        endDate: ''
+      }));
+    } else if (name === 'endDate' && filters.startDate && value < filters.startDate) {
+      // If end date is before start date, show error or handle accordingly
+      alert('End date cannot be before start date');
+      return;
+    } else {
+      setFilters(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+
+    // Clear timeRange when manually setting dates
+    if ((name === 'startDate' || name === 'endDate') && value) {
+      setTimeRange('');
+    }
   };
+
   const getDateRange = (range) => {
     const now = new Date();
     let startDate = new Date();
@@ -640,11 +665,11 @@ const AdminAnalytics = () => {
   }
 
   const handleViewAllClients = () => {
-    navigate('/dashboard-admin/clients');
+    navigate('/gomez/dashboard-admin/clients');
   };
 
   const handleViewAllOrders = () => {
-    navigate('/dashboard-admin/orders');
+    navigate('/gomez/dashboard-admin/orders');
   };
 
   const revenueData = analyticsData.revenue || [];
@@ -694,7 +719,7 @@ const AdminAnalytics = () => {
   };
   const getTimeRangeDisplayText = (timeRange, filters) => {
     if (filters.startDate && filters.endDate) {
-      return 'Custom range';
+      return `Custom range: ${new Date(filters.startDate).toLocaleDateString()} - ${new Date(filters.endDate).toLocaleDateString()}`;
     }
 
     switch (timeRange) {
@@ -806,7 +831,9 @@ const AdminAnalytics = () => {
           {isFilterOpen && (
             <div className="mt-4 bg-white rounded-lg shadow-sm p-4">
               <h3 className="font-medium text-gray-800 mb-3">Filter Options</h3>
-              <form onSubmit={handleFilterSubmit}>
+
+              {/* Remove form element and use div instead */}
+              <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
@@ -815,6 +842,7 @@ const AdminAnalytics = () => {
                       name="startDate"
                       value={filters.startDate}
                       onChange={handleFilterChange}
+                      max={filters.endDate || new Date().toISOString().split('T')[0]}
                       className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
@@ -826,6 +854,8 @@ const AdminAnalytics = () => {
                       name="endDate"
                       value={filters.endDate}
                       onChange={handleFilterChange}
+                      min={filters.startDate}
+                      max={new Date().toISOString().split('T')[0]}
                       className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
@@ -876,24 +906,29 @@ const AdminAnalytics = () => {
                       <option value="failed">Failed</option>
                     </select>
                   </div>
-                </div>
 
-                <div className="mt-4 flex justify-end space-x-2">
-                  <button
-                    type="button"
-                    onClick={handleFilterReset}
-                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-300"
-                  >
-                    Reset All
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700"
-                  >
-                    Apply Filters
-                  </button>
+                  {/* Add a quick actions column */}
+                  <div className="flex items-end">
+                    <div className="space-y-2 w-full">
+                      <button
+                        onClick={handleApplyFilters}
+                        className="w-full px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-medium hover:bg-indigo-700"
+                      >
+                        Apply Filters
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleFilterReset();
+                          fetchAnalyticsData();
+                        }}
+                        className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-300"
+                      >
+                        Clear All
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </form>
+              </div>
             </div>
           )}
         </div>
@@ -1056,11 +1091,11 @@ const AdminAnalytics = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {topClients.map((client) => (
+                     {topClients.map((client) => (
                         <tr key={client.id}>
                           <td className="py-3 px-4 text-sm font-medium text-gray-800">{client.name}</td>
                           <td className="py-3 px-4 text-sm text-gray-600">{client.services}</td>
-                          <td className="py-3 px-4 text-sm text-gray-600">₱{client.revenue}</td>
+                          <td className="py-3 px-4 text-sm text-gray-600">₱{parseFloat(client.revenue.replace(/,/g, '')).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1161,8 +1196,8 @@ const AdminAnalytics = () => {
               <div>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-700">On-time Delivery</span>
-                  <span className="font-medium">{analyticsData.performance?.on_time_delivery || 0}%</span> 
-                </div>  
+                  <span className="font-medium">{analyticsData.performance?.on_time_delivery || 0}%</span>
+                </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-blue-500 h-2 rounded-full transition-all duration-300"

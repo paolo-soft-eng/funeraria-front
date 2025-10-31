@@ -210,7 +210,7 @@ const SuperAdminReport = () => {
         await axios.post('http://localhost/funeraria/api/config/logout.php');
         localStorage.removeItem('userEmail');
         localStorage.removeItem('userRole');
-        navigate('/');
+        navigate('/gomez/auth');
       } catch (error) {
         console.error('Error logging out:', error);
         alert('Failed to log out. Please try again.');
@@ -231,7 +231,7 @@ const SuperAdminReport = () => {
               </div>
               <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
                 <button 
-                  onClick={() => navigate('/super-admin')}
+                  onClick={() => navigate('/gomez/super-admin')}
                   className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200"
                 >
                   <ArrowLeft size={18} className="mr-2" />

@@ -8,27 +8,27 @@ export const useNavigation = () => {
     };
 
     const handleOrders = () => {
-        navigate("/dashboard-admin/orders");
+        navigate("/gomez/dashboard-admin/orders");
     };
 
     const handleClient = () => {
-        navigate("/dashboard-admin/clients");
+        navigate("/gomez/dashboard-admin/clients");
     };
 
     const handleReports = () => {
-        navigate("/dashboard-admin/reports");
+        navigate("/gomez/dashboard-admin/reports");
     };
 
     const handleMessage = () => {
-        navigate("/dashboard-admin/messages");
+        navigate("/gomez/dashboard-admin/messages");
     };
 
     const handleItems = () => {
-        navigate("/dashboard-admin/itemlists");
+        navigate("/gomez/dashboard-admin/itemlists");
     };
 
     const handleEditProfile = () => {
-        navigate('/dashboard-admin/settings');
+        navigate('/gomez/dashboard-admin/settings');
     };
 
     return {

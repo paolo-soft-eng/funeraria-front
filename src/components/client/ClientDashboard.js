@@ -6,7 +6,7 @@ import {
   Info,
   Briefcase,
   Phone,
-  Menu as MenuIcon,
+  Menu,
   BookOpen,
   ShoppingCart,
   MessageSquare,
@@ -15,7 +15,7 @@ import {
   Settings,
   X,
   Bell,
-  Settings2
+  AlertTriangle
 } from 'lucide-react';
 
 
@@ -29,8 +29,9 @@ const ClientDashboard = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [username, setUsername] = useState('');
   const [notification, setNotification] = useState(null);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
-  const {email} = useContext(EmailContext);
+  const { email } = useContext(EmailContext);
   const location = useLocation();
   const dropdownRef = useRef(null);
 
@@ -100,26 +101,33 @@ const ClientDashboard = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
-  const handleLogout = async () => {
-    const userConfirmed = window.confirm("Are you sure you want to log out?");
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+    setIsDropdownOpen(false);
+  };
 
-    if (userConfirmed) {
-      try {
-        showNotification('Logging out...', 'info');
-        await axios.post('http://localhost/funeraria/api/config/logout.php');
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('userRole');
-        showNotification('Successfully logged out!', 'success');
-        
-        // Delay navigation to show success message
-        setTimeout(() => {
-          navigate('/auth');
-        }, 1000);
-      } catch (error) {
-        console.error('Error logging out:', error);
-        showNotification('Failed to log out. Please try again.', 'error');
-      }
+  const handleLogoutConfirm = async () => {
+    try {
+      showNotification('Logging out...', 'info');
+      await axios.post('http://localhost/funeraria/api/config/logout.php');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userRole');
+      showNotification('Successfully logged out!', 'success');
+      setShowLogoutModal(false);
+
+      // Delay navigation to show success message
+      setTimeout(() => {
+        navigate('/gomez/auth');
+      }, 1000);
+    } catch (error) {
+      console.error('Error logging out:', error);
+      showNotification('Failed to log out. Please try again.', 'error');
+      setShowLogoutModal(false);
     }
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutModal(false);
   };
 
   useEffect(() => {
@@ -147,15 +155,47 @@ const ClientDashboard = () => {
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-800">
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full animate-fade-in">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <AlertTriangle className="text-red-600" size={24} />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 text-center mb-2">
+                Confirm Logout
+              </h3>
+              <p className="text-gray-600 text-center mb-6">
+                Are you sure you want to log out? You'll need to sign in again to access your account.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleLogoutCancel}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLogoutConfirm}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast Notification */}
       {notification && (
         <div className="fixed top-4 right-4 z-50 animate-fade-in">
-          <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${
-            notification.type === 'success' ? 'bg-green-500 text-white' :
-            notification.type === 'error' ? 'bg-red-500 text-white' :
-            notification.type === 'warning' ? 'bg-yellow-500 text-white' :
-            'bg-blue-500 text-white'
-          }`}>
+          <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${notification.type === 'success' ? 'bg-green-500 text-white' :
+              notification.type === 'error' ? 'bg-red-500 text-white' :
+                notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+                  'bg-blue-500 text-white'
+            }`}>
             {notification.type === 'success' && (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
@@ -172,7 +212,7 @@ const ClientDashboard = () => {
               </svg>
             )}
             <span className="font-medium">{notification.message}</span>
-            <button 
+            <button
               onClick={() => setNotification(null)}
               className="ml-2 text-white hover:text-gray-200"
             >
@@ -187,13 +227,12 @@ const ClientDashboard = () => {
       )}
 
       <aside
-        className={`fixed lg:static z-30 h-full bg-gray-800 text-white transition-all duration-300 ${
-          isSidebarOpen ? 'w-64' : 'w-0 lg:w-20 overflow-hidden'
-        }`}
+        className={`fixed lg:static z-30 h-full bg-gray-800 text-white transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0 lg:w-20 overflow-hidden'
+          }`}
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-center p-4">
-            <Link to="/dashboard-client/home" className="flex items-center">
+            <Link to="/gomez/dashboard-client/home" className="flex items-center">
               {isSidebarOpen ? (
                 <h1 className="text-2xl font-bold">Funeraria Gomez</h1>
               ) : (
@@ -210,9 +249,9 @@ const ClientDashboard = () => {
           <div className={`px-4 py-6 ${isSidebarOpen ? 'flex items-center' : 'flex flex-col items-center'}`}>
             {profileImage ? (
               <div className="rounded-full p-1 flex items-center justify-center overflow-hidden">
-                <img 
-                  src={`http://localhost/funeraria/api/components/${profileImage}`} 
-                  alt="Profile" 
+                <img
+                  src={`http://localhost/funeraria/api/components/${profileImage}`}
+                  alt="Profile"
                   className="rounded-full w-9 h-9 object-cover"
                 />
               </div>
@@ -234,10 +273,9 @@ const ClientDashboard = () => {
               {mainNavItems.map((item) => (
                 <li key={item.name}>
                   <Link
-                    to={`/dashboard-client/${item.name}`}
-                    className={`flex items-center px-4 py-3 hover:bg-gray-700 transition-colors ${
-                      isSidebarOpen ? 'justify-start' : 'justify-center'
-                    }`}
+                    to={`/gomez/dashboard-client/${item.name}`}
+                    className={`flex items-center px-4 py-3 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
+                      }`}
                   >
                     <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
                     {isSidebarOpen && <span>{item.label}</span>}
@@ -246,6 +284,16 @@ const ClientDashboard = () => {
               ))}
             </ul>
           </nav>
+          <div className="p-4 mt-auto">
+            <button
+              onClick={handleLogoutClick}
+              className={`flex items-center text-red-600 hover:text-red-500 transition-colors ${isSidebarOpen ? 'justify-start w-full' : 'justify-center w-full'
+                }`}
+            >
+              <LogOut size={20} className={isSidebarOpen ? 'mr-3' : ''} />
+              {isSidebarOpen && <span>Logout</span>}
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -254,7 +302,7 @@ const ClientDashboard = () => {
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center">
               <button onClick={toggleSidebar} className="mr-4 focus:outline-none">
-                <MenuIcon size={24} />
+                <Menu size={24} />
               </button>
               <h2 className="text-xl font-semibold hidden sm:block">{currentPage}</h2>
             </div>
@@ -272,9 +320,9 @@ const ClientDashboard = () => {
                 >
                   {profileImage ? (
                     <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
-                      <img 
-                        src={`http://localhost/funeraria/api/components/${profileImage}`} 
-                        alt="Profile" 
+                      <img
+                        src={`http://localhost/funeraria/api/components/${profileImage}`}
+                        alt="Profile"
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -314,7 +362,7 @@ const ClientDashboard = () => {
                     </Link>
                     <div className="border-t border-gray-100 my-1"></div>
                     <button
-                      onClick={handleLogout}
+                      onClick={handleLogoutClick}
                       className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       <LogOut size={16} className="mr-2" />
@@ -329,7 +377,7 @@ const ClientDashboard = () => {
 
         <main className="flex-1 overflow-auto">
           <div>
-              <Outlet />
+            <Outlet />
           </div>
         </main>
 
@@ -341,13 +389,13 @@ const ClientDashboard = () => {
               </p>
             </div>
             <div className="flex flex-wrap justify-center gap-4">
-              <a href="#" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
+              <a href="/gomez/term-of-service" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
                 Terms of Service
               </a>
-              <a href="#" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
+              <a href="/gomez/privacy-policy" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
                 Privacy Policy
               </a>
-              <a href="#" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
+              <a href="/gomez/contact-support" className="text-sm text-gray-600 hover:text-indigo-600 transition-colors">
                 Contact Support
               </a>
             </div>
