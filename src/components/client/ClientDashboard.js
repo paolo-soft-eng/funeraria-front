@@ -274,7 +274,7 @@ const ClientDashboard = () => {
                 <li key={item.name}>
                   <Link
                     to={`/gomez/dashboard-client/${item.name}`}
-                    className={`flex items-center px-4 py-3 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
+                    className={`flex items-center px-5 py-4 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
                       }`}
                   >
                     <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
