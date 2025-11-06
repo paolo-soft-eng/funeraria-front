@@ -109,7 +109,7 @@ const AdminClients = () => {
   return (
     <AdminLayout currentPage="clients">
       <div className="p-4 md:p-6">
-        <div className="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <div>
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Client Management</h1>

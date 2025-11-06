@@ -450,7 +450,7 @@ const AdminAnalytics = () => {
         <div class="main-content">
           <!-- Transaction Table -->
           <div class="transaction-section">
-            <h2>Transaction Report</h2>
+            <h2>Sales Report</h2>
             
             ${recentActivity.length > 0 ? `
               <table>

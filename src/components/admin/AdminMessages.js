@@ -658,7 +658,7 @@ const AdminMessages = () => {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div>
           {!selectedUser ? (
             <div>
               <div className="p-4 border-b">

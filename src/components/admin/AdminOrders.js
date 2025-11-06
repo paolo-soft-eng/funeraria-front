@@ -113,7 +113,7 @@ const AdminOrders = () => {
   return (
     <AdminLayout currentPage="orders">
       <div className="flex-grow p-3">
-        <div className="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <div>
           <div className="container mx-auto px-4 py-3">
             {/* Status Message Display */}
             {statusMessage.message && (

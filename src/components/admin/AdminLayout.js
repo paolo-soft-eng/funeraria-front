@@ -302,7 +302,7 @@ const AdminLayout = ({ children, currentPage }) => {
                 <li key={item.name}>
                   <Link
                     to={`/gomez/dashboard-admin/${item.name}`}
-                    className={`flex items-center px-4 py-2 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
+                    className={`flex items-center px-5 py-4 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
                       }`}
                     onClick={(e) => {
                       if (isMobileView) {
