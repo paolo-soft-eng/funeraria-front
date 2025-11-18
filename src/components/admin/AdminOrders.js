@@ -284,7 +284,7 @@ const AdminOrders = () => {
                         <div className="flex justify-between">
                           <span className="text-gray-600">Payment Status:</span>
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(order.payment_status)}`}>
-                            {order.payment_status}
+                            {order.payment_status || "Pending"}
                           </span>
                         </div>
 

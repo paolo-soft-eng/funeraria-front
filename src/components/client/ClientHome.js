@@ -8,13 +8,13 @@ import { useRecentMessages } from '../hooks/client/useRecentMessages';
 
 const ClientHome = () => {
     const { email } = useContext(EmailContext);
-    
+
     // Custom hooks
     const { userId, username, setUsername, isLoggedIn, error: userError } = useUser(email);
     const { firstName, upcomingAppointments, recentOrders, loading: dataLoading, error: dataError } = useAppointmentsAndOrders(email);
     const { recentMessages, loading: messagesLoading, error: messagesError, markAsRead } = useRecentMessages(email);
     useProfileImage(email, setUsername);
-    
+
     // Local state
     const [appointmentFilter, setAppointmentFilter] = useState('all');
     const [orderFilter, setOrderFilter] = useState('all');
@@ -32,10 +32,10 @@ const ClientHome = () => {
     // Filter appointments based on status and date
     const filteredAppointments = upcomingAppointments.filter(apt => {
         if (!apt.datetimeRaw) return false;
-        
+
         const appointmentDate = new Date(apt.datetimeRaw);
         const now = new Date();
-        
+
         if (appointmentFilter === 'upcoming') {
             return appointmentDate >= now && apt.status !== 'finished';
         } else if (appointmentFilter === 'past') {
@@ -44,10 +44,10 @@ const ClientHome = () => {
         return true;
     });
 
-     const handleMessageClick = async (message) => {
+    const handleMessageClick = async (message) => {
         setSelectedMessage(message);
         setIsMessageModalOpen(true);
-        
+
         // Mark as read if it's a received message and unread
         if (message.message_direction === 'received' && !message.is_read) {
             await markAsRead(message.id);
@@ -59,7 +59,7 @@ const ClientHome = () => {
         setSelectedMessage(null);
     };
 
-     const unreadCount = recentMessages.filter(msg => 
+    const unreadCount = recentMessages.filter(msg =>
         msg.message_direction === 'received' && !msg.is_read
     ).length;
 
@@ -77,6 +77,15 @@ const ClientHome = () => {
         setSelectedOrder(order);
         setIsModalOpen(true);
     };
+
+    const formatCurrency = (amount) => {
+        const num = parseFloat(amount?.toString().replace(/[^\d.-]/g, "")) || 0;
+        return new Intl.NumberFormat("en-PH", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(num);
+    };
+
 
     const closeModal = () => {
         setIsModalOpen(false);
@@ -200,14 +209,14 @@ const ClientHome = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <h1 className="text-3xl font-bold text-gray-800 mb-8">Funeraria Gomez - Udtohan</h1>
-            
+
             {/* Welcome Section */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                 <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome, {username || firstName}</h2>
                 <p className="text-gray-600">We're here to help you through this difficult time. Below you'll find all your funeral arrangements and resources.</p>
             </div>
 
-             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-700 flex items-center">
                         <Mail className="mr-2 h-5 w-5 text-blue-500" />
@@ -219,27 +228,26 @@ const ClientHome = () => {
                         )}
                     </h2>
                 </div>
-                
+
                 <div className="space-y-3">
                     {recentMessages.length === 0 ? (
                         <p className="text-gray-500 text-center py-4">No messages found</p>
                     ) : (
                         recentMessages.slice(0, 5).map(message => (
-                            <div 
+                            <div
                                 key={message.id}
-                                className={`border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
-                                    message.message_direction === 'received' && !message.is_read 
-                                        ? 'border-blue-300 bg-blue-50' 
-                                        : 'border-gray-200'
-                                }`}
+                                className={`border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer ${message.message_direction === 'received' && !message.is_read
+                                    ? 'border-blue-300 bg-blue-50'
+                                    : 'border-gray-200'
+                                    }`}
                                 onClick={() => handleMessageClick(message)}
                             >
                                 <div className="flex justify-between items-start">
                                     <div className="flex-1">
                                         <div className="flex items-center justify-between">
                                             <h3 className="font-medium text-gray-800">
-                                                {message.message_direction === 'sent' 
-                                                    ? `To: ${message.receiver_username}` 
+                                                {message.message_direction === 'sent'
+                                                    ? `To: ${message.receiver_username}`
                                                     : `From: ${message.sender_username}`
                                                 }
                                             </h3>
@@ -251,11 +259,10 @@ const ClientHome = () => {
                                             {message.message}
                                         </p>
                                         <div className="flex items-center mt-2 space-x-2">
-                                            <span className={`text-xs px-2 py-1 rounded-full ${
-                                                message.message_direction === 'sent' 
-                                                    ? 'bg-gray-100 text-gray-800' 
-                                                    : 'bg-blue-100 text-blue-800'
-                                            }`}>
+                                            <span className={`text-xs px-2 py-1 rounded-full ${message.message_direction === 'sent'
+                                                ? 'bg-gray-100 text-gray-800'
+                                                : 'bg-blue-100 text-blue-800'
+                                                }`}>
                                                 {message.message_direction === 'sent' ? 'Sent' : 'Received'}
                                             </span>
                                             {message.message_direction === 'received' && !message.is_read && (
@@ -272,7 +279,7 @@ const ClientHome = () => {
                     )}
                 </div>
             </div>
-            
+
             {/* Appointments Section */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                 <div className="flex justify-between items-center mb-4">
@@ -281,7 +288,7 @@ const ClientHome = () => {
                         Appointments
                     </h2>
                     <div className="flex space-x-2">
-                        <select 
+                        <select
                             value={appointmentFilter}
                             onChange={(e) => setAppointmentFilter(e.target.value)}
                             className="border rounded px-2 py-1 text-sm"
@@ -292,7 +299,7 @@ const ClientHome = () => {
                         </select>
                     </div>
                 </div>
-                
+
                 <div className="space-y-4">
                     {filteredAppointments.length === 0 ? (
                         <p className="text-gray-500 text-center py-4">No appointments found</p>
@@ -311,11 +318,10 @@ const ClientHome = () => {
                                             <span>{appointment.location}</span>
                                         </div>
                                         <div className="mt-2">
-                                            <span className={`px-2 py-1 text-xs rounded-full ${
-                                                appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                                            <span className={`px-2 py-1 text-xs rounded-full ${appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
                                                 appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
-                                                'bg-gray-100 text-gray-800'
-                                            }`}>
+                                                    'bg-gray-100 text-gray-800'
+                                                }`}>
                                                 {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                                             </span>
                                         </div>
@@ -329,7 +335,7 @@ const ClientHome = () => {
                     )}
                 </div>
             </div>
-            
+
             {/* Orders Section */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                 <div className="flex justify-between items-center mb-4">
@@ -338,7 +344,7 @@ const ClientHome = () => {
                         Orders
                     </h2>
                     <div className="flex space-x-2">
-                        <select 
+                        <select
                             value={orderFilter}
                             onChange={(e) => setOrderFilter(e.target.value)}
                             className="border rounded px-2 py-1 text-sm"
@@ -349,7 +355,7 @@ const ClientHome = () => {
                         </select>
                     </div>
                 </div>
-                
+
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -381,9 +387,9 @@ const ClientHome = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.date}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                ${order.status === 'Completed' ? 'bg-green-100 text-green-800' : 
-                                                  order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                                  'bg-gray-100 text-gray-800'}`}>
+                                                ${order.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                                    order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                        'bg-gray-100 text-gray-800'}`}>
                                                 {order.status}
                                             </span>
                                         </td>
@@ -398,9 +404,12 @@ const ClientHome = () => {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.amount}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <button 
+                                            ₱{formatCurrency(order.amount)}
+                                        </td>
+
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            <button
                                                 onClick={() => handleOrderDetails(order)}
                                                 className="text-blue-600 hover:text-blue-900"
                                             >
@@ -414,21 +423,21 @@ const ClientHome = () => {
                     </table>
                 </div>
             </div>
-            
+
             {/* Order Details Modal */}
             {isModalOpen && selectedOrder && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-xl font-semibold text-gray-800">Order Details</h3>
-                            <button 
+                            <button
                                 onClick={closeModal}
                                 className="text-gray-500 hover:text-gray-700"
                             >
                                 <X className="h-6 w-6" />
                             </button>
                         </div>
-                        
+
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -443,16 +452,16 @@ const ClientHome = () => {
                                     <p className="text-sm text-gray-500">Status</p>
                                     <p className="font-medium">
                                         <span className={`px-2 py-1 text-xs rounded-full 
-                                            ${selectedOrder.status === 'Completed' ? 'bg-green-100 text-green-800' : 
-                                              selectedOrder.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                              'bg-gray-100 text-gray-800'}`}>
+                                            ${selectedOrder.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                                selectedOrder.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-gray-100 text-gray-800'}`}>
                                             {selectedOrder.status}
                                         </span>
                                     </p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500">Amount</p>
-                                    <p className="font-medium">{selectedOrder.amount}</p>
+                                    <p className="font-medium">₱{formatCurrency(selectedOrder.amount)}</p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-500">Payment Status</p>
@@ -531,7 +540,7 @@ const ClientHome = () => {
                                 </div>
                             )}
                         </div>
-                        
+
                         <div className="mt-6 flex justify-end">
                             <button
                                 onClick={closeModal}
@@ -543,7 +552,7 @@ const ClientHome = () => {
                     </div>
                 </div>
             )}
-            
+
             {/* Grief Resources */}
             <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex justify-between items-center mb-4">
@@ -615,14 +624,14 @@ const ClientHome = () => {
                                 <Mail className="mr-2 h-5 w-5 text-blue-500" />
                                 Message Details
                             </h3>
-                            <button 
+                            <button
                                 onClick={closeMessageModal}
                                 className="text-gray-500 hover:text-gray-700"
                             >
                                 <X className="h-6 w-6" />
                             </button>
                         </div>
-                        
+
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -642,17 +651,16 @@ const ClientHome = () => {
                                 <div>
                                     <p className="text-sm text-gray-500">Status</p>
                                     <p className="font-medium">
-                                        <span className={`px-2 py-1 text-xs rounded-full ${
-                                            selectedMessage.message_direction === 'sent' 
-                                                ? 'bg-gray-100 text-gray-800' 
-                                                : selectedMessage.is_read 
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-blue-100 text-blue-800'
-                                        }`}>
-                                            {selectedMessage.message_direction === 'sent' 
-                                                ? 'Sent' 
-                                                : selectedMessage.is_read 
-                                                    ? 'Read' 
+                                        <span className={`px-2 py-1 text-xs rounded-full ${selectedMessage.message_direction === 'sent'
+                                            ? 'bg-gray-100 text-gray-800'
+                                            : selectedMessage.is_read
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-blue-100 text-blue-800'
+                                            }`}>
+                                            {selectedMessage.message_direction === 'sent'
+                                                ? 'Sent'
+                                                : selectedMessage.is_read
+                                                    ? 'Read'
                                                     : 'Unread'
                                             }
                                         </span>
@@ -667,7 +675,7 @@ const ClientHome = () => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="mt-6 flex justify-end">
                             <button
                                 onClick={closeMessageModal}

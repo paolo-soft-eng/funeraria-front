@@ -224,7 +224,7 @@ const AdminLayout = ({ children, currentPage }) => {
 
       {notification && (
         <div className="fixed top-4 right-4 z-50 animate-fade-in">
-          <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${notification.type === 'success' ? 'bg-green-500 text-white' :
+          <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${notification.type === 'success' ? 'bg-green-400 text-white' :
             notification.type === 'error' ? 'bg-red-500 text-white' :
               notification.type === 'warning' ? 'bg-yellow-500 text-white' :
                 'bg-blue-500 text-white'

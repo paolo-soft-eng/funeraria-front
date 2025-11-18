@@ -159,7 +159,7 @@ const AdminDashboard = () => {
 
             {notification && (
                 <div className="fixed top-4 right-4 z-50 animate-fade-in">
-                    <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${notification.type === 'success' ? 'bg-green-500 text-white' :
+                    <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${notification.type === 'success' ? 'bg-green-400 text-white' :
                         notification.type === 'error' ? 'bg-red-500 text-white' :
                             notification.type === 'warning' ? 'bg-yellow-500 text-white' :
                                 'bg-blue-500 text-white'
@@ -504,7 +504,7 @@ const AdminDashboard = () => {
                                 {/* Main Content Area */}
                                 <div className="lg:col-span-2 space-y-6">
                                     {/* Messages Section */}
-                                    <div className="bg-white rounded-lg shadow-sm p-6">
+                                    <div className="bg-white rounded-lg shadow-sm p-5">
                                         <h3 className="text-lg font-semibold mb-4 flex items-center">
                                             <MessageSquare size={18} className="mr-2 text-indigo-600" />
                                             Recent Messages
@@ -588,7 +588,7 @@ const AdminDashboard = () => {
 
 
                                     {/* Upcoming Orders */}
-                                    <div className="bg-white rounded-lg shadow-sm p-6">
+                                    <div className="bg-white rounded-lg shadow-sm p-5">
                                         <h3 className="text-xl font-semibold mb-6 flex items-center text-gray-800">
                                             <Clock size={20} className="mr-2 text-indigo-600" />
                                             Upcoming Orders
@@ -637,7 +637,7 @@ const AdminDashboard = () => {
                                     </div>
 
                                     {/* Upcoming Appointments */}
-                                    <div className="bg-white rounded-lg shadow-sm p-6">
+                                    <div className="bg-white rounded-lg shadow-sm p-5">
                                         <h3 className="text-xl font-semibold mb-6 flex items-center text-gray-800">
                                             <Calendar size={20} className="mr-2 text-indigo-600" />
                                             Upcoming Appointments
@@ -691,7 +691,7 @@ const AdminDashboard = () => {
                                     </div>
 
                                     {/* Quick Actions */}
-                                    <div className="bg-white rounded-lg shadow-sm p-6">
+                                    <div className="bg-white rounded-lg shadow-sm p-5">
                                         <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <button className="p-4 bg-indigo-50 rounded-lg text-center hover:bg-indigo-100 transition-colors flex flex-col items-center" onClick={handleOrders}>

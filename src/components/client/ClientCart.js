@@ -68,7 +68,6 @@ const ClientCart = () => {
         setActiveTab('cart');
         setIsProcessingFuneralPayment(true);
         setIsOrderCart(true);
-        setShowCheckout(false);
 
         const order = orders.find(order => order.id === orderId);
         if (!order) {
@@ -115,9 +114,12 @@ const ClientCart = () => {
         }];
 
         setCartItems(orderItems);
-
-        setShowCheckout(true);
-        setSuccessMessage(`Ready to process payment for Memorial Service #${orderId} (Service ID: ${serviceId})`);
+        
+        // Use setTimeout to ensure state updates are processed
+        setTimeout(() => {
+            setShowCheckout(true);
+            setSuccessMessage(`Ready to process payment for Memorial Service #${orderId} (Service ID: ${serviceId})`);
+        }, 0);
     };
 
     const handleCheckoutSuccess = (result) => {
