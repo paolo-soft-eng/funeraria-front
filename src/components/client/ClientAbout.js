@@ -163,7 +163,7 @@ const ClientAbout = () => {
                     <div className="md:w-1/2 slide-left">
                         <h3 className="text-3xl font-serif mb-4 text-gray-800">A Family Tradition</h3>
                         <p className="mb-4 text-gray-700">
-                            Founded in 1987 by Roberto Gomez, our funeral home began with a simple mission:
+                            Founded in 1987 by  Gomez, our funeral home began with a simple mission:
                             to provide dignified and respectful funeral services that honor each family's traditions
                             and beliefs.
                         </p>
