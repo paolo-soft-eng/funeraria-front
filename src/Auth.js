@@ -449,7 +449,7 @@ const Auth = () => {
                       Remember me
                     </label>
                     <div className="text-sm">
-                      <a href="/forgot-password" className="font-medium text-gray-100 hover:text-gray-200 transition-colors">
+                      <a href="/gomez/forgot-password" className="font-medium text-gray-100 hover:text-gray-200 transition-colors">
                         Forgot password?
                       </a>
                     </div>

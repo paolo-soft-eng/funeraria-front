@@ -117,15 +117,19 @@ export default function FuneralManagementLanding() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 font-sans">
       {/* Navigation */}
-      <nav className="bg-gray-900/95 backdrop-blur-sm text-white py-4 px-6 shadow-lg relative z-50">
+      <nav className="bg-gray-700/95 backdrop-blur-sm text-white py-4 px-6 shadow-lg relative z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center">
-          <Heart className="h-8 w-8 text-gray-400 mr-3" />
-          <div>
-            <h1 className="text-xl font-semibold">Funeraria Gomez - Udtohan</h1>
-            <p className="text-xs text-gray-300">Funeral Management Services</p>
-          </div>
-        </div>
+      <img 
+        src='/assets/gomez_logo.jpg' 
+        alt='gomez logo'
+        className="w-12 h-12 object-cover mr-4 border-2 border-white/50"
+      />
+      <div>
+        <h1 className="text-xl font-semibold">Funeraria Gomez - Udtohan</h1>
+        <p className="text-xs text-gray-300">Funeral Management Services</p>
+      </div>
+    </div>
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex space-x-6">

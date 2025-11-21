@@ -395,7 +395,7 @@ const SuperAdmin = () => {
 
       <div className="mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header Card */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-xl overflow-hidden mb-6">
+        <div className="bg-gradient-to-r from-gray-500 to-gray-600 rounded-2xl shadow-xl overflow-hidden mb-6">
           <div className="p-6 md:p-8">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
               <div className="flex items-center">
