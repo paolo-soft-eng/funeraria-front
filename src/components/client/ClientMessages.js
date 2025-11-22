@@ -293,38 +293,6 @@ export default function ClientMessages() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-100 text-gray-900">
-      {/* Header */}
-      <div className="flex items-center p-4 border-b border-gray-300 bg-white shadow-sm">
-        <button
-          className="md:hidden mr-2"
-          onClick={toggleSidebar}
-        >
-          <Menu size={24} />
-        </button>
-
-        <div className="flex items-center">
-          {selectedAdmin && (
-            <>
-              <div className="h-10 w-10 bg-gray-300 rounded-full mr-3"></div>
-              <span className="font-semibold text-lg text-black">{selectedAdmin.username}</span>
-            </>
-          )}
-          {!selectedAdmin && (
-            <span className="font-semibold text-lg text-black">Messages</span>
-          )}
-        </div>
-        <div className="flex items-center ml-auto space-x-4">
-          {selectedAdmin && (
-            <>
-              <Phone className="text-gray-600" size={20} />
-              <Video className="text-gray-600" size={20} />
-              <Info className="text-gray-600" size={20} />
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Admins List */}
         <div className={`${showSidebar ? 'block' : 'hidden'} md:block w-full md:w-1/3 lg:w-1/4 border-r border-gray-300 bg-white overflow-y-auto absolute md:relative z-10 h-full`}>
@@ -541,6 +509,7 @@ export default function ClientMessages() {
                         </div>
 
                         {msg.imageUrl && (
+                        
                           <div className="relative mt-2 group">
                             <img
                               src={msg.imageUrl}

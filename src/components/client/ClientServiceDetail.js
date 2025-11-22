@@ -12,8 +12,8 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
   const [formTouched, setFormTouched] = useState(false);
   const { email } = useContext(EmailContext);
   
-  // Use custom hooks
-  const { caskets, chapels, loadingItems } = useServiceItems(service.id, showNotification);
+  // Use custom hooks - only fetch chapels now since caskets are displayed in main component
+  const { chapels, loadingItems } = useServiceItems(service.id, showNotification);
   const { orderStatus, submitOrder, setOrderStatus } = useOrder(email, userId, showNotification);
 
   const [formData, setFormData] = useState({
@@ -89,15 +89,8 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
 
     // Validate service selections based on service type
     if (service.name?.toLowerCase().includes('customized')) {
-      if (selectedCaskets.length === 0) {
-        errors.caskets = 'Please select at least one casket for customized service';
-      }
       if (selectedChapels.length === 0) {
         errors.chapels = 'Please select at least one chapel for customized service';
-      }
-    } else if (service.name?.toLowerCase().includes('bubbles')) {
-      if (selectedCaskets.length === 0) {
-        errors.caskets = 'Please select a casket for bubbles service';
       }
     }
 
@@ -116,26 +109,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
       const errors = validateForm();
       setValidationErrors(errors);
     }
-  }, [formData, selectedCaskets, selectedChapels, formTouched]);
-
-  const handleCasketSelect = (casket) => {
-    setSelectedCaskets(prev => {
-      const isSelected = prev.some(c => c.id === casket.id);
-      if (isSelected) {
-        return prev.filter(c => c.id !== casket.id);
-      } else {
-        return [...prev, casket];
-      }
-    });
-    
-    // Clear casket validation error when user makes a selection
-    if (validationErrors.caskets) {
-      setValidationErrors(prev => ({
-        ...prev,
-        caskets: ''
-      }));
-    }
-  };
+  }, [formData, selectedChapels, formTouched]);
 
   const handleChapelSelect = (chapel) => {
     setSelectedChapels(prev => {
@@ -274,66 +248,10 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                 </div>
               ) : (
                 <>
-                  {caskets.length > 0 && (
-                    <div className="mb-8">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-semibold text-gray-900">Casket Options</h3>
-                        {validationErrors.caskets && (
-                          <span className="text-red-600 text-sm font-medium">{validationErrors.caskets}</span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        {caskets.map((casket) => (
-                          <div
-                            key={casket.id}
-                            className={`bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-200 ${
-                              selectedCaskets.some(c => c.id === casket.id) 
-                                ? 'ring-2 ring-gray-900' 
-                                : 'hover:shadow-md'
-                            } ${validationErrors.caskets ? 'border border-red-300' : ''}`}
-                            onClick={() => service.name?.toLowerCase().includes('bubbles') && handleCasketSelect(casket)}
-                          >
-                            {casket.image && (
-                              <div className="h-48 w-full">
-                                <img
-                                  src={`${API_BASE_URL}/api/components/uploads/caskets/${casket.image}`}
-                                  alt={casket.name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src = `${API_BASE_URL}/api/components/uploads/default.jpg`;
-                                  }}
-                                />
-                              </div>
-                            )}
-                            <div className="p-4">
-                              <h4 className="font-semibold text-lg text-gray-900">{casket.name}</h4>
-                              <p className="text-gray-600 mt-1">{casket.description}</p>
-                              {service.name?.toLowerCase().includes('customized') && (
-                                <>
-                                  <p className="text-gray-900 font-semibold mt-2">₱{formatCurrency(parseFloat(casket.price))}</p>
-                                  <div className="mt-2">
-                                    <span className={`inline-block px-3 py-1 rounded-full text-sm ${
-                                      selectedCaskets.some(c => c.id === casket.id)
-                                        ? 'bg-gray-900 text-white'
-                                        : 'bg-gray-100 text-gray-700'
-                                    }`}>
-                                      {selectedCaskets.some(c => c.id === casket.id) ? 'Selected' : 'Click to select'}
-                                    </span>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
                   {chapels.length > 0 && (
                     <div className="mb-8">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-semibold text-gray-900">Chapels Options</h3>
+                        <h3 className="text-xl font-semibold text-gray-900">Available Chapels</h3>
                         {validationErrors.chapels && (
                           <span className="text-red-600 text-sm font-medium">{validationErrors.chapels}</span>
                         )}
@@ -493,11 +411,10 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                 </div>
 
                 {/* Service selection validation summary */}
-                {(validationErrors.caskets || validationErrors.chapels) && (
+                {validationErrors.chapels && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <h4 className="font-semibold text-red-800 mb-2">Service Selection Required</h4>
                     <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
-                      {validationErrors.caskets && <li>{validationErrors.caskets}</li>}
                       {validationErrors.chapels && <li>{validationErrors.chapels}</li>}
                     </ul>
                   </div>

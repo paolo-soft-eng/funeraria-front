@@ -2,47 +2,24 @@ import React, { useState, useContext } from 'react';
 import { Calendar, FileText, Users, MessageSquare, Clock, MapPin, ChevronRight, X, Mail, LogOutIcon } from 'lucide-react';
 import { EmailContext } from '../utils/EmailContext';
 import { useUser } from '../hooks/client/useUser';
-import { useAppointmentsAndOrders } from '../hooks/client/useOrdersAndAppointments';
 import { useProfileImage } from '../hooks/client/useProfileImage';
 import { useRecentMessages } from '../hooks/client/useRecentMessages';
 
 const ClientHome = () => {
     const { email } = useContext(EmailContext);
 
-    // Custom hooks
+    // Custom hooks - only basic user info and messages
     const { userId, username, setUsername, isLoggedIn, error: userError } = useUser(email);
-    const { firstName, upcomingAppointments, recentOrders, loading: dataLoading, error: dataError } = useAppointmentsAndOrders(email);
     const { recentMessages, loading: messagesLoading, error: messagesError, markAsRead } = useRecentMessages(email);
     useProfileImage(email, setUsername);
 
     // Local state
-    const [appointmentFilter, setAppointmentFilter] = useState('all');
-    const [orderFilter, setOrderFilter] = useState('all');
-    const [selectedOrder, setSelectedOrder] = useState(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedResource, setSelectedResource] = useState(null);
-    const [isResourceModalOpen, setIsResourceModalOpen] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
     // Combine loading states and errors
-    const loading = dataLoading || messagesLoading;
-    const error = userError || dataError || messagesError;
-
-    // Filter appointments based on status and date
-    const filteredAppointments = upcomingAppointments.filter(apt => {
-        if (!apt.datetimeRaw) return false;
-
-        const appointmentDate = new Date(apt.datetimeRaw);
-        const now = new Date();
-
-        if (appointmentFilter === 'upcoming') {
-            return appointmentDate >= now && apt.status !== 'finished';
-        } else if (appointmentFilter === 'past') {
-            return appointmentDate < now || apt.status === 'finished';
-        }
-        return true;
-    });
+    const loading = messagesLoading;
+    const error = userError || messagesError;
 
     const handleMessageClick = async (message) => {
         setSelectedMessage(message);
@@ -62,35 +39,6 @@ const ClientHome = () => {
     const unreadCount = recentMessages.filter(msg =>
         msg.message_direction === 'received' && !msg.is_read
     ).length;
-
-    // Filter orders based on status
-    const filteredOrders = recentOrders.filter(order => {
-        if (orderFilter === 'pending') {
-            return order.status.toLowerCase() === 'pending';
-        } else if (orderFilter === 'completed') {
-            return order.status.toLowerCase() === 'completed';
-        }
-        return true;
-    });
-
-    const handleOrderDetails = (order) => {
-        setSelectedOrder(order);
-        setIsModalOpen(true);
-    };
-
-    const formatCurrency = (amount) => {
-        const num = parseFloat(amount?.toString().replace(/[^\d.-]/g, "")) || 0;
-        return new Intl.NumberFormat("en-PH", {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(num);
-    };
-
-
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setSelectedOrder(null);
-    };
 
     const griefResources = [
         {
@@ -156,16 +104,6 @@ const ClientHome = () => {
         }
     ];
 
-    const handleResourceClick = (resource) => {
-        setSelectedResource(resource);
-        setIsResourceModalOpen(true);
-    };
-
-    const closeResourceModal = () => {
-        setIsResourceModalOpen(false);
-        setSelectedResource(null);
-    };
-
     if (!isLoggedIn) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -212,10 +150,11 @@ const ClientHome = () => {
 
             {/* Welcome Section */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome, {username || firstName}</h2>
-                <p className="text-gray-600">We're here to help you through this difficult time. Below you'll find all your funeral arrangements and resources.</p>
+                <h2 className="text-2xl font-semibold text-gray-700 mb-2">Welcome, {username}</h2>
+                <p className="text-gray-600">We're here to help you through this difficult time. Below you'll find your messages and support resources.</p>
             </div>
 
+            {/* Recent Messages Section */}
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                 <div className="flex justify-between items-center mb-4">
                     <h2 className="text-xl font-semibold text-gray-700 flex items-center">
@@ -280,279 +219,6 @@ const ClientHome = () => {
                 </div>
             </div>
 
-            {/* Appointments Section */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-gray-700 flex items-center">
-                        <Calendar className="mr-2 h-5 w-5 text-blue-500" />
-                        Appointments
-                    </h2>
-                    <div className="flex space-x-2">
-                        <select
-                            value={appointmentFilter}
-                            onChange={(e) => setAppointmentFilter(e.target.value)}
-                            className="border rounded px-2 py-1 text-sm"
-                        >
-                            <option value="all">All Appointments</option>
-                            <option value="upcoming">Upcoming</option>
-                            <option value="past">Past</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="space-y-4">
-                    {filteredAppointments.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">No appointments found</p>
-                    ) : (
-                        filteredAppointments.map(appointment => (
-                            <div key={appointment.id} className="border border-blue-300 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h3 className="font-medium text-gray-800">{appointment.type}</h3>
-                                        <div className="flex items-center text-sm text-gray-500 mt-1">
-                                            <Clock className="mr-1 h-4 w-4" />
-                                            <span>{appointment.date}</span>
-                                        </div>
-                                        <div className="flex items-center text-sm text-gray-500 mt-1">
-                                            <MapPin className="mr-1 h-4 w-4" />
-                                            <span>{appointment.location}</span>
-                                        </div>
-                                        <div className="mt-2">
-                                            <span className={`px-2 py-1 text-xs rounded-full ${appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                                                appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
-                                                    'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <button className="text-gray-400 hover:text-gray-600">
-                                        <ChevronRight className="h-5 w-5" />
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </div>
-
-            {/* Orders Section */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-gray-700 flex items-center">
-                        <FileText className="mr-2 h-5 w-5 text-green-500" />
-                        Orders
-                    </h2>
-                    <div className="flex space-x-2">
-                        <select
-                            value={orderFilter}
-                            onChange={(e) => setOrderFilter(e.target.value)}
-                            className="border rounded px-2 py-1 text-sm"
-                        >
-                            <option value="all">All Orders</option>
-                            <option value="pending">Pending</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredOrders.length === 0 ? (
-                                <tr>
-                                    <td colSpan="6" className="px-6 py-4 text-center text-gray-500">No orders found</td>
-                                </tr>
-                            ) : (
-                                filteredOrders.map(order => (
-                                    <tr key={order.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {order.service}
-                                            {order.items && order.items.length > 0 && (
-                                                <div className="text-xs text-gray-500 mt-1">
-                                                    {order.items.map(item => item.name).join(', ')}
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.date}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                ${order.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                                    order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                        'bg-gray-100 text-gray-800'}`}>
-                                                {order.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <div className="flex flex-col">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full mb-1
-                                                    ${order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                    {order.payment_status.toUpperCase()}
-                                                </span>
-                                                <span className="text-xs text-gray-500">
-                                                    {order.payment_method.toUpperCase()}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            ₱{formatCurrency(order.amount)}
-                                        </td>
-
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            <button
-                                                onClick={() => handleOrderDetails(order)}
-                                                className="text-blue-600 hover:text-blue-900"
-                                            >
-                                                Details
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* Order Details Modal */}
-            {isModalOpen && selectedOrder && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-semibold text-gray-800">Order Details</h3>
-                            <button
-                                onClick={closeModal}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                <X className="h-6 w-6" />
-                            </button>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-sm text-gray-500">Service Type</p>
-                                    <p className="font-medium">{selectedOrder.service}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500">Date</p>
-                                    <p className="font-medium">{selectedOrder.date}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500">Status</p>
-                                    <p className="font-medium">
-                                        <span className={`px-2 py-1 text-xs rounded-full 
-                                            ${selectedOrder.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                                selectedOrder.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                    'bg-gray-100 text-gray-800'}`}>
-                                            {selectedOrder.status}
-                                        </span>
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500">Amount</p>
-                                    <p className="font-medium">₱{formatCurrency(selectedOrder.amount)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500">Payment Status</p>
-                                    <p className="font-medium">
-                                        <span className={`px-2 py-1 text-xs rounded-full 
-                                            ${selectedOrder.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                            {selectedOrder.payment_status.toUpperCase()}
-                                        </span>
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-gray-500">Payment Method</p>
-                                    <p className="font-medium">{selectedOrder.payment_method.toUpperCase()}</p>
-                                </div>
-                                <div className="col-span-2">
-                                    <p className="text-sm text-gray-500">Delivery Address</p>
-                                    <p className="font-medium">{selectedOrder.address}</p>
-                                </div>
-                            </div>
-
-                            {/* Items Section */}
-                            {selectedOrder.items && selectedOrder.items.length > 0 && (
-                                <div className="mt-6">
-                                    <h4 className="text-lg font-semibold text-gray-800 mb-3">Order Items</h4>
-                                    <div className="border rounded-lg overflow-hidden">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Item Name</th>
-                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {selectedOrder.items.map((item) => (
-                                                    <tr key={`item-${item.id}`}>
-                                                        <td className="px-4 py-2 text-sm text-gray-900">{item.name}</td>
-                                                        <td className="px-4 py-2 text-sm text-gray-500">{item.quantity}</td>
-                                                        <td className="px-4 py-2 text-sm text-gray-500">₱{item.price}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Funeral Service Section */}
-                            {selectedOrder.service_details && (
-                                <div className="mt-6">
-                                    <h4 className="text-lg font-semibold text-gray-800 mb-3">Funeral Service Details</h4>
-                                    <div className="border rounded-lg p-4">
-                                        <div className="space-y-2">
-                                            <div>
-                                                <p className="text-sm text-gray-500">Package Name</p>
-                                                <p className="font-medium">{selectedOrder.service_details.name}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-500">Description</p>
-                                                <p className="font-medium">{selectedOrder.service_details.description}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-500">Inclusions</p>
-                                                <ul className="list-disc list-inside">
-                                                    {JSON.parse(selectedOrder.service_details.inclusions).map((inclusion, index) => (
-                                                        <li key={`inclusion-${index}-${inclusion.substring(0, 10)}`} className="text-sm text-gray-700">{inclusion}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-500">Price Range</p>
-                                                <p className="font-medium">₱{selectedOrder.service_details.price_range}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="mt-6 flex justify-end">
-                            <button
-                                onClick={closeModal}
-                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Grief Resources */}
             <div className="bg-white rounded-lg shadow-md p-6">
                 <div className="flex justify-between items-center mb-4">
@@ -570,7 +236,6 @@ const ClientHome = () => {
                         <div
                             key={index}
                             className="border border-purple-300 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => handleResourceClick(resource)}
                         >
                             <div className="flex items-center mb-2">
                                 <MessageSquare className="h-5 w-5 text-purple-400 mr-2" />
@@ -585,37 +250,7 @@ const ClientHome = () => {
                 </div>
             </div>
 
-            {/* Resource Modal */}
-            {isResourceModalOpen && selectedResource && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-semibold text-gray-800 flex items-center">
-                                <MessageSquare className="mr-2 h-5 w-5 text-purple-500" />
-                                {selectedResource.title}
-                            </h3>
-                            <button
-                                onClick={closeResourceModal}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                <X className="h-6 w-6" />
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            {selectedResource.content}
-                        </div>
-                        <div className="mt-6 flex justify-end">
-                            <button
-                                onClick={closeResourceModal}
-                                className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
+            {/* Message Details Modal */}
             {isMessageModalOpen && selectedMessage && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">

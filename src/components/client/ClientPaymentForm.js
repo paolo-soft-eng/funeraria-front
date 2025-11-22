@@ -17,7 +17,10 @@ const PaymentForm = ({
     userId, 
     onSuccess, 
     onError, 
-    orderId 
+    orderId,
+    isFuneralPackage = false,
+    customerInfo = null,
+    serviceDate = null
 }) => {
     const [state, setState] = useState({
         processing: false,
@@ -32,13 +35,14 @@ const PaymentForm = ({
         setState(prev => ({ ...prev, ...updates }));
     }, []);
 
-    const storePaymentData = (formData) => {
+     const storePaymentData = (formData) => {
         const paymentData = {
             userId: userId,
             amount: totalAmount,
             address: formData.address,
             orderId: orderId,
-            deliveryDate: formData.deliveryDate,
+            // Include service date for funeral packages
+            deliveryDate: isFuneralPackage ? serviceDate : formData.deliveryDate,
             timestamp: Date.now(),
             paymentMethod: state.paymentMethod,
             billingInfo: {
@@ -51,7 +55,9 @@ const PaymentForm = ({
                 serviceId: item[0]?.service_id || cartItems[0]?.serviceId,
                 quantity: parseInt(item.quantity),
                 price: parseFloat(item.price)
-            }))
+            })),
+            // Add service date specifically
+            ...(isFuneralPackage && serviceDate && { serviceDate: serviceDate })
         };
 
         try {
@@ -64,87 +70,98 @@ const PaymentForm = ({
     };
 
     const handleSubmit = async (event) => {
-        if (event) event.preventDefault();
-        
-        if (!state.billingValid || !state.billingData) {
-            updateState({ errorMessage: 'Please fill in all required billing information correctly' });
+    if (event) event.preventDefault();
+    
+    if (!state.billingValid || !state.billingData) {
+        updateState({ errorMessage: 'Please fill in all required billing information correctly' });
+        return;
+    }
+
+    updateState({ processing: true, errorMessage: null });
+
+    try {
+        storePaymentData(state.billingData);
+
+        if (state.paymentMethod === 'cod') {
+            await handleCashOnDelivery();
             return;
         }
 
-        updateState({ processing: true, errorMessage: null });
-
-        try {
-            storePaymentData(state.billingData);
-
-            if (state.paymentMethod === 'cod') {
-                await handleCashOnDelivery();
-                return;
-            }
-
-            const amountInCentavos = Math.round(parseFloat(totalAmount) * 100);
-            
-            if (amountInCentavos < 2000) {
-                throw new Error('Amount too low. Minimum payment is ₱20.00');
-            }
-
-            // UNIFIED APPROACH: Always create payment intent first
-            await handleUnifiedPayment(amountInCentavos);
-
-        } catch (error) {
-            updateState({ errorMessage: error.message || 'Payment processing failed' });
-            onError && onError("Network connection error. Please check your internet connection");
-        } finally {
-            updateState({ processing: false });
+        const amountInCentavos = Math.round(parseFloat(totalAmount) * 100);
+        
+        if (amountInCentavos < 2000) {
+            throw new Error('Amount too low. Minimum payment is ₱20.00');
         }
-    };
+
+        // UNIFIED APPROACH: Always create payment intent first
+        await handleUnifiedPayment(amountInCentavos);
+
+    } catch (error) {
+        console.error('Submit error:', error);
+        
+        // FIXED: Show the actual error message
+        const errorMessage = error.message || 'Payment processing failed';
+        updateState({ errorMessage });
+        
+        // Only call onError if it exists
+        if (onError) {
+            onError(errorMessage);
+        }
+    } finally {
+        updateState({ processing: false });
+    }
+};
 
     const handleUnifiedPayment = async (amountInCentavos) => {
-        try {
-            // Step 1: Always create payment intent first (for all payment methods)
-            const intentResponse = await fetchWithRetry(
-                'http://localhost/funeraria/api/components/create-payment-intent.php',
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        amount: amountInCentavos,
-                        currency: 'PHP',
-                        // Include the specific payment method
-                        payment_method_allowed: [state.paymentMethod],
-                        metadata: {
-                            user_id: userId.toString(),
-                            order_id: orderId ? orderId.toString() : '',
-                            items_count: cartItems.length.toString(),
-                            billing_name: state.billingData.name || '',
-                            billing_email: state.billingData.email || '',
-                            billing_phone: state.billingData.phone || '',
-                            payment_method: state.paymentMethod
-                        }
-                    })
-                }
-            );
-
-            const intentData = await intentResponse.json();
-            
-            if (!intentResponse.ok || !intentData.success || !intentData.intent_id) {
-                throw new Error(intentData.error || 'Failed to create payment intent');
+    try {
+        // Step 1: Always create payment intent first (for all payment methods)
+        const intentResponse = await fetchWithRetry(
+            'http://localhost/funeraria/api/components/create-payment-intent.php',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: amountInCentavos,
+                    currency: 'PHP',
+                    // Include the specific payment method
+                    payment_method_allowed: [state.paymentMethod],
+                    metadata: {
+                        user_id: userId.toString(),
+                        order_id: orderId ? orderId.toString() : '',
+                        items_count: cartItems.length.toString(),
+                        billing_name: state.billingData.name || '',
+                        billing_email: state.billingData.email || '',
+                        billing_phone: state.billingData.phone || '',
+                        payment_method: state.paymentMethod
+                    }
+                })
             }
+        );
 
-            // Store intent ID for all payment methods
-            try {
-                sessionStorage.setItem('paymentIntentId', intentData.intent_id);
-                localStorage.setItem('lastPaymentIntentId', intentData.intent_id);
-            } catch (e) {
-                console.warn('Failed to store payment intent ID:', e);
-            }
-
-            // Step 2: Create checkout session with the payment intent
-            await createUnifiedCheckoutSession(amountInCentavos, intentData.intent_id);
-
-        } catch (error) {
-            throw new Error(`Payment failed: Internet connection error`);
+        const intentData = await intentResponse.json();
+        
+        if (!intentResponse.ok || !intentData.success || !intentData.intent_id) {
+            // Use the actual error message from the API
+            throw new Error(intentData.error || 'Failed to create payment intent');
         }
-    };
+
+        // Store intent ID for all payment methods
+        try {
+            sessionStorage.setItem('paymentIntentId', intentData.intent_id);
+            localStorage.setItem('lastPaymentIntentId', intentData.intent_id);
+        } catch (e) {
+            console.warn('Failed to store payment intent ID:', e);
+        }
+
+        // Step 2: Create checkout session with the payment intent
+        await createUnifiedCheckoutSession(amountInCentavos, intentData.intent_id);
+
+    } catch (error) {
+        // FIXED: Pass through the actual error message instead of masking it
+        console.error('Payment error:', error);
+        throw error; // Re-throw the original error
+    }
+};
 
     const createUnifiedCheckoutSession = async (amountInCentavos, intentId) => {
         const sessionResponse = await fetchWithRetry(
@@ -164,7 +181,7 @@ const PaymentForm = ({
                         phone: state.billingData.phone || ''
                     },
                     metadata: {
-                        user_id: userId.toString(),
+                        user_id: userId,
                         order_id: orderId ? orderId.toString() : '',
                         items_count: cartItems.length.toString(),
                         payment_method: state.paymentMethod
@@ -214,14 +231,17 @@ const PaymentForm = ({
                     quantity: parseInt(item.quantity),
                     price: parseFloat(item.price)
                 })),
-                deliveryDate: state.billingData.deliveryDate || null,
+                // Use serviceDate for funeral packages, deliveryDate for regular orders
+                deliveryDate: isFuneralPackage ? serviceDate : (state.billingData.deliveryDate || null),
                 address: state.billingData.address.trim(),
                 billingInfo: {
                     name: state.billingData.name || '',
                     email: state.billingData.email || '',
                     phone: state.billingData.phone || ''
                 },
-                ...(orderId && { orderId: parseInt(orderId) })
+                ...(orderId && { orderId: parseInt(orderId) }),
+                // Add service date specifically for funeral packages
+                ...(isFuneralPackage && serviceDate && { serviceDate: serviceDate })
             };
 
             const recordResponse = await fetchWithRetry(
@@ -262,37 +282,35 @@ const PaymentForm = ({
     };
 
     const fetchWithRetry = async (url, options, maxRetries = 2) => {
-        for (let i = 0; i <= maxRetries; i++) {
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
+    for (let i = 0; i <= maxRetries; i++) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-                const response = await fetch(url, {
-                    ...options,
-                    signal: controller.signal
-                });
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal
+            });
 
-                if(!response.ok){
-                    console.error('Internet connection error!');
-                }
+            clearTimeout(timeoutId);
+            
+            // Don't throw on non-OK responses, let the caller handle it
+            return response;
 
-                clearTimeout(timeoutId);
-                return response;
-
-            } catch (error) {
-                if (i === maxRetries) {
-                    throw error;
-                }
-                
+        } catch (error) {
+            if (i === maxRetries) {
+                // On final retry, throw with a descriptive message
                 if (error.name === 'AbortError') {
                     throw new Error('Request timed out. Please check your connection and try again.');
                 }
-                
-                updateState({ isRetrying: true });
-                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                throw new Error('Network error: ' + error.message);
             }
+            
+            updateState({ isRetrying: true });
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
         }
-    };
+    }
+};
 
     const handleBillingSubmit = (formData, isValid) => {
         updateState({ 
@@ -346,6 +364,8 @@ const PaymentForm = ({
                 userId={userId}
                 cartItems={cartItems}
                 orderId={orderId}
+                isFuneralPackage={isFuneralPackage}
+                customerInfo={customerInfo}
             />
 
             {state.errorMessage && (

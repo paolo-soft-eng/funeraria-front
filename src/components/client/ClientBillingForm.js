@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 
-const BillingForm = ({ onSubmit, disabled, userId, cartItems, orderId }) => {
+const BillingForm = ({ 
+    onSubmit, 
+    disabled, 
+    userId, 
+    cartItems, 
+    orderId,
+    isFuneralPackage = false,
+    customerInfo = null,
+    serviceDate = null
+}) => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -15,9 +24,29 @@ const BillingForm = ({ onSubmit, disabled, userId, cartItems, orderId }) => {
     const [saveMessage, setSaveMessage] = useState('');
     const [formValid, setFormValid] = useState(false);
 
+    // Initialize form with customer info for both funeral packages and regular orders
+    useEffect(() => {
+        
+        if (customerInfo) {
+            const newFormData = {
+                name: customerInfo.name || '',
+                email: customerInfo.email || '',
+                phone: customerInfo.phone || '',
+                address: isFuneralPackage ? 'Chapel' : (customerInfo.address || ''),
+                deliveryDate: formData.deliveryDate
+            };
+            setFormData(newFormData);
+        }
+    }, [customerInfo, isFuneralPackage]);
+
     // Check form validity whenever formData or errors change
     useEffect(() => {
         const isValid = Object.keys(formData).every(field => {
+            // Skip deliveryDate validation for funeral packages
+            if (isFuneralPackage && field === 'deliveryDate') {
+                return true;
+            }
+            
             if (field === 'deliveryDate') {
                 const selectedDate = new Date(formData[field]);
                 const now = new Date();
@@ -26,7 +55,7 @@ const BillingForm = ({ onSubmit, disabled, userId, cartItems, orderId }) => {
             return formData[field] && formData[field].trim() !== '' && !errors[field];
         });
         setFormValid(isValid);
-    }, [formData, errors]);
+    }, [formData, errors, isFuneralPackage]);
 
     const validateField = (name, value) => {
         switch (name) {
@@ -47,9 +76,12 @@ const BillingForm = ({ onSubmit, disabled, userId, cartItems, orderId }) => {
                 return '';
             case 'address':
                 if (!value.trim()) return 'Address is required';
-                if (value.trim().length < 10) return 'Please enter a complete address';
+                if (value.trim().length < 5) return 'Please enter a complete address';
                 return '';
             case 'deliveryDate':
+                // Skip validation for funeral packages
+                if (isFuneralPackage) return '';
+                
                 if (!value) return 'Delivery date is required';
                 const selectedDate = new Date(value);
                 const now = new Date();
@@ -87,6 +119,11 @@ const BillingForm = ({ onSubmit, disabled, userId, cartItems, orderId }) => {
     const validateForm = () => {
         const newErrors = {};
         Object.keys(formData).forEach(field => {
+            // Skip deliveryDate validation for funeral packages
+            if (isFuneralPackage && field === 'deliveryDate') {
+                return;
+            }
+            
             const error = validateField(field, formData[field]);
             if (error) newErrors[field] = error;
         });
@@ -129,8 +166,9 @@ const BillingForm = ({ onSubmit, disabled, userId, cartItems, orderId }) => {
         return `${baseClass} border-gray-300 focus:border-blue-500`;
     };
 
+
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div onSubmit={handleSubmit} className="space-y-4">
             <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2">
                     Full Name *
@@ -190,7 +228,7 @@ const BillingForm = ({ onSubmit, disabled, userId, cartItems, orderId }) => {
 
             <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2">
-                    Delivery Address *
+                    {isFuneralPackage ? 'Service Location *' : 'Delivery Address *'}
                 </label>
                 <textarea
                     name="address"
@@ -198,33 +236,49 @@ const BillingForm = ({ onSubmit, disabled, userId, cartItems, orderId }) => {
                     onChange={handleInputChange}
                     onBlur={handleBlur}
                     className={getFieldClassName('address')}
-                    placeholder="Enter your complete delivery address"
+                    placeholder={isFuneralPackage ? 'Service location' : 'Enter your complete delivery address'}
                     rows={3}
-                    disabled={disabled}
+                    disabled={isFuneralPackage? true : false}
                 />
                 {errors.address && touched.address && (
                     <p className="text-red-500 text-xs mt-1">{errors.address}</p>
                 )}
             </div>
 
-            <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2">
-                    Delivery Date *
-                </label>
-                <input
-                    type="datetime-local"
-                    name="deliveryDate"
-                    value={formData.deliveryDate}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    className={getFieldClassName('deliveryDate')}
-                    disabled={disabled}
-                    min={new Date().toISOString().slice(0, 16)}
-                />
-                {errors.deliveryDate && touched.deliveryDate && (
-                    <p className="text-red-500 text-xs mt-1">{errors.deliveryDate}</p>
-                )}
-            </div>
+            {isFuneralPackage && serviceDate && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <label className="block text-green-700 text-sm font-bold mb-1">
+                        Service Date & Time
+                    </label>
+                    <p className="text-green-800 font-semibold">
+                        {new Date(serviceDate).toLocaleString()}
+                    </p>
+                    <p className="text-green-600 text-xs mt-1">
+                        This date has been selected for the funeral service
+                    </p>
+                </div>
+            )}
+
+            {!isFuneralPackage && (
+                <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2">
+                        Delivery Date *
+                    </label>
+                    <input
+                        type="datetime-local"
+                        name="deliveryDate"
+                        value={formData.deliveryDate}
+                        onChange={handleInputChange}
+                        onBlur={handleBlur}
+                        className={getFieldClassName('deliveryDate')}
+                        disabled={disabled}
+                        min={new Date().toISOString().slice(0, 16)}
+                    />
+                    {errors.deliveryDate && touched.deliveryDate && (
+                        <p className="text-red-500 text-xs mt-1">{errors.deliveryDate}</p>
+                    )}
+                </div>
+            )}
 
             {saveMessage && (
                 <div className={`p-3 rounded text-sm mb-4 ${
@@ -237,7 +291,7 @@ const BillingForm = ({ onSubmit, disabled, userId, cartItems, orderId }) => {
             )}
 
             <button
-                type="submit"
+                onClick={handleSubmit}
                 disabled={disabled || saving}
                 className={`w-full py-2 px-4 rounded text-white text-sm font-semibold transition-colors ${
                     disabled || saving
@@ -247,7 +301,7 @@ const BillingForm = ({ onSubmit, disabled, userId, cartItems, orderId }) => {
             >
                 {saving ? 'Saving...' : 'Save Billing Info'}
             </button>
-        </form>
+        </div>
     );
 };
 

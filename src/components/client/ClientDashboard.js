@@ -15,25 +15,67 @@ import {
   Settings,
   X,
   Bell,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Package,
+  Clock,
+  CheckCircle,
+  BriefcaseBusiness
 } from 'lucide-react';
-
-
 import { EmailContext } from '../utils/EmailContext';
 
 const ClientDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [currentPage, setCurrentPage] = useState('Client Dashboard');
+  const [currentPage, setCurrentPage] = useState('Cart');
   const [profileImage, setProfileImage] = useState(null);
   const [username, setUsername] = useState('');
   const [notification, setNotification] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isCartExpanded, setIsCartExpanded] = useState(false);
   const navigate = useNavigate();
-  const { email } = useContext(EmailContext);
   const location = useLocation();
   const dropdownRef = useRef(null);
+  
+  const { email } = useContext(EmailContext);
+
+  // Fetch profile image and username
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!email) return;
+
+      try {
+        const response = await axios.get(`http://localhost/funeraria/api/components/client_picture.php?email=${email}`);
+        
+        if (response.data?.success) {
+          // Set username from response
+          if (response.data.username) {
+            setUsername(response.data.username);
+          }
+          
+          // Set profile image if available
+          if (response.data.image_path) {
+            setProfileImage(response.data.image_path);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching profile data:', err);
+        // Fallback: try to get username from getUserId.php
+        try {
+          const userResponse = await axios.get(`http://localhost/funeraria/api/components/getUserId.php?email=${email}`);
+          if (userResponse.data?.userName) {
+            setUsername(userResponse.data.userName);
+          }
+        } catch (userErr) {
+          console.error('Error fetching user data:', userErr);
+        }
+      }
+    };
+
+    fetchProfileData();
+  }, [email]);
 
   // Toast notification function
   const showNotification = (message, type = 'info') => {
@@ -67,31 +109,14 @@ const ClientDashboard = () => {
     } else if (path === 'profile') {
       setCurrentPage('Profile');
     } else {
-      setCurrentPage('Client Dashboard');
+      setCurrentPage('Cart');
+    }
+    
+    // Auto-expand cart if on a cart sub-page
+    if (path === 'cart' || path === 'active-orders' || path === 'order-history') {
+      setIsCartExpanded(true);
     }
   }, [location.pathname]);
-
-  useEffect(() => {
-    if (email) {
-      fetchProfileImage();
-    }
-  }, [email]);
-
-  const fetchProfileImage = async () => {
-    try {
-      const response = await axios.get(`http://localhost/funeraria/api/components/client_picture.php?email=${email}`);
-      if (response.data && response.data.success) {
-        if (response.data.image_path) {
-          setProfileImage(response.data.image_path);
-        }
-        if (response.data.username) {
-          setUsername(response.data.username);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching profile image:', error);
-    }
-  };
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -101,29 +126,21 @@ const ClientDashboard = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  const toggleCartAccordion = () => {
+    setIsCartExpanded(!isCartExpanded);
+  };
+
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
     setIsDropdownOpen(false);
   };
 
   const handleLogoutConfirm = async () => {
-    try {
-      showNotification('Logging out...', 'info');
-      await axios.post('http://localhost/funeraria/api/config/logout.php');
-      localStorage.removeItem('userEmail');
-      localStorage.removeItem('userRole');
-      showNotification('Successfully logged out!', 'success');
-      setShowLogoutModal(false);
-
-      // Delay navigation to show success message
-      setTimeout(() => {
-        navigate('/gomez/auth');
-      }, 1000);
-    } catch (error) {
-      console.error('Error logging out:', error);
-      showNotification('Failed to log out. Please try again.', 'error');
-      setShowLogoutModal(false);
-    }
+    showNotification('Successfully logged out!', 'success');
+    setShowLogoutModal(false);
+    setTimeout(() => {
+      navigate('/gomez/auth');
+    }, 1000);
   };
 
   const handleLogoutCancel = () => {
@@ -146,9 +163,19 @@ const ClientDashboard = () => {
   const mainNavItems = [
     { name: 'home', icon: <Home size={20} />, label: 'Home' },
     { name: 'about', icon: <Info size={20} />, label: 'About' },
-    { name: 'services', icon: <Briefcase size={20} />, label: 'Services' },
-    { name: 'menu', icon: <BookOpen size={20} />, label: 'Menu List' },
-    { name: 'cart', icon: <ShoppingCart size={20} />, label: 'Cart' },
+    { name: 'services', icon: <BriefcaseBusiness size={20} />, label: 'Services' },
+    { 
+      name: 'cart', 
+      icon: <ShoppingCart size={20} />, 
+      label: 'Cart',
+      hasAccordion: true,
+      subItems: [
+        { name: 'cart', icon: <ShoppingCart size={18} />, label: 'Shopping Cart' },
+        { name: 'funeral-cart', icon: <Briefcase size={18} />, label: 'Package Cart' },
+        { name: 'active-orders', icon: <Clock size={18} />, label: 'Active Orders' },
+        { name: 'order-history', icon: <CheckCircle size={18} />, label: 'Order History' }
+      ]
+    },
     { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
     { name: 'settings', icon: <Settings size={20} />, label: 'Settings' }
   ];
@@ -191,11 +218,12 @@ const ClientDashboard = () => {
       {/* Toast Notification */}
       {notification && (
         <div className="fixed top-4 right-4 z-50 animate-fade-in">
-          <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${notification.type === 'success' ? 'bg-green-500 text-white' :
-              notification.type === 'error' ? 'bg-red-500 text-white' :
-                notification.type === 'warning' ? 'bg-yellow-500 text-white' :
-                  'bg-blue-500 text-white'
-            }`}>
+          <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${
+            notification.type === 'success' ? 'bg-green-500 text-white' :
+            notification.type === 'error' ? 'bg-red-500 text-white' :
+            notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+            'bg-blue-500 text-white'
+          }`}>
             {notification.type === 'success' && (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
@@ -227,8 +255,9 @@ const ClientDashboard = () => {
       )}
 
       <aside
-        className={`fixed lg:static z-30 h-full bg-gray-800 text-white transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0 lg:w-20 overflow-hidden'
-          }`}
+        className={`fixed lg:static z-30 h-full bg-gray-800 text-white transition-all duration-300 ${
+          isSidebarOpen ? 'w-64' : 'w-0 lg:w-20 overflow-hidden'
+        }`}
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-center p-4">
@@ -246,14 +275,18 @@ const ClientDashboard = () => {
             )}
           </div>
 
+          {/* Profile Section */}
           <div className={`px-4 py-6 ${isSidebarOpen ? 'flex items-center' : 'flex flex-col items-center'}`}>
             {profileImage ? (
-              <div className="rounded-full p-1 flex items-center justify-center overflow-hidden">
+              <div className="rounded-full flex items-center justify-center overflow-hidden bg-white">
                 <img
                   src={`http://localhost/funeraria/api/components/${profileImage}`}
                   alt="Profile"
-                  className="rounded-full w-9 h-9 object-cover"
+                  className="rounded-full w-10 h-10 object-cover"
                 />
+                <div className="rounded-full bg-gray-700 p-2 flex items-center justify-center hidden">
+                  <User size={isSidebarOpen ? 24 : 18} />
+                </div>
               </div>
             ) : (
               <div className="rounded-full bg-gray-700 p-2 flex items-center justify-center">
@@ -262,33 +295,84 @@ const ClientDashboard = () => {
             )}
             {isSidebarOpen && (
               <div className="ml-3">
-                <p className="font-medium">{username || 'Client User'}</p>
-                <p className="text-xs text-white truncate max-w-[180px]">{email}</p>
+                <p className="font-medium">{username || 'Loading...'}</p>
+                <p className="text-xs text-gray-300 truncate max-w-[180px]">{email}</p>
               </div>
             )}
           </div>
 
-          <nav className="mt-6 flex-grow">
+          <nav className="mt-6 flex-grow overflow-y-auto">
             <ul className="space-y-1">
               {mainNavItems.map((item) => (
                 <li key={item.name}>
-                  <Link
-                    to={`/gomez/dashboard-client/${item.name}`}
-                    className={`flex items-center px-5 py-4 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
+                  {item.hasAccordion ? (
+                    <>
+                      <button
+                        onClick={toggleCartAccordion}
+                        className={`flex items-center w-full px-5 py-4 hover:bg-gray-700 transition-colors ${
+                          isSidebarOpen ? 'justify-between' : 'justify-center'
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
+                          {isSidebarOpen && <span>{item.label}</span>}
+                        </div>
+                        {isSidebarOpen && (
+                          <span className="transition-transform duration-200">
+                            {isCartExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+                          </span>
+                        )}
+                      </button>
+                      
+                      {/* Accordion Content */}
+                      {isSidebarOpen && (
+                        <div
+                          className={`overflow-hidden transition-all duration-300 ${
+                            isCartExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                          }`}
+                        >
+                          <ul className="bg-gray-900 py-1">
+                            {item.subItems.map((subItem) => (
+                              <li key={subItem.name}>
+                                <Link
+                                  to={`/gomez/dashboard-client/${subItem.name}`}
+                                  className={`flex items-center px-5 py-3 pl-12 hover:bg-gray-700 transition-colors text-sm ${
+                                    location.pathname.includes(subItem.name) ? 'bg-gray-700 border-l-4 border-indigo-500' : ''
+                                  }`}
+                                >
+                                  <span className="mr-3">{subItem.icon}</span>
+                                  <span>{subItem.label}</span>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Link
+                      to={`/gomez/dashboard-client/${item.name}`}
+                      className={`flex items-center px-5 py-4 hover:bg-gray-700 transition-colors ${
+                        isSidebarOpen ? 'justify-start' : 'justify-center'
+                      } ${
+                        location.pathname.includes(item.name) ? 'bg-gray-700 border-l-4 border-indigo-500' : ''
                       }`}
-                  >
-                    <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
-                    {isSidebarOpen && <span>{item.label}</span>}
-                  </Link>
+                    >
+                      <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
+                      {isSidebarOpen && <span>{item.label}</span>}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
           </nav>
+          
           <div className="p-4 mt-auto">
             <button
               onClick={handleLogoutClick}
-              className={`flex items-center text-red-600 hover:text-red-500 transition-colors ${isSidebarOpen ? 'justify-start w-full' : 'justify-center w-full'
-                }`}
+              className={`flex items-center text-red-400 hover:text-red-300 transition-colors ${
+                isSidebarOpen ? 'justify-start w-full' : 'justify-center w-full'
+              }`}
             >
               <LogOut size={20} className={isSidebarOpen ? 'mr-3' : ''} />
               {isSidebarOpen && <span>Logout</span>}
@@ -319,39 +403,28 @@ const ClientDashboard = () => {
                   className="flex items-center space-x-2 focus:outline-none"
                 >
                   {profileImage ? (
-                    <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden">
+                    <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden border border-gray-200">
                       <img
                         src={`http://localhost/funeraria/api/components/${profileImage}`}
                         alt="Profile"
                         className="w-full h-full object-cover"
                       />
+                      <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 hidden">
+                        <User size={18} />
+                      </div>
                     </div>
                   ) : (
                     <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700">
                       <User size={18} />
                     </div>
                   )}
-                  <span className="hidden md:block text-sm">Client</span>
-                  <svg
-                    className="hidden md:block"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M6 9L12 15L18 9"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
                 </button>
 
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                    <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+                      <p className="text-xs text-gray-500 truncate">{email}</p>
+                    </div>
                     <Link
                       to="/gomez/dashboard-client/settings"
                       className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
