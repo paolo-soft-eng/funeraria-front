@@ -284,9 +284,6 @@ const ClientDashboard = () => {
                   alt="Profile"
                   className="rounded-full w-10 h-10 object-cover"
                 />
-                <div className="rounded-full bg-gray-700 p-2 flex items-center justify-center">
-                  <User size={isSidebarOpen ? 24 : 18} />
-                </div>
               </div>
             ) : (
               <div className="rounded-full bg-gray-700 p-2 flex items-center justify-center">
