@@ -5,6 +5,9 @@ import { EmailProvider } from './components/utils/EmailContext';
 import LoadingScreen from './components/LoadingScreen';
 import LoadingWrapper from './components/LoadingWrapper';
 import ProtectedRoute from './components/utils/ProtectedRoute';
+import ClientPackageCart from './components/client/ClientPackageCart';
+import ClientActiveOrders from './components/client/ClientActiveOrders';
+import ClientOrderHistory from './components/client/ClientOrderHistory';
 
 const Auth = lazy(() => import('./Auth'));
 const ClientDashboard = lazy(() => import('./components/client/ClientDashboard'));
@@ -124,6 +127,21 @@ const App = () => {
                 <Route path="cart" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientCart />
+                  </Suspense>
+                } />
+                <Route path="funeral-cart" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientPackageCart />
+                  </Suspense>
+                } />
+                <Route path="active-orders" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientActiveOrders />
+                  </Suspense>
+                } />
+                <Route path="order-history" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientOrderHistory />
                   </Suspense>
                 } />
                 <Route path="settings" element={
