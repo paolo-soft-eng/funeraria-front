@@ -12,10 +12,17 @@ export const useCamera = () => {
 
   const startCamera = useCallback(async () => {
     try {
+      // First, show the camera UI (this will mount the video element)
+      setShowCamera(true);
+      
+      // Wait a bit for the video element to mount
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       if (!videoRef.current) {
-        throw new Error("Video element not mounted yet");
+        throw new Error("Video element failed to mount");
       }
 
+      // Stop any existing stream
       if (videoRef.current.srcObject) {
         videoRef.current.srcObject.getTracks().forEach(track => track.stop());
       }
@@ -41,10 +48,10 @@ export const useCamera = () => {
         };
       });
 
-      setShowCamera(true);
     } catch (err) {
       console.error("Camera Error:", err);
       setError(`Camera error: ${err.message}`);
+      setShowCamera(false); // Hide camera UI on error
     }
   }, []);
 

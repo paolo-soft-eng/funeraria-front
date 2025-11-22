@@ -15,13 +15,12 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
 
     try {
       setError(null);
+      // Using a client-side ID for optimistic update of text messages
       const messageId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       processedMessageIds.add(messageId);
 
-      // Extract the actual message ID (not the full object)
       const replyToId = replyContext?.id || null;
-      
 
       const newMessage = {
         id: messageId,
@@ -40,7 +39,6 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
 
       addMessage(newMessage);
 
-      // Send via WebSocket with proper replyToId
       socket.send(JSON.stringify({
         type: 'message',
         messageId: messageId,
@@ -50,7 +48,7 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
         isAdmin: false,
         imageUrl: null,
         isOwnMessage: true,
-        replyToId: replyToId // Send as integer, not object
+        replyToId: replyToId
       }));
 
       if (selectedAdmin && userId) {
@@ -76,19 +74,19 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
       setError(null);
       setLoading(true);
 
+      // Step 1: Upload image and save to database via PHP API
       const formData = new FormData();
       formData.append('image', selectedFile);
       formData.append('sender_id', userId);
       formData.append('receiver_id', selectedAdmin.id);
       formData.append('message', message || 'Image message');
       formData.append('is_admin_message', '0');
-      
-      // Add reply_to_id if exists
+
       if (replyContext?.id) {
         formData.append('reply_to_id', replyContext.id);
       }
 
-      const uploadResponse = await fetch('http://localhost/funeraria/api/components/send_message.php', {
+      const uploadResponse = await fetch(API_BASE_URL, {
         method: 'POST',
         body: formData
       });
@@ -99,17 +97,27 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
         throw new Error(uploadData.message || 'Failed to upload image');
       }
 
-      const imageUrl = uploadData.image_url;
+      // Get the database-generated message ID and image URL
       const messageId = uploadData.message_id;
+      const fullImageUrl = uploadData.image_url;
 
+      // Extract relative path for WebSocket transmission (smaller payload)
+      let relativePath = fullImageUrl;
+      if (fullImageUrl.includes('/funeraria/api/components/')) {
+        const parts = fullImageUrl.split('/funeraria/api/components/');
+        relativePath = parts[1];
+      }
+
+      // Add to processed messages to prevent duplicates
       processedMessageIds.add(messageId);
 
+      // Step 2: Add message to UI optimistically with full URL
       const newMessage = {
-        id: messageId,
+        id: messageId, // Use database ID
         text: message || 'Image message',
         sender: 'me',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        imageUrl: imageUrl,
+        imageUrl: fullImageUrl, // Use full URL for display
         replyToId: replyContext?.id || null,
         replyTo: replyContext ? {
           id: replyContext.id,
@@ -121,18 +129,23 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
 
       addMessage(newMessage);
 
-      // Also send via WebSocket to notify admin in real-time
+      // Step 3: Send WebSocket notification ONLY (don't save to DB again)
+      // The message is already saved in the database from Step 1
+      // This WebSocket message is ONLY for real-time notification to other clients
       socket.send(JSON.stringify({
-        type: 'message',
-        messageId: messageId,
+        type: 'message_notification', // Changed from 'message' to 'message_notification'
+        messageId: messageId, // Use database ID
         senderId: userId,
         receiverId: selectedAdmin.id,
         message: message || 'Image message',
         isAdmin: false,
-        imageUrl: imageUrl,
-        replyToId: replyContext?.id || null
+        imageUrl: relativePath, // Send relative path
+        replyToId: replyContext?.id || null,
+        isOwnMessage: true,
+        alreadySaved: true // Flag to indicate this is already in the database
       }));
 
+      // Update message count
       if (selectedAdmin && userId) {
         countMessages(selectedAdmin.id, userId);
       }

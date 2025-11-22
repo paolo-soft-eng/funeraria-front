@@ -12,10 +12,10 @@ export const useProfileImage = (email, setUsername) => {
                     setUsername(response.data.username);
                 }
             } catch (err) {
-                console.error('Error fetching username:', err);
+                console.error('Error fetching profile image:', err);
             }
         };
 
         fetchProfile();
-    }, [email, setUsername]);
+    }, [email, setUsername]); 
 };
