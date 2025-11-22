@@ -406,9 +406,6 @@ const ClientDashboard = () => {
                         alt="Profile"
                         className="w-full h-full object-cover"
                       />
-                      <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 ">
-                        <User size={18} />
-                      </div>
                     </div>
                   ) : (
                     <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700">
