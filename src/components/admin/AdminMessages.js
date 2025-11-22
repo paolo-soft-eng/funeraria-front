@@ -820,7 +820,7 @@ const AdminMessages = () => {
                           {msg.image_path && (
                             <div className="relative mt-2 group">
                               <img
-                                src={`${msg.image_path}`}
+                                src={`http://localhost/funeraria/api/components/${msg.image_path}`}
                                 alt="Attached"
                                 className="w-60 h-auto rounded cursor-pointer hover:opacity-90 transition-opacity"
                                 onClick={(e) => {
@@ -996,7 +996,7 @@ const AdminMessages = () => {
               </button>
 
               <img
-                src={enlargedImage}
+                src={`http://localhost/funeraria/api/components/${enlargedImage}`}
                 alt="Enlarged view"
                 className="max-w-[70vw] max-h-[70vh] object-contain rounded-lg shadow-2xl"
                 onClick={closeEnlargedImage}
