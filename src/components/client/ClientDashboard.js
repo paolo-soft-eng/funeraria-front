@@ -284,7 +284,7 @@ const ClientDashboard = () => {
                   alt="Profile"
                   className="rounded-full w-10 h-10 object-cover"
                 />
-                <div className="rounded-full bg-gray-700 p-2 flex items-center justify-center hidden">
+                <div className="rounded-full bg-gray-700 p-2 flex items-center justify-center">
                   <User size={isSidebarOpen ? 24 : 18} />
                 </div>
               </div>
@@ -409,7 +409,7 @@ const ClientDashboard = () => {
                         alt="Profile"
                         className="w-full h-full object-cover"
                       />
-                      <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 hidden">
+                      <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 ">
                         <User size={18} />
                       </div>
                     </div>
