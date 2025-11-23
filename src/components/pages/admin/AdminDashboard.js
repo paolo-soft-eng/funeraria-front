@@ -26,7 +26,7 @@ import {
     LogOutIcon
 } from 'lucide-react';
 import { EmailContext } from '../../utils/EmailContext';
-import LoadingWrapper from '../../static/LoadingWrapper';
+import LoadingWrapper from '../../static/loading/LoadingWrapper';
 
 import { useAdminAuth } from '../../hooks/admin/useAdminAuth';
 import { useUserData } from '../../hooks/admin/useUserData';

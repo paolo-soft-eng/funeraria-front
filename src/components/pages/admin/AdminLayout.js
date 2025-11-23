@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { EmailContext } from '../../utils/EmailContext';
-import LoadingWrapper from '../../static/LoadingWrapper';
+import LoadingWrapper from '../../static/loading/LoadingWrapper';
 
 const AdminLayout = ({ children, currentPage }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
