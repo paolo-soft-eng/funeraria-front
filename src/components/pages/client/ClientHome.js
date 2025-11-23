@@ -1,9 +1,9 @@
 import React, { useState, useContext } from 'react';
 import { Calendar, FileText, Users, MessageSquare, Clock, MapPin, ChevronRight, X, Mail, LogOutIcon } from 'lucide-react';
-import { EmailContext } from '../utils/EmailContext';
-import { useUser } from '../hooks/client/useUser';
-import { useProfileImage } from '../hooks/client/useProfileImage';
-import { useRecentMessages } from '../hooks/client/useRecentMessages';
+import { EmailContext } from '../../utils/EmailContext';
+import { useUser } from '../../hooks/client/useUser';
+import { useProfileImage } from '../../hooks/client/useProfileImage';
+import { useRecentMessages } from '../../hooks/client/useRecentMessages';
 
 const ClientHome = () => {
     const { email } = useContext(EmailContext);

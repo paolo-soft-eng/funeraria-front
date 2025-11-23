@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchServices } from "../../Api";
+import { fetchServices } from "../../service/Api";
 
 export const useServices = () => {
   const [services, setServices] = useState([]);

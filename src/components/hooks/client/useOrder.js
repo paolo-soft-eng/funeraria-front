@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { placeOrder } from "../../Api";
+import { placeOrder } from "../../service/Api";
 
 export const useOrder = (email, userId, showNotification) => {
   const [orderStatus, setOrderStatus] = useState(null);

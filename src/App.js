@@ -2,36 +2,37 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { EmailProvider } from './components/utils/EmailContext';
-import LoadingScreen from './components/LoadingScreen';
-import LoadingWrapper from './components/LoadingWrapper';
+import LoadingScreen from './components/static/LoadingScreen';
+import LoadingWrapper from './components/static/LoadingWrapper';
 import ProtectedRoute from './components/utils/ProtectedRoute';
-import ClientPackageCart from './components/client/ClientPackageCart';
-import ClientActiveOrders from './components/client/ClientActiveOrders';
-import ClientOrderHistory from './components/client/ClientOrderHistory';
+import ClientPackageCart from './components/pages/client/ClientPackageCart';
+import ClientActiveOrders from './components/pages/client/ClientActiveOrders';
+import ClientOrderHistory from './components/pages/client/ClientOrderHistory';
 
+const ClientAppointment = lazy(() => import('./components/pages/client/ClientAppointment'));
 const Auth = lazy(() => import('./Auth'));
-const ClientDashboard = lazy(() => import('./components/client/ClientDashboard'));
-const ClientHome = lazy(() => import('./components/client/ClientHome'));
-const ClientAbout = lazy(() => import('./components/client/ClientAbout'));
-const ClientMenu = lazy(() => import('./components/client/ClientMenu'));
-const ClientCart = lazy(() => import('./components/client/ClientCart'));
-const ClientProfile = lazy(() => import('./components/client/ClientProfile'));
-const ClientServices = lazy(() => import('./components/client/ClientServices'));
-const ClientMessages = lazy(() => import('./components/client/ClientMessages'));
-const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
-const AdminOrders = lazy(() => import('./components/admin/AdminOrders'));
-const AdminItemList = lazy(() => import('./components/admin/AdminItemList'));
-const AdminMessages = lazy(() => import('./components/admin/AdminMessages'));
-const AdminSettings = lazy(() => import('./components/admin/AdminSettings'));
-const AdminClients = lazy(() => import('./components/admin/AdminClients'));
-const AdminAppointments = lazy(() => import('./components/admin/AdminAppointments'));
-const AdminAnalytics = lazy(() => import('./components/admin/AdminAnalytics'));
-const AdminReport = lazy(() => import('./components/admin/AdminReport'));
-const AdminDocuments = lazy(() => import('./components/admin/AdminDocuments'));
+const ClientDashboard = lazy(() => import('./components/pages/client/ClientDashboard'));
+const ClientHome = lazy(() => import('./components/pages/client/ClientHome'));
+const ClientAbout = lazy(() => import('./components/pages/client/ClientAbout'));
+const ClientMenu = lazy(() => import('./components/pages/client/ClientMenu'));
+const ClientCart = lazy(() => import('./components/pages/client/ClientCart'));
+const ClientProfile = lazy(() => import('./components/pages/client/ClientProfile'));
+const ClientServices = lazy(() => import('./components/pages/client/ClientServices'));
+const ClientMessages = lazy(() => import('./components/pages/client/ClientMessages'));
+const AdminDashboard = lazy(() => import('./components/pages/admin/AdminDashboard'));
+const AdminOrders = lazy(() => import('./components/pages/admin/AdminOrders'));
+const AdminItemList = lazy(() => import('./components/pages/admin/AdminItemList'));
+const AdminMessages = lazy(() => import('./components/pages/admin/AdminMessages'));
+const AdminSettings = lazy(() => import('./components/pages/admin/AdminSettings'));
+const AdminClients = lazy(() => import('./components/pages/admin/AdminClients'));
+const AdminAppointments = lazy(() => import('./components/pages/admin/AdminAppointments'));
+const AdminAnalytics = lazy(() => import('./components/pages/admin/AdminAnalytics'));
+const AdminReport = lazy(() => import('./components/pages/admin/AdminReport'));
+const AdminDocuments = lazy(() => import('./components/pages/admin/AdminDocuments'));
 const LandingPage = lazy(() => import('./components/LandingPage'));
 const SuperAdmin = lazy(() => import('./components/superadmin/SuperAdmin'));
 const SuperAdminReport = lazy(() => import('./components/superadmin/SuperAdminReport'));
-const ErrorPage = lazy(() => import('./components/ErrorPage'));
+const ErrorPage = lazy(() => import('./components/static/ErrorPage'));
 const ForgotPassword = lazy(() => import('./components/utils/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/utils/ResetPassword'));
 const PaymentSuccess = lazy(() => import('./components/utils/PaymentSuccess'));
@@ -122,6 +123,11 @@ const App = () => {
                 <Route path="menu" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientMenu />
+                  </Suspense>
+                } />
+                <Route path="appointments" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientAppointment />
                   </Suspense>
                 } />
                 <Route path="cart" element={

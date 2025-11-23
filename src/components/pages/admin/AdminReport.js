@@ -13,11 +13,11 @@ import {
 } from 'lucide-react';
 
 // Import custom hooks
-import { useReports } from '../hooks/admin/useReports';
-import { useReportFilters } from '../hooks/admin/useReportFilters';
-import { useReportModal } from '../hooks/admin/useReportModal';
-import { useReportUtils } from '../hooks/admin/useReportUtils';
-import { useStatusMessage } from '../hooks/admin/useStatusMessage';
+import { useReports } from '../../hooks/admin/useReports';
+import { useReportFilters } from '../../hooks/admin/useReportFilters';
+import { useReportModal } from '../../hooks/admin/useReportModal';
+import { useReportUtils } from '../../hooks/admin/useReportUtils';
+import { useStatusMessage } from '../../hooks/admin/useStatusMessage';
 
 export const AdminReport = () => {
   // Use custom hooks

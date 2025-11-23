@@ -11,8 +11,8 @@ import {
     FaChevronLeft, 
     FaChevronRight 
 } from 'react-icons/fa';
-import { useResponsiveView, useAppointments, useApiConfig } from '../hooks/admin/useAppointments';
-import { usePagination } from '../hooks/admin/usePagination';
+import { useResponsiveView, useAppointments, useApiConfig } from '../../hooks/admin/useAppointments';
+import { usePagination } from '../../hooks/admin/usePagination';
 
 const AdminAppointments = () => {
     const { isMobile, viewMode, setViewMode } = useResponsiveView();

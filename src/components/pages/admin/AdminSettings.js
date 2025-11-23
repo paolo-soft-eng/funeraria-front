@@ -13,12 +13,12 @@ import {
 } from 'lucide-react';
 
 import AdminLayout from './AdminLayout';
-import { EmailContext } from '../utils/EmailContext';
-import { useProfile } from '../hooks/admin/useProfile';
-import { usePassword } from '../hooks/admin/usePassword';
-import { useStaff } from '../hooks/admin/useStaff';
-import { useBugReport } from '../hooks/admin/useReportBug';
-import { useStatusMessage } from '../hooks/admin/useStatusMessage';
+import { EmailContext } from '../../utils/EmailContext';
+import { useProfile } from '../../hooks/admin/useProfile';
+import { usePassword } from '../../hooks/admin/usePassword';
+import { useStaff } from '../../hooks/admin/useStaff';
+import { useBugReport } from '../../hooks/admin/useReportBug';
+import { useStatusMessage } from '../../hooks/admin/useStatusMessage';
 import { data } from 'react-router-dom';
 
 const AdminSettings = () => {

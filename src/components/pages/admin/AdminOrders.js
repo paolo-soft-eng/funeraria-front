@@ -3,12 +3,12 @@ import AdminLayout from './AdminLayout';
 import { FaTable, FaThLarge, FaCheck, FaTrash, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 // Import custom hooks
-import { useAuth } from '../hooks/admin/useAuth';
-import { useOrders } from '../hooks/admin/useOrders';
-import { useOrderActions } from '../hooks/admin/useOrderActions';
-import { usePagination } from '../hooks/admin/usePagination';
-import { useOrderView } from '../hooks/admin/useOrderView';
-import { useStatusMessage } from '../hooks/admin/useStatusMessage';
+import { useAuth } from '../../hooks/admin/useAuth';
+import { useOrders } from '../../hooks/admin/useOrders';
+import { useOrderActions } from '../../hooks/admin/useOrderActions';
+import { usePagination } from '../../hooks/admin/usePagination';
+import { useOrderView } from '../../hooks/admin/useOrderView';
+import { useStatusMessage } from '../../hooks/admin/useStatusMessage';
 
 const AdminOrders = () => {
   // Use custom hooks

@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { FileText, X, Clock, Calendar, Package } from 'lucide-react';
-import { EmailContext } from '../utils/EmailContext';
-import { useActiveOrders } from '../hooks/client/useActiveOrders';
+import { EmailContext } from '../../utils/EmailContext';
+import { useActiveOrders } from '../../hooks/client/useActiveOrders';
 
 const ClientActiveOrders = () => {
     const { email } = useContext(EmailContext);

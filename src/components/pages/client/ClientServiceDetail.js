@@ -1,8 +1,8 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { API_BASE_URL } from '../Api';
-import { EmailContext } from '../utils/EmailContext';
-import { useServiceItems } from '../hooks/client/useServiceItems';
-import { useOrder } from '../hooks/client/useOrder';
+import { API_BASE_URL } from '../../service/Api';
+import { EmailContext } from '../../utils/EmailContext';
+import { useServiceItems } from '../../hooks/client/useServiceItems';
+import { useOrder } from '../../hooks/client/useOrder';
 
 const ServiceDetail = ({ service, onClose, refetchServices, showNotification, userId, isLoggedIn }) => {
   const [showOrderForm, setShowOrderForm] = useState(false);

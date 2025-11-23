@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Info, Phone, Video, Image, Camera, Send, Copy, Trash, CornerUpLeft, Menu, X, ZoomIn, User } from 'lucide-react';
-import { EmailContext } from '../utils/EmailContext';
+import { EmailContext } from '../../utils/EmailContext';
 
 // Import custom hooks
-import { useAuth } from '../hooks/client/useAuth';
-import { useWebSocket } from '../hooks/client/useWebSocket';
-import { useMessages } from '../hooks/client/useMessages';
-import { useAdmins } from '../hooks/client/useAdmins';
-import { useCamera } from '../hooks/client/useCamera';
-import { useMessageActions } from '../hooks/client/useMessageActions';
-import { useUserInterface } from '../hooks/client/useUserInterface';
+import { useAuth } from '../../hooks/client/useAuth';
+import { useWebSocket } from '../../hooks/client/useWebSocket';
+import { useMessages } from '../../hooks/client/useMessages';
+import { useAdmins } from '../../hooks/client/useAdmins';
+import { useCamera } from '../../hooks/client/useCamera';
+import { useMessageActions } from '../../hooks/client/useMessageActions';
+import { useUserInterface } from '../../hooks/client/useUserInterface';
 
 export default function ClientMessages() {
   const [message, setMessage] = useState('');

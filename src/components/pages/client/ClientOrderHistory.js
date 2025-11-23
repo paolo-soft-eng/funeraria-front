@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { FileText, X, Calendar, Clock, Package, ShoppingCart, CheckCircle, XCircle, Grid, List, ChevronLeft, ChevronRight } from 'lucide-react';
-import { EmailContext } from '../utils/EmailContext';
-import { useOrderHistory } from '../hooks/client/useOrderHistory';
+import { EmailContext } from '../../utils/EmailContext';
+import { useOrderHistory } from '../../hooks/client/useOrderHistory';
 
 // Pagination Hook
 const usePagination = (totalItems, itemsPerPage, currentPage, setCurrentPage, setItemsPerPage) => {

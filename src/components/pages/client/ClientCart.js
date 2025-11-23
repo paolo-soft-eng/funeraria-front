@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import useCart from '../hooks/useCart';
-import ClientCartItem from '../client/ClientCartItem';
-import PaymentForm from '../client/ClientPaymentForm';
+import useCart from '../../hooks/useCart';
+import ClientCartItem from './ClientCartItem';
+import PaymentForm from './ClientPaymentForm';
 
 const ClientCart = () => {
     const {

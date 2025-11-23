@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { fetchCasketsByServiceId, fetchChapelsByServiceId } from "../../Api";
+import { fetchCasketsByServiceId, fetchChapelsByServiceId } from "../../service/Api";
 
 export const useServiceItems = (serviceId, showNotification) => {
   const [caskets, setCaskets] = useState([]);

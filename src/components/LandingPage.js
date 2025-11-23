@@ -199,10 +199,10 @@ export default function FuneralManagementLanding() {
             <div className="flex flex-col items-center text-center text-white">
               <div className="max-w-4xl">
                 <h2 className="text-1xl md:text-3xl lg:text-6xl font-light mb-6 leading-tight">
-                  Your partner who takes good care of you and your loved ones
+                  "Your partner who takes good care of you and your loved ones"
                 </h2>
                 <p className="text-xl md:text-2xl text-gray-200 mb-12 font-light leading-relaxed max-w-3xl mx-auto">
-                  Our comprehensive funeral management system helps you handle all aspects of memorial services with dignity and respect.
+                  Our funeral services system helps you handle every part of the memorial service with dignity and respect.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-6 justify-center">
                   <button
@@ -326,9 +326,9 @@ export default function FuneralManagementLanding() {
       <section id="testimonials" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-light mb-6 text-gray-800">What Families Say</h2>
+            <h2 className="text-4xl md:text-5xl font-light mb-6 text-gray-800">Testimonials</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Hear from families who have used our funeral management services during their time of need.
+              Hear from clients who have used our funeral management services during their time of need.
             </p>
           </div>
 
@@ -416,23 +416,7 @@ export default function FuneralManagementLanding() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-gray-800 to-gray-900 text-white">
-        <div className="max-w-4xl mx-auto text-center px-6">
-          <h2 className="text-4xl md:text-5xl font-light mb-8">Ready to Get Started?</h2>
-          <p className="text-xl text-gray-100 mb-12 max-w-3xl mx-auto leading-relaxed">
-            Our dedicated team is available 24/7 to help you navigate funeral arrangements with dignity and respect.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <button className="bg-white text-gray-800 hover:bg-gray-100 py-4 px-10 rounded-lg transition-all duration-300 shadow-lg font-semibold text-lg">
-              Request a Consultation
-            </button>
-            <button className="border-2 border-white hover:bg-white hover:text-gray-800 text-white py-4 px-10 rounded-lg transition-all duration-300 font-semibold text-lg" onClick={handleNavigate}>
-              View Our Services
-            </button>
-          </div>
-        </div>
-      </section>
+ 
 
       {/* Contact Section */}
       <section id="contact" className="py-20 bg-gray-900 text-white">

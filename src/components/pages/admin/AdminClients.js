@@ -5,13 +5,14 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 // Import custom hooks
-import { useAuth } from '../hooks/admin/useAuth';
-import { useClients } from '../hooks/admin/useClients';
-import { useClientActions } from '../hooks/admin/useClientActions';
-import { usePagination } from '../hooks/admin/usePagination';
-import { useFilters } from '../hooks/admin/useFilters';
-import { useViewMode } from '../hooks/admin/useViewMode';
-import { useProfilePicture } from '../hooks/admin/useProfilePicture';
+import { useAuth } from '../../hooks/admin/useAuth';
+import { useClients } from '../../hooks/admin/useClients';
+import { useClientActions } from '../../hooks/admin/useClientActions';
+import { usePagination } from '../../hooks/admin/usePagination';
+import { useFilters } from '../../hooks/admin/useFilters';
+import { useViewMode } from '../../hooks/admin/useViewMode';
+import { useProfilePicture } from '../../hooks/admin/useProfilePicture';
+
 
 const AdminClients = () => {
   // Use custom hooks

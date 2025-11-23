@@ -1,11 +1,11 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
-import { EmailContext } from '../utils/EmailContext';
+import { EmailContext } from '../../utils/EmailContext';
 import toast, { Toaster } from 'react-hot-toast';
-import { useServices } from '../hooks/client/useServices';
-import { useUser } from '../hooks/client/useUser';
-import { useMenuItems } from '../hooks/client/useMenuItems';
-import { useQuantities } from '../hooks/client/useQuantities';
-import { usePurchase } from '../hooks/client/usePurchase';
+import { useServices } from '../../hooks/client/useServices';
+import { useUser } from '../../hooks/client/useUser';
+import { useMenuItems } from '../../hooks/client/useMenuItems';
+import { useQuantities } from '../../hooks/client/useQuantities';
+import { usePurchase } from '../../hooks/client/usePurchase';
 import ServiceDetail from './ClientServiceDetail';
 
 const ClientServices = () => {

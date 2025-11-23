@@ -25,19 +25,19 @@ import {
     LogOut, // Fixed: Changed from LogOutIcon to LogOut
     LogOutIcon
 } from 'lucide-react';
-import { EmailContext } from '../utils/EmailContext';
-import LoadingWrapper from '../LoadingWrapper';
+import { EmailContext } from '../../utils/EmailContext';
+import LoadingWrapper from '../../static/LoadingWrapper';
 
-import { useAdminAuth } from '../hooks/admin/useAdminAuth';
-import { useUserData } from '../hooks/admin/useUserData';
-import { useDashboardStats } from '../hooks/admin/useDashboardStats';
-import { useRecentActivities } from '../hooks/admin/useRecentActivities';
-import { useNotification } from '../hooks/admin/useNotifications';
-import { useSidebar } from '../hooks/admin/useSideBar';
-import { useDropdown } from '../hooks/admin/useDropDown';
-import { useLogout } from '../hooks/admin/useLogout';
-import { useActivityUtils } from '../hooks/admin/useActivityUtils';
-import { useNavigation } from '../hooks/admin/useNavigation';
+import { useAdminAuth } from '../../hooks/admin/useAdminAuth';
+import { useUserData } from '../../hooks/admin/useUserData';
+import { useDashboardStats } from '../../hooks/admin/useDashboardStats';
+import { useRecentActivities } from '../../hooks/admin/useRecentActivities';
+import { useNotification } from '../../hooks/admin/useNotifications';
+import { useSidebar } from '../../hooks/admin/useSideBar';
+import { useDropdown } from '../../hooks/admin/useDropDown';
+import { useLogout } from '../../hooks/admin/useLogout';
+import { useActivityUtils } from '../../hooks/admin/useActivityUtils';
+import { useNavigation } from '../../hooks/admin/useNavigation';
 
 const AdminDashboard = () => {
     const navigate = useNavigate();

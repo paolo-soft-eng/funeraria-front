@@ -1,12 +1,12 @@
 import React, { useContext } from 'react';
-import { EmailContext } from '../utils/EmailContext';
+import { EmailContext } from '../../utils/EmailContext';
 import { Link } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
-import { useUser } from '../hooks/client/useUser';
-import { useMenuItems } from '../hooks/client/useMenuItems';
-import { useQuantities } from '../hooks/client/useQuantities';
-import { useIntersectionObserver } from '../hooks/client/useIntersectionObserver';
-import { usePurchase } from '../hooks/client/usePurchase';
+import { useUser } from '../../hooks/client/useUser';
+import { useMenuItems } from '../../hooks/client/useMenuItems';
+import { useQuantities } from '../../hooks/client/useQuantities';
+import { useIntersectionObserver } from '../../hooks/client/useIntersectionObserver';
+import { usePurchase } from '../../hooks/client/usePurchase';
 
 const ClientMenu = () => {
     const { email } = useContext(EmailContext);
