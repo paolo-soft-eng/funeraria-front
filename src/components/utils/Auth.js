@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { EmailContext } from './components/utils/EmailContext';
+import { EmailContext } from './EmailContext';
 import { GoogleLogin } from '@react-oauth/google';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
@@ -50,8 +50,7 @@ const Auth = () => {
             setTimeout(() => navigate('/gomez/super-admin'), 1000);
       return;
     }
-
-    // Check if passwords match
+    
     if (!isLogin && formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
       setIsLoading(false);

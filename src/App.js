@@ -10,7 +10,7 @@ import ClientActiveOrders from './components/pages/client/ClientActiveOrders';
 import ClientOrderHistory from './components/pages/client/ClientOrderHistory';
 
 const ClientAppointment = lazy(() => import('./components/pages/client/ClientAppointment'));
-const Auth = lazy(() => import('./Auth'));
+const Auth = lazy(() => import('./components/utils/Auth'));
 const ClientDashboard = lazy(() => import('./components/pages/client/ClientDashboard'));
 const ClientHome = lazy(() => import('./components/pages/client/ClientHome'));
 const ClientAbout = lazy(() => import('./components/pages/client/ClientAbout'));
