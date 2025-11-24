@@ -597,42 +597,59 @@ const AdminMessages = () => {
   };
 
   const handleDeleteMessage = async (messageId) => {
-    if (!window.confirm('Are you sure you want to delete this message?')) {
+  if (!window.confirm('Are you sure you want to delete this message?')) {
+    return;
+  }
+
+  try {
+    const messageToDelete = messages.find(msg => msg.id === messageId);
+    const isAdminMsg = messageToDelete?.is_admin_message === "1" || messageToDelete?.is_admin_message === 1;
+
+    if (!isAdminMsg) {
+      setError('You can only delete your own messages');
       return;
     }
 
-    try {
-      const messageToDelete = messages.find(msg => msg.id === messageId);
-      const isAdminMsg = messageToDelete?.is_admin_message === "1" || messageToDelete?.is_admin_message === 1;
+    console.log('Deleting message:', messageId);
+    console.log('Admin email:', email);
 
-      if (!isAdminMsg) {
-        setError('You can only delete your own messages');
-        return;
+    // Try POST method as fallback since some servers block DELETE
+    const response = await axios.post(API_URL, {
+      action: 'delete',
+      messageId: messageId,
+      adminEmail: email
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
       }
+    });
 
-      const response = await axios.delete(`${API_URL}/${messageId}`);
+    console.log('Delete response:', response.data);
 
-      if (response.data.success) {
-        setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    if (response.data.success) {
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      setSelectedMessage(null);
 
-        if (messageToDelete) {
-          addActivity(
-            'Message',
-            `Deleted message in conversation with '${selectedUser.name}': "${messageToDelete.message?.substring(0, 50) || 'Image message'}${messageToDelete.message?.length > 50 ? '...' : ''}"`,
-            selectedUser.user_id
-          );
-        }
+      if (messageToDelete) {
+        addActivity(
+          'Message',
+          `Deleted message in conversation with '${selectedUser.name}': "${messageToDelete.message?.substring(0, 50) || 'Image message'}${messageToDelete.message?.length > 50 ? '...' : ''}"`,
+          selectedUser.user_id
+        );
       }
-    } catch (err) {
-      console.error('Error deleting message:', err);
-      if (err.response?.data?.error) {
-        setError(err.response.data.error);
-      } else {
-        setError('Failed to delete message. Please try again.');
-      }
+    } else {
+      setError('Failed to delete message: ' + (response.data.error || 'Unknown error'));
     }
-  };
-
+  } catch (err) {
+    console.error('Error deleting message:', err);
+    console.error('Error response:', err.response);
+    if (err.response?.data?.error) {
+      setError(err.response.data.error);
+    } else {
+      setError('Failed to delete message. Please try again.');
+    }
+  }
+};
   const handleBackToList = () => {
     setSelectedUser(null);
     setMessages([]);
@@ -685,6 +702,7 @@ const AdminMessages = () => {
   return (
     <AdminLayout currentPage="messages">
       <div className="container mx-auto px-4 py-6">
+      <div className='bg-white rounded-lg shadow-md p-4 md:p-6 mb-6'>
         {error && (
           <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
             <p>{error}</p>
@@ -1096,6 +1114,7 @@ const AdminMessages = () => {
             </div>
           </div>
         )}
+        </div>
       </div>
     </AdminLayout>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { FaTable, FaThLarge, FaUser, FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { ToastContainer } from 'react-toastify';
@@ -13,15 +13,14 @@ import { useFilters } from '../../hooks/admin/useFilters';
 import { useViewMode } from '../../hooks/admin/useViewMode';
 import { useProfilePicture } from '../../hooks/admin/useProfilePicture';
 
-
 const AdminClients = () => {
   // Use custom hooks
   const { isLoggedIn, userId, userName } = useAuth();
   const { viewMode, isMobile, setViewMode } = useViewMode('table');
 
   // Add state for itemsPerPage and currentPage
-  const [itemsPerPage, setItemsPerPage] = React.useState(isMobile ? 6 : 10);
-  const [currentPage, setCurrentPage] = React.useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(isMobile ? 6 : 10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const {
     searchTerm,
@@ -37,16 +36,20 @@ const AdminClients = () => {
   const {
     clients,
     loading,
-    fetchClients
+    fetchClients,
+    totalCount
   } = useClients(isLoggedIn, currentPage, itemsPerPage, searchTerm, statusFilter);
 
-  // Fix: Update usePagination usage to match what it actually returns
+  // Check if clients data is an array and has items
+  const clientsArray = Array.isArray(clients) ? clients : (clients.data || clients.clients || []);
+
+  // Pagination handlers
   const {
     totalPages,
     handlePageChange,
-    handleItemsPerPageChange, // This expects an event object
-    getVisiblePageNumbers  // This is what usePagination actually returns
-  } = usePagination(clients.totalCount || 0, itemsPerPage, currentPage, setCurrentPage, setItemsPerPage);
+    handleItemsPerPageChange,
+    getVisiblePageNumbers
+  } = usePagination(totalCount, itemsPerPage, currentPage, setCurrentPage, setItemsPerPage);
 
   const {
     showActionModal,
@@ -59,34 +62,25 @@ const AdminClients = () => {
   const { ProfilePicture } = useProfilePicture();
 
   // Update items per page when mobile detection changes
-  React.useEffect(() => {
+  useEffect(() => {
     setItemsPerPage(isMobile ? 6 : 10);
   }, [isMobile]);
 
   // Reset to first page when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter]);
 
-  // Fix: Create a custom handler for items per page change
-  const handleItemsPerPageChangeCustom = (newItemsPerPage) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
-  };
-
-
   const getDisplayRange = () => {
-    const totalItems = clients.totalCount || 0;
-    if (totalItems === 0) {
+    if (totalCount === 0) {
       return { start: 0, end: 0 };
     }
     const start = (currentPage - 1) * itemsPerPage + 1;
-    const end = Math.min(currentPage * itemsPerPage, totalItems);
+    const end = Math.min(currentPage * itemsPerPage, totalCount);
     return { start, end };
   };
 
   const { start, end } = getDisplayRange();
-  const totalItems = clients.totalCount || 0;
 
   if (!isLoggedIn) {
     return (
@@ -110,7 +104,7 @@ const AdminClients = () => {
   return (
     <AdminLayout currentPage="clients">
       <div className="p-4 md:p-6">
-        <div>
+        <div className='bg-white rounded-lg shadow-md p-4 md:p-6 mb-6'>
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Client Management</h1>
@@ -176,11 +170,7 @@ const AdminClients = () => {
               <span className="text-sm text-gray-600">Show:</span>
               <select
                 value={itemsPerPage}
-                onChange={(e) => {
-                  const newItemsPerPage = Number(e.target.value);
-                  setItemsPerPage(newItemsPerPage);
-                  setCurrentPage(1); // Reset to first page when changing items per page
-                }}
+                onChange={handleItemsPerPageChange}
                 className="px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value={5}>5</option>
@@ -219,7 +209,7 @@ const AdminClients = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {clients.map(client => (
+                  {clientsArray.map(client => (
                     <tr key={client.id} className="border-b hover:bg-gray-50">
                       <td className="px-4 py-2">
                         <ProfilePicture client={client} size="small" />
@@ -263,7 +253,7 @@ const AdminClients = () => {
             /* Card View */
             !loading && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {clients.map(client => (
+                {clientsArray.map(client => (
                   <div key={client.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border">
                     <div className="flex items-center space-x-3 mb-4">
                       <ProfilePicture client={client} size="large" />
@@ -307,7 +297,7 @@ const AdminClients = () => {
           )}
 
           {/* No results message */}
-          {!loading && clients.length === 0 && (
+          {!loading && clientsArray.length === 0 && (
             <div className="text-center py-10">
               <p className="text-gray-500">
                 {searchTerm || statusFilter ? 'No clients found matching your criteria' : 'No clients found'}
@@ -323,45 +313,50 @@ const AdminClients = () => {
             </div>
           )}
 
-          {/* Pagination */}
-          {!loading && totalPages > 0 && (
+          {/* Pagination - FIXED: Always show when there are clients */}
+          {!loading && clientsArray.length > 0 && (
             <div className="flex flex-col sm:flex-row justify-between items-center mt-6 gap-4">
               <div className="text-sm text-gray-600">
-                Showing {start} to {end} of {totalItems} clients
+                Showing {start} to {end} of {totalCount} clients
               </div>
 
               <div className="flex items-center space-x-2">
+                {/* Previous Button */}
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <FaChevronLeft className="w-4 h-4" />
+                  <FaChevronLeft className="w-3 h-3 mr-1" />
+                  Previous
                 </button>
 
-                {/* Fix: Use getVisiblePageNumbers instead of getVisiblePages */}
+                {/* Page Numbers */}
                 {getVisiblePageNumbers().map((page, index) => (
                   <button
                     key={index}
                     onClick={() => typeof page === 'number' && handlePageChange(page)}
                     disabled={page === '...'}
-                    className={`px-3 py-2 border rounded text-sm ${page === currentPage
-                        ? 'bg-blue-500 text-white border-blue-500'
+                    className={`px-3 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      page === currentPage
+                        ? 'bg-blue-600 text-white'
                         : page === '...'
-                          ? 'cursor-default'
-                          : 'hover:bg-gray-50'
-                      }`}
+                          ? 'cursor-default text-gray-500'
+                          : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                    }`}
                   >
                     {page}
                   </button>
                 ))}
 
+                {/* Next Button */}
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <FaChevronRight className="w-4 h-4" />
+                  Next
+                  <FaChevronRight className="w-3 h-3 ml-1" />
                 </button>
               </div>
             </div>
@@ -395,10 +390,11 @@ const AdminClients = () => {
                 Cancel
               </button>
               <button
-                className={`px-4 py-2 rounded text-white text-sm ${selectedClient.action === "disable"
+                className={`px-4 py-2 rounded text-white text-sm ${
+                  selectedClient.action === "disable"
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-green-600 hover:bg-green-700"
-                  }`}
+                }`}
                 onClick={handleConfirmAction}
               >
                 {selectedClient.action === "disable" ? "Disable" : "Enable"}

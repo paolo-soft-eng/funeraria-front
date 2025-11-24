@@ -239,6 +239,7 @@ export default function ClientMessages() {
       }
     }
   }, [selectedAdmin, userId, currentMessages, markMessagesAsRead, currentMarkAsRead]);
+  
 
   // Handle admin selection
   const handleAdminClick = (admin) => {
@@ -571,9 +572,6 @@ export default function ClientMessages() {
             {/* Messages */}
             {selectedAdmin && (
               <div className="space-y-4">
-                <div className="text-center text-gray-600 mb-4">
-                  Total Messages: {messageCount}
-                </div>
                 {currentLoading ? (
                   <div className="flex justify-center items-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>

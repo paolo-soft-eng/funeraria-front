@@ -248,12 +248,25 @@ const AdminAnalytics = () => {
   // Generate print content with paper size support
   const generatePrintContent = () => {
     const recentActivity = analyticsData.recentActivity || [];
-    const currentDate = new Date().toLocaleDateString();
+    const currentDate = new Date().toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+
+    // Format date to "Month Day, Year" format
+    const formatLongDate = (date) => {
+      return new Date(date).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    };
 
     // Get date range based on filters or time range
     let dateRangeText = '';
     if (filters.startDate && filters.endDate) {
-      dateRangeText = `${new Date(filters.startDate).toLocaleDateString()} - ${new Date(filters.endDate).toLocaleDateString()}`;
+      dateRangeText = `${formatLongDate(filters.startDate)} - ${formatLongDate(filters.endDate)}`;
     } else {
       const now = new Date();
       let startDate;
@@ -275,7 +288,7 @@ const AdminAnalytics = () => {
         default:
           startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       }
-      dateRangeText = `${startDate.toLocaleDateString()} - ${now.toLocaleDateString()}`;
+      dateRangeText = `${formatLongDate(startDate)} - ${formatLongDate(now)}`;
     }
 
     // Calculate total revenue from recent activity
@@ -389,7 +402,8 @@ const AdminAnalytics = () => {
           .total-revenue {
             font-size: 16px;
             color: #000;
-            margin: 0;
+            text-align: right;
+            margin-right: 40px;
             font-weight: bold;
           }
           .signature {
@@ -450,7 +464,7 @@ const AdminAnalytics = () => {
         <div class="main-content">
           <!-- Transaction Table -->
           <div class="transaction-section">
-            <h2>Sales Report</h2>
+            <h2>Sales Report of ${dateRangeText}</h2>
             
             ${recentActivity.length > 0 ? `
               <table>
@@ -903,7 +917,6 @@ const AdminAnalytics = () => {
                       <option value="">All Status</option>
                       <option value="paid">Paid</option>
                       <option value="pending">Pending</option>
-                      <option value="failed">Failed</option>
                     </select>
                   </div>
 

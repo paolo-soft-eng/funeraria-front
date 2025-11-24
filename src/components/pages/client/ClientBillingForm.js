@@ -218,7 +218,7 @@ const BillingForm = ({
                     onChange={handleInputChange}
                     onBlur={handleBlur}
                     className={getFieldClassName('phone')}
-                    placeholder="Enter your phone number"
+                    placeholder="e.g., 912 345 6789"
                     disabled={disabled}
                 />
                 {errors.phone && touched.phone && (

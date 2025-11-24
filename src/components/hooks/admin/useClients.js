@@ -6,7 +6,7 @@ export const useClients = (isLoggedIn, currentPage, itemsPerPage, searchTerm, st
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const [totalCount, setTotalCount] = useState(0); // Changed from totalItems to totalCount
 
   const fetchClients = async () => {
     if (!isLoggedIn) return;
@@ -26,7 +26,7 @@ export const useClients = (isLoggedIn, currentPage, itemsPerPage, searchTerm, st
       if (response.data.success) {
         setClients(response.data.data || []);
         setTotalPages(response.data.pagination.total_pages);
-        setTotalItems(response.data.pagination.total_items);
+        setTotalCount(response.data.pagination.total_items); // Changed from setTotalItems to setTotalCount
       } else {
         setClients([]);
         toast.error('Failed to fetch clients ❌');
@@ -48,7 +48,7 @@ export const useClients = (isLoggedIn, currentPage, itemsPerPage, searchTerm, st
     clients,
     loading,
     totalPages,
-    totalItems,
+    totalCount, // Changed from totalItems to totalCount
     fetchClients,
     setClients
   };

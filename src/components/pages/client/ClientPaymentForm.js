@@ -6,7 +6,6 @@ const PAYMENT_METHODS = {
   GCASH: 'gcash',
   GRAB_PAY: 'grab_pay',
   PAYMAYA: 'paymaya',
-  COD: 'cod'
 };
 
 

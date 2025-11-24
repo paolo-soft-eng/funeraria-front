@@ -39,8 +39,8 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
     },
     customer_phone: {
       required: true,
-      pattern: /^\+?[\d\s-()]{11,}$/,
-      message: 'Please enter a valid phone number (at least 11 digits)'
+      pattern: /^\+?[\d\s-()]{10,}$/,
+      message: 'Please enter a valid phone number (at least 10 digits)'
     }
   };
 
@@ -403,7 +403,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                         : 'border-gray-300'
                     }`}
                     required
-                    placeholder="e.g., +63 912 345 6789 or 0912-345-6789"
+                    placeholder="e.g., 912 345 6789"
                   />
                   {validationErrors.customer_phone && (
                     <p className="mt-1 text-sm text-red-600">{validationErrors.customer_phone}</p>

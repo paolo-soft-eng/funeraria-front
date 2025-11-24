@@ -28,7 +28,7 @@ const PaymentFailed = () => {
           
           <div className="mt-6">
             <Link
-              to="/dashboard-client/cart"
+              to="/gomez/dashboard-client/cart"
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
               Try Again
@@ -37,7 +37,7 @@ const PaymentFailed = () => {
           
           <div className="mt-4">
             <Link
-              to="/dashboard-client/menu"
+              to="/gomez/dashboard-client/menu"
               className="text-sm text-gray-600 hover:text-gray-500"
             >
               Continue Shopping
