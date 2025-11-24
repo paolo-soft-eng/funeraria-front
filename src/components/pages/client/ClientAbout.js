@@ -217,10 +217,10 @@ const ClientAbout = () => {
                         <div className="text-center delay-100">
                             <img
                                 src="/assets/pawlo.jpg"
-                                alt="Miguel Gomez - Funeral Director and Owner of Gomez Funeral Home"
+                                alt="Pawlo Villanueva - Funeral Director and Owner of Gomez Funeral Home"
                                 className="h-48 w-48 rounded-full mx-auto mb-4 transform transition-transform hover:scale-105 object-cover"
                             />
-                            <h4 className="text-xl font-semibold text-gray-800">Miguel Gomez</h4>
+                            <h4 className="text-xl font-semibold text-gray-800">Pawlo Villanueva</h4>
                             <p className="text-gray-600">Funeral Director / Owner</p>
                         </div>
                         <div className="text-center delay-300">
@@ -229,7 +229,7 @@ const ClientAbout = () => {
                                 alt="Elena Gomez - Family Services Director at Gomez Funeral Home"
                                 className="h-48 w-48 rounded-full mx-auto mb-4 transform transition-transform hover:scale-105 object-cover"
                             />
-                            <h4 className="text-xl font-semibold text-gray-800">Elena Gomez</h4>
+                            <h4 className="text-xl font-semibold text-gray-800">Reynan Jumaylab</h4>
                             <p className="text-gray-600">Family Services Director</p>
                         </div>
                         <div className="text-center delay-500">
@@ -238,7 +238,7 @@ const ClientAbout = () => {
                                 alt="Carlos Mendez - Grief Counselor at Gomez Funeral Home"
                                 className="h-48 w-48 rounded-full mx-auto mb-4 transform transition-transform hover:scale-105 object-cover"
                             />
-                            <h4 className="text-xl font-semibold text-gray-800">Carlos Mendez</h4>
+                            <h4 className="text-xl font-semibold text-gray-800">Rosnin Bagot</h4>
                             <p className="text-gray-600">Grief Counselor</p>
                         </div>
                     </div>

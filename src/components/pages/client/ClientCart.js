@@ -130,7 +130,7 @@ const ClientCart = () => {
         <div className="flex flex-col min-h-screen">
             <div className="container mx-auto p-4 flex-grow">
                 <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl sm:tracking-tight lg:text-5xl text-center mb-6">
-                    Shopping Cart
+                    Customized Cart
                 </h1>
 
                 {error && (

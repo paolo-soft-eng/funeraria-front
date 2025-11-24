@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 
-// FIX 3: Accept processedMessageIds for deduplication
 export const useMessages = (userId, selectedAdmin, processedMessageIds) => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -35,7 +34,9 @@ export const useMessages = (userId, selectedAdmin, processedMessageIds) => {
 
           return {
             ...msg,
-            id: msg.id || `db_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+            id: msg.id || `db_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            // Ensure reply information is included
+            replyTo: msg.replyTo || null
           };
         });
 
@@ -55,7 +56,7 @@ export const useMessages = (userId, selectedAdmin, processedMessageIds) => {
     } finally {
       setLoading(false);
     }
-  }, [userId, selectedAdmin, processedMessageIds]); // Add processedMessageIds to dependency array
+  }, [userId, selectedAdmin, processedMessageIds]);
 
   const countMessages = useCallback(async (adminId, clientId) => {
     try {
@@ -97,7 +98,7 @@ export const useMessages = (userId, selectedAdmin, processedMessageIds) => {
 
       return [...prev, message];
     });
-  }, [processedMessageIds]); // Add processedMessageIds to dependencies!
+  }, [processedMessageIds]);
 
   const removeMessage = useCallback((messageId) => {
     setMessages(prev => {
@@ -144,4 +145,4 @@ export const useMessages = (userId, selectedAdmin, processedMessageIds) => {
     markAsRead,
     setError
   };
-};
+}

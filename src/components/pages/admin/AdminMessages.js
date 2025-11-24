@@ -114,48 +114,58 @@ const AdminMessages = () => {
     };
 
     ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'message') {
-        // Check if this message is for the current conversation
-        const isForCurrentUser = selectedUser &&
-          ((data.isAdmin && data.senderId === 'admin_' + userId && selectedUser.user_id === data.receiverId) ||
-            (!data.isAdmin && data.senderId === selectedUser.user_id));
+  const data = JSON.parse(event.data);
+  
+  if (data.type === 'message') {
+    // Check if this message is for the current conversation
+    const isForCurrentUser = selectedUser &&
+      ((data.isAdmin && data.senderId === 'admin_' + userId && selectedUser.user_id === data.receiverId) ||
+        (!data.isAdmin && data.senderId === selectedUser.user_id));
 
-        if (isForCurrentUser || data.isOwnMessage) {
-          setMessages(prev => {
-            // If this is a confirmation for our optimistic update, replace the temp message
-            if (data.tempId) {
-              const filtered = prev.filter(msg => msg.id !== data.tempId);
-              return [...filtered, {
-                id: data.id,
-                message: data.message,
-                timestamp: data.timestamp,
-                image_path: data.imageUrl,
-                is_admin_message: data.is_admin_message ? 1 : 0,
-                reply_to_id: data.replyToId,
-                reply_to_message: data.replyToMessage,
-                reply_sender_name: data.replySenderName
-              }];
-            }
-
-            // Avoid duplicates for regular messages
-            if (prev.some(msg => msg.id === data.id)) {
-              return prev;
-            }
-            return [...prev, {
-              id: data.id,
-              message: data.message,
-              timestamp: data.timestamp,
-              image_path: data.imageUrl,
-              is_admin_message: data.is_admin_message ? 1 : 0,
-              reply_to_id: data.replyToId,
-              reply_to_message: data.replyToMessage,
-              reply_sender_name: data.replySenderName
-            }];
-          });
+    if (isForCurrentUser || data.isOwnMessage) {
+      setMessages(prev => {
+        // If this is a confirmation for our optimistic update, replace the temp message
+        if (data.tempId) {
+          const filtered = prev.filter(msg => msg.id !== data.tempId);
+          
+          const newMessage = {
+            id: data.id,
+            message: data.message,
+            timestamp: data.timestamp,
+            image_path: data.imageUrl,
+            is_admin_message: data.is_admin_message ? 1 : 0,
+            reply_to_id: data.replyToId,
+            reply_to_message: data.replyToMessage,
+            reply_image_path: data.replyImagePath,
+            reply_sender_name: data.replySenderName,
+            sender_name: data.senderName || (data.isAdmin ? "You" : selectedUser.name)
+          };
+          return [...filtered, newMessage];
         }
-      }
-    };
+
+        // Avoid duplicates for regular messages
+        if (prev.some(msg => msg.id === data.id)) {
+          return prev;
+        }
+        
+        const newMessage = {
+          id: data.id,
+          message: data.message,
+          timestamp: data.timestamp,
+          image_path: data.imageUrl,
+          is_admin_message: data.is_admin_message ? 1 : 0,
+          reply_to_id: data.replyToId,
+          reply_to_message: data.replyToMessage,
+          reply_image_path: data.replyImagePath,
+          reply_sender_name: data.replySenderName,
+          sender_name: data.senderName || (data.isAdmin ? "You" : selectedUser.name)
+        };
+
+        return [...prev, newMessage];
+      });
+    }
+  }
+};
 
     return () => {
       if (ws) {
@@ -257,7 +267,6 @@ const AdminMessages = () => {
 
   const handleCopyMessage = (text) => {
     navigator.clipboard.writeText(text).then(() => {
-      console.log('Message copied to clipboard');
     }).catch(err => {
       console.error('Failed to copy message: ', err);
     });
@@ -268,7 +277,8 @@ const AdminMessages = () => {
 
     setReplyingTo({
       id: message.id,
-      text: message.message,
+      text: message.message || '',  // ← Make sure to include message text
+      imagePath: message.image_path,
       sender: isAdminMsg ? 'You' : selectedUser.name,
       senderName: isAdminMsg ? 'You' : selectedUser.name
     });
@@ -389,76 +399,93 @@ const AdminMessages = () => {
   };
 
   const sendImageMessage = async () => {
-    if (!selectedFile || !selectedUser) return;
+  if (!selectedFile || !selectedUser) return;
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const formData = new FormData();
-      formData.append('image', selectedFile);
+    const formData = new FormData();
+    formData.append('image', selectedFile);
 
-      const uploadResponse = await fetch('http://localhost/funeraria/api/components/upload.php', {
-        method: 'POST',
-        body: formData
-      });
+    const uploadResponse = await fetch('http://localhost/funeraria/api/components/upload.php', {
+      method: 'POST',
+      body: formData
+    });
 
-      const uploadData = await uploadResponse.json();
+    const uploadData = await uploadResponse.json();
 
-      if (uploadData.status !== 'success') {
-        throw new Error(uploadData.message || 'Failed to upload image');
-      }
+    if (uploadData.status !== 'success') {
+      throw new Error(uploadData.message || 'Failed to upload image');
+    }
 
-      const imageUrl = uploadData.imageUrl;
+    const imagePath = uploadData.imageUrl;
 
+    // Store reply info before clearing
+    const replyToId = replyingTo?.id || null;
+    const replyToMessage = replyingTo?.text || null;
+    const replyImagePath = replyingTo?.imagePath || null;
+    const replySenderName = replyingTo?.senderName || null;
+
+    // Create temp message for optimistic update
+    const tempMessageId = 'temp-' + Date.now();
+    const tempMessage = {
+      id: tempMessageId,
+      message: replyText || 'Image message',
+      timestamp: new Date().toISOString(),
+      image_path: imagePath,
+      is_admin_message: 1,
+      reply_to_id: replyToId,
+      sender_name: "You",
+      reply_to_message: replyToMessage,           // ← Add this
+      reply_image_path: replyImagePath,           // ← Add this
+      reply_sender_name: replySenderName          // ← Add this
+    };
+
+    // Add optimistic update
+    setMessages(prev => [...prev, tempMessage]);
+
+    // Clear input immediately
+    setReplyText('');
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setReplyingTo(null);
+
+    // Send via WebSocket with reply info
+    if (socket && isConnected) {
       const messageData = {
-        action: 'reply',
-        userId: selectedUser.user_id,
+        type: 'message',
+        senderId: 'admin_' + userId,
+        receiverId: selectedUser.user_id,
         message: replyText || 'Image message',
-        adminEmail: email,
-        imageUrl: imageUrl
+        imageUrl: imagePath,
+        isAdmin: true,
+        timestamp: new Date().toISOString(),
+        replyToId: replyToId,
+        replyToMessage: replyToMessage,           // ← Add this
+        replyImagePath: replyImagePath,           // ← Add this
+        replySenderName: replySenderName,         // ← Add this
+        tempId: tempMessageId
       };
 
-      // Add reply reference if replying
-      if (replyingTo) {
-        messageData.replyTo = replyingTo.id;
-      }
+      socket.send(JSON.stringify(messageData));
 
-      const response = await axios.post(API_URL, messageData);
-
-      if (response.data.success) {
-        fetchUserMessages(selectedUser.user_id);
-        setReplyText('');
-        setSelectedFile(null);
-        setPreviewUrl(null);
-        setReplyingTo(null);
-
-        addActivity(
-          'Message',
-          `Sent image message to client '${selectedUser.name}'`,
-          selectedUser.user_id
-        );
-
-        // Send via WebSocket
-        if (socket && isConnected) {
-          socket.send(JSON.stringify({
-            type: 'message',
-            senderId: 'admin_' + userId,
-            receiverId: selectedUser.user_id,
-            message: replyText || 'Image message',
-            imageUrl: imageUrl,
-            isAdmin: true,
-            timestamp: new Date().toISOString(),
-            replyToId: replyingTo?.id || null
-          }));
-        }
-      }
-    } catch (err) {
-      console.error('Error sending image message:', err);
-      setError('Failed to send image message. Please try again.');
-    } finally {
-      setLoading(false);
+      addActivity(
+        'Message',
+        `Sent image message to client '${selectedUser.name}'`,
+        selectedUser.user_id
+      );
+    } else {
+      setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
+      setError('WebSocket not connected. Please refresh the page.');
     }
-  };
+  } catch (err) {
+    console.error('Error sending image message:', err);
+    setError('Failed to send image message. Please try again.');
+    fetchUserMessages(selectedUser.user_id);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleReplySubmit = async (e) => {
     e.preventDefault();
@@ -473,22 +500,27 @@ const AdminMessages = () => {
     try {
       const messageId = 'temp-' + Date.now();
 
+      // Get reply information before clearing
+      const replyToId = replyingTo?.id || null;
+      const replyToMessage = replyingTo?.text || null;
+      const replyImagePath = replyingTo?.imagePath || null;
+      const replySenderName = replyingTo?.senderName || null;
+
       // OPTIMISTIC UPDATE: Add message to UI immediately
       const tempMessage = {
         id: messageId,
         message: replyText,
         timestamp: new Date().toISOString(),
         is_admin_message: 1,
-        reply_to_id: replyingTo?.id || null,
+        reply_to_id: replyToId,
         sender_name: "You",
-        // Include reply information for display
-        reply_to_message: replyingTo?.text || null,
-        reply_sender_name: replyingTo?.senderName || null
+        reply_to_message: replyToMessage,
+        reply_image_path: replyImagePath,  // ← Add this
+        reply_sender_name: replySenderName
       };
 
       setMessages(prev => [...prev, tempMessage]);
       const messageText = replyText;
-      const replyToId = replyingTo?.id || null;
 
       // Clear input immediately for better UX
       setReplyText('');
@@ -503,7 +535,7 @@ const AdminMessages = () => {
         };
         socket.send(JSON.stringify(registerMessage));
 
-        // Send the actual message
+        // Send the actual message with reply info
         const messageData = {
           type: 'message',
           senderId: 'admin_' + userId,
@@ -512,7 +544,10 @@ const AdminMessages = () => {
           isAdmin: true,
           timestamp: new Date().toISOString(),
           replyToId: replyToId,
-          tempId: messageId // Include temp ID to replace optimistic update
+          replyToMessage: replyToMessage,           // ← Add this
+          replyImagePath: replyImagePath,           // ← Add this
+          replySenderName: replySenderName,          // ← Add this
+          tempId: messageId
         };
 
         socket.send(JSON.stringify(messageData));
@@ -524,44 +559,42 @@ const AdminMessages = () => {
         );
       } else {
         // Fallback to HTTP if WebSocket fails
-        // Remove temp message before HTTP request
         setMessages(prev => prev.filter(msg => msg.id !== messageId));
         await sendViaHTTP(messageText, replyToId, messageId);
       }
     } catch (err) {
       console.error('Error sending reply:', err);
       setError('Failed to send reply. Please try again.');
-      // Refresh messages on error
       fetchUserMessages(selectedUser.user_id);
     }
   };
 
   const sendViaHTTP = async (messageText, replyToId, tempMessageId) => {
-  const messageData = {
-    action: 'reply',
-    userId: selectedUser.user_id,
-    message: messageText,
-    adminEmail: email
+    const messageData = {
+      action: 'reply',
+      userId: selectedUser.user_id,
+      message: messageText,
+      adminEmail: email
+    };
+
+    if (replyToId) {
+      messageData.replyTo = replyToId;
+    }
+
+    const response = await axios.post(API_URL, messageData);
+
+    if (response.data.success) {
+      // Remove the temp message and refresh to get the real message
+      setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
+      fetchUserMessages(selectedUser.user_id);
+
+      addActivity(
+        'Message',
+        `Sent message to client '${selectedUser.name}': "${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"`,
+        selectedUser.user_id
+      );
+    }
   };
-
-  if (replyToId) {
-    messageData.replyTo = replyToId;
-  }
-
-  const response = await axios.post(API_URL, messageData);
-
-  if (response.data.success) {
-    // Remove the temp message and refresh to get the real message
-    setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
-    fetchUserMessages(selectedUser.user_id);
-
-    addActivity(
-      'Message',
-      `Sent message to client '${selectedUser.name}': "${messageText.substring(0, 50)}${messageText.length > 50 ? '...' : ''}"`,
-      selectedUser.user_id
-    );
-  }
-};
 
   const handleDeleteMessage = async (messageId) => {
     if (!window.confirm('Are you sure you want to delete this message?')) {
@@ -740,12 +773,34 @@ const AdminMessages = () => {
                       <CornerUpLeft size={14} className="mr-1" />
                       Replying to {replyingTo.sender}
                     </div>
-                    <p className="text-sm text-blue-600">
-                      {replyingTo.text.length > 60
-                        ? `${replyingTo.text.substring(0, 60)}...`
-                        : replyingTo.text
-                      }
-                    </p>
+
+                    {/* Show actual image if replying to an image message */}
+                    {replyingTo.imagePath ? (
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-1">
+                          <Image size={14} className="text-blue-600" />
+                          <span className="text-sm text-blue-600 font-medium">Image:</span>
+                        </div>
+                        <img
+                          src={
+                            replyingTo.imagePath.startsWith('http')
+                              ? replyingTo.imagePath
+                              : `http://localhost/funeraria/api/components/${replyingTo.imagePath}`
+                          }
+                          alt="Replied content"
+                          className="w-12 h-12 object-cover rounded border border-blue-300"
+                        />
+                      </div>
+                    ) : replyingTo.text ? (
+                      <p className="text-sm text-blue-600">
+                        {replyingTo.text.length > 60
+                          ? `${replyingTo.text.substring(0, 60)}...`
+                          : replyingTo.text
+                        }
+                      </p>
+                    ) : (
+                      <p className="text-sm text-blue-600 italic">Image message</p>
+                    )}
                   </div>
                   <button
                     onClick={cancelReply}
@@ -779,12 +834,12 @@ const AdminMessages = () => {
                         className={`flex ${isAdminMsg ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[75%] rounded-lg p-3 relative ${isAdminMsg ? "bg-blue-500 text-white" : "bg-gray-100 text-black"
+                          className={`max-w-[75%] rounded-lg p-3 relative ${isAdminMsg ? "bg-gray-200 text-black" : "bg-gray-200 text-black"
                             }`}
                           onClick={() => handleMessageClick(msg)}
                         >
                           <div className="flex justify-between items-start mb-1">
-                            <span className="font-medium">
+                            <span className="font-medium text-black">
                               {isAdminMsg ? "You" : selectedUser.name}
                             </span>
                             {isAdminMsg && (
@@ -793,34 +848,66 @@ const AdminMessages = () => {
                                   e.stopPropagation();
                                   handleDeleteMessage(msg.id);
                                 }}
-                                className="ml-2 opacity-50 hover:opacity-100"
+                                className="ml-2 opacity-50 hover:opacity-100 text-black"
                                 title="Delete message"
                               >
                                 <Trash2 size={16} />
                               </button>
                             )}
                           </div>
+                          {msg.reply_to_id && (
+                            <div className={`text-xs mb-2 border-l-2 pl-2 ${isAdminMsg ? 'border-blue-500' : 'border-blue-500'}`}>
+                              <div className="font-medium text-gray-800 mb-1">
+                                Replying to {msg.reply_sender_name === "You" || msg.reply_sender_name === "Admin" ? 'yourself' : msg.reply_sender_name}
+                              </div>
 
-                          {/* Reply Preview */}
-                          {msg.reply_to_id && msg.reply_to_message && (
-                            <div className={`text-xs mb-2 border-l-2 pl-2 ${isAdminMsg ? 'border-blue-200 text-blue-200' : 'border-blue-400 text-gray-600'}`}>
-                              <div className="font-medium">
-                                Replying to {msg.reply_sender_id === userId ? 'yourself' : msg.reply_sender_name}
-                              </div>
-                              <div className="truncate opacity-75">
-                                {msg.reply_to_message.length > 50
-                                  ? `${msg.reply_to_message.substring(0, 50)}...`
-                                  : msg.reply_to_message
-                                }
-                              </div>
+                              {/* Show image if the replied message has an image */}
+                              {msg.reply_image_path ? (
+                                <div className="bg-blue-50 p-2 rounded border border-blue-200">
+                                  <div className="flex items-center space-x-2 mb-1">
+                                    <Image size={12} className="text-blue-600 flex-shrink-0" />
+                                    <span className="text-blue-600 text-xs font-medium">Image:</span>
+                                  </div>
+                                  <img
+                                    src={
+                                      msg.reply_image_path.startsWith('http')
+                                        ? msg.reply_image_path
+                                        : `http://localhost/funeraria/api/components/${msg.reply_image_path}`
+                                    }
+                                    alt="Replied image"
+                                    className="w-16 h-16 object-cover rounded border border-blue-300 cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleImageClick(msg.reply_image_path);
+                                    }}
+                                  />
+                                </div>
+                              ) : msg.reply_to_message ? (
+                                // Show text preview if available
+                                <div className="text-gray-600 bg-blue-50 p-2 rounded border border-blue-200">
+                                  {msg.reply_to_message.length > 50
+                                    ? `${msg.reply_to_message.substring(0, 50)}...`
+                                    : msg.reply_to_message
+                                  }
+                                </div>
+                              ) : (
+                                // Fallback if no message or image
+                                <div className="text-gray-500 italic text-xs bg-blue-50 p-2 rounded">
+                                  Original message not available
+                                </div>
+                              )}
                             </div>
                           )}
 
-                          <p className="whitespace-pre-line">{msg.message}</p>
+                          <p className="whitespace-pre-line text-black">{msg.message}</p>
                           {msg.image_path && (
                             <div className="relative mt-2 group">
                               <img
-                                src={`http://localhost/funeraria/api/components/${msg.image_path}`}
+                                src={
+                                  msg.image_path.startsWith('http')
+                                    ? msg.image_path
+                                    : `http://localhost/funeraria/api/components/${msg.image_path}`
+                                }
                                 alt="Attached"
                                 className="w-60 h-auto rounded cursor-pointer hover:opacity-90 transition-opacity"
                                 onClick={(e) => {
@@ -838,7 +925,7 @@ const AdminMessages = () => {
                             </div>
                           )}
                           <div
-                            className={`text-xs mt-1 ${isAdminMsg ? "text-white" : "text-black"
+                            className={`text-xs mt-1 ${isAdminMsg ? "text-black" : "text-black"
                               }`}
                           >
                             {formatDate(msg.timestamp)}

@@ -192,7 +192,7 @@ const AdminAppointments = () => {
                             size="md"
                         />
                         <div className="ml-4 flex-1 min-w-0">
-                            <h3 className="text-lg font-bold text-gray-900 truncate mb-1">{appointment.user_name}</h3>
+                            <h3 className="text-lg font-bold text-gray-600 truncate mb-1">{appointment.user_name}</h3>
                             <p className="text-sm text-gray-500 truncate flex items-center gap-1.5">
                                 <FaEnvelope className="w-3 h-3" />
                                 {appointment.user_email}

@@ -21,7 +21,17 @@ import {
   Package,
   Clock,
   CheckCircle,
-  BriefcaseBusiness
+  BriefcaseBusiness,
+  Flower,
+  Car,
+  Users,
+  PackagePlus,
+  Package2,
+  LucidePackage,
+  Layers,
+  Box,
+  Archive,
+  ShoppingBag
 } from 'lucide-react';
 import { EmailContext } from '../../utils/EmailContext';
 
@@ -35,6 +45,7 @@ const ClientDashboard = () => {
   const [notification, setNotification] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isCartExpanded, setIsCartExpanded] = useState(false);
+  const [isServicesExpanded, setIsServicesExpanded] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef(null);
@@ -100,19 +111,34 @@ const ClientDashboard = () => {
       setCurrentPage('Cart');
     }
     
-    if (path === 'cart' || path === 'active-orders' || path === 'order-history') {
+    if (path === 'cart' || path === 'active-orders' || path === 'order-history' || path === 'funeral-cart') {
       setIsCartExpanded(true);
     }
+    
+    if (path === 'services' || path === 'customized-services') {
+      setIsServicesExpanded(true);
+    }
   }, [location.pathname]);
+
+  // Helper function to check if a route is active
+  const isRouteActive = (routeName) => {
+    const currentPath = location.pathname;
+    return currentPath === `/gomez/dashboard-client/${routeName}`;
+  };
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
   const toggleCartAccordion = () => setIsCartExpanded(!isCartExpanded);
+  const toggleServicesAccordion = () => setIsServicesExpanded(!isServicesExpanded);
   const handleLogoutClick = () => { setShowLogoutModal(true); setIsDropdownOpen(false); };
   const handleLogoutConfirm = async () => { 
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('email');
+    localStorage.removeItem('token'); 
+    
     showNotification('Successfully logged out!', 'success'); 
     setShowLogoutModal(false); 
-    setTimeout(() => navigate('/gomez/auth'), 1000); 
+    setTimeout(() => navigate('/gomez/auth', { replace: true }), 1000); 
   };
   const handleLogoutCancel = () => setShowLogoutModal(false);
 
@@ -127,18 +153,27 @@ const ClientDashboard = () => {
   const mainNavItems = [
     { name: 'home', icon: <Home size={20} />, label: 'Home' },
     { name: 'about', icon: <Info size={20} />, label: 'About' },
-    { name: 'services', icon: <BriefcaseBusiness size={20} />, label: 'Services' },
-    { name: 'appointments', icon: <Clock size={20} />, label: 'Appointments' }, // <<-- Added
+    { 
+      name: 'services', 
+      icon: <BriefcaseBusiness size={20} />, 
+      label: 'Services',
+      hasAccordion: true,
+      subItems: [
+        { name: 'services', icon: <BookOpen size={18} />, label: 'Full Packages' },
+        { name: 'services/customized-services', icon: <Flower size={18} />, label: 'Customized Packages' },
+      ]
+    },
+    { name: 'appointments', icon: <Clock size={20} />, label: 'Appointments' }, 
     { 
       name: 'cart', 
       icon: <ShoppingCart size={20} />, 
       label: 'Cart',
       hasAccordion: true,
       subItems: [
-        { name: 'cart', icon: <ShoppingCart size={18} />, label: 'Shopping Cart' },
-        { name: 'funeral-cart', icon: <Briefcase size={18} />, label: 'Package Cart' },
-        { name: 'active-orders', icon: <Clock size={18} />, label: 'Active Orders' },
-        { name: 'order-history', icon: <CheckCircle size={18} />, label: 'Order History' }
+        { name: 'cart', icon: <ShoppingBag size={18} />, label: 'Customized Package Cart' },
+        { name: 'cart/funeral-cart', icon: <Briefcase size={18} />, label: 'Full Package Cart' },
+        { name: 'cart/active-orders', icon: <Clock size={18} />, label: 'Active Orders' },
+        { name: 'cart/order-history', icon: <CheckCircle size={18} />, label: 'Order History' }
       ]
     },
     { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
@@ -233,22 +268,38 @@ const ClientDashboard = () => {
                   {item.hasAccordion ? (
                     <>
                       <button
-                        onClick={toggleCartAccordion}
+                        onClick={item.name === 'cart' ? toggleCartAccordion : toggleServicesAccordion}
                         className={`flex items-center w-full px-5 py-4 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}
                       >
                         <div className="flex items-center">
                           <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
                           {isSidebarOpen && <span>{item.label}</span>}
                         </div>
-                        {isSidebarOpen && <span className="transition-transform duration-200">{isCartExpanded ? <ChevronDown size={18}/> : <ChevronRight size={18}/>}</span>}
+                        {isSidebarOpen && (
+                          <span className="transition-transform duration-200">
+                            {(item.name === 'cart' ? isCartExpanded : isServicesExpanded) ? 
+                              <ChevronDown size={18}/> : <ChevronRight size={18}/>
+                            }
+                          </span>
+                        )}
                       </button>
 
                       {isSidebarOpen && (
-                        <div className={`overflow-hidden transition-all duration-300 ${isCartExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                        <div className={`overflow-hidden transition-all duration-300 ${
+                          (item.name === 'cart' ? isCartExpanded : isServicesExpanded) ? 
+                            'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                        }`}>
                           <ul className="bg-gray-900 py-1">
                             {item.subItems.map((subItem) => (
                               <li key={subItem.name}>
-                                <Link to={`/gomez/dashboard-client/${subItem.name}`} className={`flex items-center px-5 py-3 pl-12 hover:bg-gray-700 transition-colors text-sm ${location.pathname.includes(subItem.name) ? 'bg-gray-700 border-l-4 border-indigo-500' : ''}`}>
+                                <Link 
+                                  to={`/gomez/dashboard-client/${subItem.name}`} 
+                                  className={`flex items-center px-5 py-3 pl-12 transition-colors text-xs ${
+                                    isRouteActive(subItem.name)
+                                      ? 'bg-gray-700 border-l-4 border-indigo-500' 
+                                      : 'hover:bg-gray-700'
+                                  }`}
+                                >
                                   <span className="mr-3">{subItem.icon}</span>
                                   <span>{subItem.label}</span>
                                 </Link>
@@ -259,7 +310,12 @@ const ClientDashboard = () => {
                       )}
                     </>
                   ) : (
-                    <Link to={`/gomez/dashboard-client/${item.name}`} className={`flex items-center px-5 py-4 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'} ${location.pathname.includes(item.name) ? 'bg-gray-700 border-l-4 border-indigo-500' : ''}`}>
+                    <Link 
+                      to={`/gomez/dashboard-client/${item.name}`} 
+                      className={`flex items-center px-5 py-4 hover:bg-gray-700 transition-colors ${
+                        isSidebarOpen ? 'justify-start' : 'justify-center'
+                      } ${isRouteActive(item.name) ? 'bg-gray-700 border-l-4 border-indigo-500' : ''}`}
+                    >
                       <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
                       {isSidebarOpen && <span>{item.label}</span>}
                     </Link>
@@ -270,7 +326,12 @@ const ClientDashboard = () => {
           </nav>
 
           <div className="p-4 mt-auto">
-            <button onClick={handleLogoutClick} className={`flex items-center text-red-400 hover:text-red-300 transition-colors ${isSidebarOpen ? 'justify-start w-full' : 'justify-center w-full'}`}>
+            <button 
+              onClick={handleLogoutClick} 
+              className={`flex items-center text-red-400 hover:text-red-300 transition-colors ${
+                isSidebarOpen ? 'justify-start w-full' : 'justify-center w-full'
+              }`}
+            >
               <LogOut size={20} className={isSidebarOpen ? 'mr-3' : ''}/>
               {isSidebarOpen && <span>Logout</span>}
             </button>
@@ -307,15 +368,15 @@ const ClientDashboard = () => {
 
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                    <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+                    <div className="px-4 py-2 text-xs text-gray-700 border-b border-gray-100">
                       <p className="text-xs text-gray-500 truncate">{email}</p>
                     </div>
-                    <Link to="/gomez/dashboard-client/settings" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsDropdownOpen(false)}>
+                    <Link to="/gomez/dashboard-client/settings" className="flex items-center px-4 py-2 text-xs text-gray-700 hover:bg-gray-100" onClick={() => setIsDropdownOpen(false)}>
                       <Settings size={16} className="mr-2"/>
                       <span>Settings</span>
                     </Link>
                     <div className="border-t border-gray-100 my-1"></div>
-                    <button onClick={handleLogoutClick} className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <button onClick={handleLogoutClick} className="flex items-center w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-gray-100">
                       <LogOut size={16} className="mr-2"/>
                       <span>Logout</span>
                     </button>

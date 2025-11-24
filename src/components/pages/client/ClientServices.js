@@ -3,35 +3,16 @@ import { EmailContext } from '../../utils/EmailContext';
 import toast, { Toaster } from 'react-hot-toast';
 import { useServices } from '../../hooks/client/useServices';
 import { useUser } from '../../hooks/client/useUser';
-import { useMenuItems } from '../../hooks/client/useMenuItems';
-import { useQuantities } from '../../hooks/client/useQuantities';
-import { usePurchase } from '../../hooks/client/usePurchase';
 import ServiceDetail from './ClientServiceDetail';
 
 const ClientServices = () => {
   const [selectedService, setSelectedService] = useState(null);
   const { email } = useContext(EmailContext);
   const servicesRef = useRef([]);
-  const customizationItemsRef = useRef([]);
-  const otherProductsRef = useRef([]);
   
   // Custom hooks for services
   const { services, loading: servicesLoading, error: servicesError, refetch: refetchServices } = useServices();
   const { userId, isLoggedIn } = useUser(email);
-  
-  // Custom hooks for menu items
-  const { items, loading: itemsLoading, error: itemsError, updateItemStock } = useMenuItems();
-  const { quantities, handleQuantityChange } = useQuantities(items);
-  const { handleBuy, purchasing } = usePurchase(isLoggedIn, userId, updateItemStock);
-
-  // Filter items based on whether details contains "item"
-  const customizationItems = items.filter(item => 
-    !item.details?.toLowerCase().includes('item')
-  );
-  
-  const otherProducts = items.filter(item => 
-    item.details?.toLowerCase().includes('item')
-  );
 
   // Intersection Observer for scroll animations
   useEffect(() => {
@@ -47,16 +28,16 @@ const ClientServices = () => {
       { threshold: 0.1, rootMargin: '50px' }
     );
 
-    [...servicesRef.current, ...customizationItemsRef.current, ...otherProductsRef.current].forEach((ref) => {
+    servicesRef.current.forEach((ref) => {
       if (ref) observer.observe(ref);
     });
 
     return () => {
-      [...servicesRef.current, ...customizationItemsRef.current, ...otherProductsRef.current].forEach((ref) => {
+      servicesRef.current.forEach((ref) => {
         if (ref) observer.unobserve(ref);
       });
     };
-  }, [services, customizationItems, otherProducts]);
+  }, [services]);
 
   const showNotification = (message, type = 'info') => {
     if (type === 'success') {
@@ -68,11 +49,6 @@ const ClientServices = () => {
     } else {
       toast(message);
     }
-  };
-
-  const onBuyClick = (itemId) => {
-    const quantity = quantities[itemId];
-    handleBuy(itemId, quantity);
   };
 
   const getInclusionIcon = (inclusionsCount) => {
@@ -111,70 +87,8 @@ const ClientServices = () => {
     return `http://localhost/funeraria/api/components/uploads/caskets/${service.cover_image}`;
   };
 
-  // Render menu item card
-  const renderMenuItemCard = (item, index, refArray) => (
-    <div
-      key={item.id}
-      ref={el => refArray.current[index] = el}
-      className="menu-card rounded-xl overflow-hidden"
-    >
-      <div className="relative">
-        <img
-          src={`http://localhost/funeraria/api/components/${item.image_path}`}
-          alt={item.name}
-          className="w-full h-56 sm:h-64 object-cover"
-        />
-        {parseInt(item.stock) < 5 && parseInt(item.stock) > 0 && (
-          <div className="stock-badge absolute top-3 right-3 text-white text-xs px-3 py-1.5 rounded-full">
-            Low Stock
-          </div>
-        )}
-        {parseInt(item.stock) <= 0 && (
-          <div className="stock-badge absolute top-3 right-3 text-white text-xs px-3 py-1.5 rounded-full">
-            Out of Stock
-          </div>
-        )}
-      </div>
-      <div className="p-6">
-        <h2 className="text-xl font-semibold mb-3 text-gray-800">{item.name}</h2>
-        <p className="text-gray-600 mb-4 text-sm leading-relaxed">{item.details}</p>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-gray-900 font-bold text-xl">₱{parseFloat(item.price)}</p>
-          <p className={`text-sm ${parseInt(item.stock) < 5 ? 'text-red-600' : 'text-gray-500'}`}>
-            Stock: {item.stock}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
-            <label htmlFor={`quantity-${item.id}`} className="mr-2 text-gray-600 text-sm">Qty:</label>
-            <input
-              type="number"
-              id={`quantity-${item.id}`}
-              value={quantities[item.id] || 1}
-              onChange={(event) => handleQuantityChange(item.id, event)}
-              min="1"
-              max={item.stock}
-              className="w-16 p-1 rounded bg-white text-gray-900 border border-gray-300 focus:border-gray-400 focus:outline-none"
-            />
-          </div>
-          <button
-            onClick={() => onBuyClick(item.id)}
-            disabled={!isLoggedIn || item.stock < 1 || purchasing}
-            className={`btn-primary px-4 py-2 rounded-lg text-sm font-medium flex-grow ${
-              !isLoggedIn || item.stock < 1 || purchasing
-                ? 'opacity-50 cursor-not-allowed'
-                : 'text-white'
-            }`}
-          >
-            {purchasing ? 'Adding...' : item.stock < 1 ? 'Out of Stock' : 'Add to Cart'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const loading = servicesLoading || itemsLoading;
-  const error = servicesError || itemsError;
+  const loading = servicesLoading;
+  const error = servicesError;
 
   if (loading) {
     return (
@@ -211,7 +125,7 @@ const ClientServices = () => {
               animation: fadeIn 1.2s ease forwards, slideUp 1s ease 0.3s both;
             }
             
-            .service-card, .menu-card {
+            .service-card {
               transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
               background: linear-gradient(145deg, #ffffff, #f3f4f6);
               border: 1px solid rgba(0, 0, 0, 0.1);
@@ -220,7 +134,7 @@ const ClientServices = () => {
               transform: translateY(30px);
             }
             
-            .service-card:hover, .menu-card:hover {
+            .service-card:hover {
               transform: translateY(-5px);
               box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             }
@@ -238,11 +152,6 @@ const ClientServices = () => {
             
             .btn-primary:active:not(:disabled) {
               transform: translateY(1px);
-            }
-
-            .stock-badge {
-              backdrop-filter: blur(4px);
-              background: rgba(0, 0, 0, 0.6);
             }
           `
         }} />
@@ -342,42 +251,6 @@ const ClientServices = () => {
                   </div>
                 );
               })}
-            </div>
-          )}
-        </div>
-
-        {/* Package Customization Section */}
-        <div className="mb-16">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Gomez Package Customization</h1>
-            <p className="text-gray-600">Customize your service package with our additional options</p>
-          </div>
-
-          {customizationItems.length === 0 ? (
-            <div className="text-center p-8 bg-white rounded-xl shadow-inner border border-gray-200">
-              <p className="text-lg text-gray-600">No customization options available at the moment.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {customizationItems.map((item, index) => renderMenuItemCard(item, index, customizationItemsRef))}
-            </div>
-          )}
-        </div>
-
-        {/* Other Products Section */}
-        <div className="mb-16">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Gomez Other Products</h1>
-            <p className="text-gray-600">Select from our range of dignified menu items</p>
-          </div>
-
-          {otherProducts.length === 0 ? (
-            <div className="text-center p-8 bg-white rounded-xl shadow-inner border border-gray-200">
-              <p className="text-lg text-gray-600">No other products available at the moment.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {otherProducts.map((item, index) => renderMenuItemCard(item, index, otherProductsRef))}
             </div>
           )}
         </div>

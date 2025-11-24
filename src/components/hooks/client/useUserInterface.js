@@ -5,8 +5,8 @@ export const useUserInterface = () => {
   const [enlargedImage, setEnlargedImage] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
 
-  const handleMessageClick = useCallback((msg) => {
-    setSelectedMessage(selectedMessage === msg ? null : msg);
+  const handleMessageClick = useCallback((message) => {
+    setSelectedMessage(selectedMessage?.id === message.id ? null : message);
   }, [selectedMessage]);
 
   const handleImageClick = useCallback((imageSrc) => {
@@ -25,11 +25,11 @@ export const useUserInterface = () => {
     selectedMessage,
     enlargedImage,
     showSidebar,
-    setSelectedMessage,
     handleMessageClick,
     handleImageClick,
     closeEnlargedImage,
     toggleSidebar,
-    setShowSidebar
+    setShowSidebar,
+    setSelectedMessage  // ← Export this
   };
 };

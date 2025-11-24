@@ -8,6 +8,7 @@ import ProtectedRoute from './components/utils/ProtectedRoute';
 import ClientPackageCart from './components/pages/client/ClientPackageCart';
 import ClientActiveOrders from './components/pages/client/ClientActiveOrders';
 import ClientOrderHistory from './components/pages/client/ClientOrderHistory';
+import ClientCustomized from './components/pages/client/ClientCustomized';
 
 const ClientAppointment = lazy(() => import('./components/pages/client/ClientAppointment'));
 const Auth = lazy(() => import('./components/utils/Auth'));
@@ -135,17 +136,17 @@ const App = () => {
                       <ClientCart />
                   </Suspense>
                 } />
-                <Route path="funeral-cart" element={
+                <Route path="cart/funeral-cart" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientPackageCart />
                   </Suspense>
                 } />
-                <Route path="active-orders" element={
+                <Route path="cart/active-orders" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientActiveOrders />
                   </Suspense>
                 } />
-                <Route path="order-history" element={
+                <Route path="cart/order-history" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientOrderHistory />
                   </Suspense>
@@ -158,6 +159,11 @@ const App = () => {
                 <Route path="services" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientServices />
+                  </Suspense>
+                } />
+                <Route path="services/customized-services" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientCustomized />
                   </Suspense>
                 } />
                 <Route path="messages" element={

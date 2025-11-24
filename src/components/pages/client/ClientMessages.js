@@ -72,7 +72,8 @@ export default function ClientMessages() {
     handleImageClick,
     closeEnlargedImage,
     toggleSidebar,
-    setShowSidebar
+    setShowSidebar,
+    setSelectedMessage
   } = useUserInterface();
 
   // Update messages hook with selectedAdmin
@@ -90,41 +91,140 @@ export default function ClientMessages() {
   } = useMessages(userId, selectedAdmin);
 
   useEffect(() => {
-    if (!socket) return;
+  if (!socket) return;
 
-    const handleMessage = (event) => {
-      const data = JSON.parse(event.data);
+  const handleMessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log("WebSocket received:", data);
 
-      if (data.type === 'message' && !data.isOwnMessage) {
-        const messageId = data.messageId || `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Handle incoming messages from admin (not own messages)
+    if (data.type === 'message' && !data.isOwnMessage) {
+      const messageId = data.messageId || data.id || `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        if (processedMessageIds.has(messageId)) {
-          return;
+      if (processedMessageIds.has(messageId)) {
+        console.log("Duplicate message detected, skipping:", messageId);
+        return;
+      }
+
+      processedMessageIds.add(messageId);
+
+      // Construct the full image URL if imageUrl exists
+      let fullImageUrl = null;
+      if (data.imageUrl) {
+        if (data.imageUrl.startsWith('http')) {
+          fullImageUrl = data.imageUrl;
+        } else {
+          fullImageUrl = `http://localhost/funeraria/api/components/${data.imageUrl}`;
+        }
+      }
+
+      // Construct reply information with image support
+      let replyTo = null;
+      if (data.replyToId) {
+        // Construct full image URL for reply if it exists
+        let replyImageUrl = null;
+        if (data.replyImagePath) {
+          if (data.replyImagePath.startsWith('http')) {
+            replyImageUrl = data.replyImagePath;
+          } else {
+            replyImageUrl = `http://localhost/funeraria/api/components/${data.replyImagePath}`;
+          }
         }
 
-        processedMessageIds.add(messageId);
+        // Determine the sender type based on replySenderId
+        const replySender = data.replySenderId === userId ? 'me' : 'admin';
 
-        const newMessage = {
-          id: messageId,
-          text: data.message,
-          sender: 'admin',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          imageUrl: data.imageUrl || null,
-          replyToId: data.replyToId || null // Add this
+        replyTo = {
+          id: data.replyToId,
+          text: data.replyToMessage || '',
+          sender: replySender,
+          senderName: data.replySenderName || (replySender === 'me' ? 'You' : 'Admin'),
+          imageUrl: replyImageUrl
         };
 
-        currentAddMessage(newMessage);
+        console.log("Reply context constructed:", replyTo);
       }
 
-      // Handle message deletion from admin
-      if (data.type === 'message_deleted') {
-        currentRemoveMessage(data.messageId);
-      }
-    };
+      const newMessage = {
+        id: messageId,
+        text: data.message,
+        sender: 'admin',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        imageUrl: fullImageUrl,
+        replyToId: data.replyToId || null,
+        replyTo: replyTo
+      };
 
-    socket.addEventListener('message', handleMessage);
-    return () => socket.removeEventListener('message', handleMessage);
-  }, [socket, processedMessageIds, currentAddMessage, currentRemoveMessage]);
+      console.log("Adding new message:", newMessage);
+      currentAddMessage(newMessage);
+    }
+
+    // Handle confirmation of own messages (replace temp message with real one)
+    if (data.type === 'message' && data.isOwnMessage && data.tempId) {
+      console.log("Received confirmation for temp message:", data.tempId);
+      
+      // Remove the temp message
+      currentRemoveMessage(data.tempId);
+      
+      // Construct the full image URL if imageUrl exists
+      let fullImageUrl = null;
+      if (data.imageUrl) {
+        if (data.imageUrl.startsWith('http')) {
+          fullImageUrl = data.imageUrl;
+        } else {
+          fullImageUrl = `http://localhost/funeraria/api/components/${data.imageUrl}`;
+        }
+      }
+
+      // Construct reply information with image support for confirmation
+      let replyTo = null;
+      if (data.replyToId) {
+        let replyImageUrl = null;
+        if (data.replyImagePath) {
+          if (data.replyImagePath.startsWith('http')) {
+            replyImageUrl = data.replyImagePath;
+          } else {
+            replyImageUrl = `http://localhost/funeraria/api/components/${data.replyImagePath}`;
+          }
+        }
+
+        const replySender = data.replySenderId === userId ? 'me' : 'admin';
+
+        replyTo = {
+          id: data.replyToId,
+          text: data.replyToMessage || '',
+          sender: replySender,
+          senderName: data.replySenderName || (replySender === 'me' ? 'You' : 'Admin'),
+          imageUrl: replyImageUrl
+        };
+      }
+
+      // Add the confirmed message with database ID
+      const confirmedMessage = {
+        id: data.id || data.messageId,
+        text: data.message,
+        sender: 'me',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        imageUrl: fullImageUrl,
+        replyToId: data.replyToId || null,
+        replyTo: replyTo
+      };
+
+      processedMessageIds.add(confirmedMessage.id);
+      currentAddMessage(confirmedMessage);
+      console.log("Added confirmed message with reply info:", confirmedMessage);
+    }
+
+    // Handle message deletion from admin
+    if (data.type === 'message_deleted') {
+      currentRemoveMessage(data.messageId);
+    }
+  };
+
+  socket.addEventListener('message', handleMessage);
+  return () => socket.removeEventListener('message', handleMessage);
+}, [socket, processedMessageIds, currentAddMessage, currentRemoveMessage, userId]);
+
 
   useEffect(() => {
     if (selectedAdmin && userId && currentMessages.length > 0) {
@@ -202,6 +302,25 @@ export default function ClientMessages() {
       }
     }
   };
+  const handleReplyToMessage = (message) => {
+  setReplyContext({
+    id: message.id,
+    text: message.text || '',
+    sender: message.sender,
+    senderName: message.sender === 'me' ? 'You' : selectedAdmin?.username,
+    imageUrl: message.imageUrl || null
+  });
+  
+  setSelectedMessage(null); // Close the action menu
+  
+  // Focus on the input field
+  setTimeout(() => {
+    const input = document.querySelector('input[type="text"]');
+    if (input) {
+      input.focus();
+    }
+  }, 100);
+};
 
   const handleCopyMessage = (text) => {
     copyMessage(text);
@@ -476,14 +595,14 @@ export default function ClientMessages() {
                             />
                           ) : (
                             <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                        <User size={18} className="text-gray-500" />
-                      </div>
+                              <User size={18} className="text-gray-500" />
+                            </div>
                           )}
                         </div>
                       )}
                       <div
                         className={`max-w-xs md:max-w-md p-3 rounded-lg relative ${msg.sender === 'me'
-                          ? 'bg-blue-500 text-white'
+                          ? 'bg-gray-200 text-black'
                           : 'bg-gray-200 text-black'
                           }`}
                         onClick={() => handleMessageClick(msg)}
@@ -491,16 +610,60 @@ export default function ClientMessages() {
                       >
                         {/* Reply Preview */}
                         {msg.replyTo && (
-                          <div className={`text-xs mb-2 border-l-2 pl-2 ${msg.sender === 'me' ? 'border-blue-200 text-blue-200' : 'border-blue-400 text-gray-600'}`}>
-                            <div className="font-medium">
+                          <div className={`text-xs mb-2 border-l-2 pl-2 ${msg.sender === 'me'
+                            ? 'border-blue-500'
+                            : 'border-blue-500'
+                            }`}>
+                            <div className={`font-medium mb-1 ${msg.sender === 'me'
+                              ? 'text-gray-700'
+                              : 'text-gray-700'
+                              }`}>
                               Replying to {msg.replyTo.sender === 'me' ? 'yourself' : msg.replyTo.senderName}
                             </div>
-                            <div className="truncate opacity-75">
-                              {msg.replyTo.text.length > 50
-                                ? `${msg.replyTo.text.substring(0, 50)}...`
-                                : msg.replyTo.text
-                              }
-                            </div>
+
+                            {/* Show image if reply contains an image */}
+                            {msg.replyTo.imageUrl ? (
+                              <div className={`rounded p-2 ${msg.sender === 'me'
+                                ? 'bg-gray-200 '
+                                : 'bg-gray-200'
+                                }`}>
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <Image size={12} className={msg.sender === 'me' ? 'text-black' : 'text-black'} />
+                                  <span className={`text-xs font-medium ${msg.sender === 'me' ? 'text-black' : 'text-black'
+                                    }`}>Image:
+                                  </span>
+                                </div>
+                                <img
+                                  src={msg.replyTo.imageUrl}
+                                  alt="Replied content"
+                                  className="w-16 h-16 object-cover rounded border border-opacity-50"
+                                  style={{
+                                    borderColor: msg.sender === 'me' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)'
+                                  }}
+                                />
+                                {/* Show text if available along with image */}
+                                {msg.replyTo.text && msg.replyTo.text !== 'Image message' && (
+                                  <p className={`mt-1 text-xs ${msg.sender === 'me' ? 'text-blue-200 opacity-75' : 'text-gray-600'
+                                    }`}>
+                                    {msg.replyTo.text.length > 50
+                                      ? `${msg.replyTo.text.substring(0, 50)}...`
+                                      : msg.replyTo.text
+                                    }
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              /* Show text only if no image */
+                              <div className={`truncate ${msg.sender === 'me'
+                                ? 'text-blue-200 opacity-75'
+                                : 'text-gray-600'
+                                }`}>
+                                {msg.replyTo.text.length > 50
+                                  ? `${msg.replyTo.text.substring(0, 50)}...`
+                                  : msg.replyTo.text
+                                }
+                              </div>
+                            )}
                           </div>
                         )}
 
@@ -509,7 +672,7 @@ export default function ClientMessages() {
                         </div>
 
                         {msg.imageUrl && (
-                        
+
                           <div className="relative mt-2 group">
                             <img
                               src={msg.imageUrl}
@@ -534,7 +697,7 @@ export default function ClientMessages() {
 
                         <div className="flex items-center justify-start mt-1">
                           {msg.time && (
-                            <span className={`text-xs ${msg.sender === 'me' ? 'text-blue-200' : 'text-gray-500'} text-left`}>
+                            <span className={`text-xs ${msg.sender === 'me' ? 'text-black' : 'text-black'} text-left`}>
                               {msg.time}
                             </span>
                           )}
@@ -549,7 +712,7 @@ export default function ClientMessages() {
                               <Copy size={18} className="text-gray-900" />
                             </button>
                             <button
-                              onClick={() => setReplyContext(msg)}
+                              onClick={() => handleReplyToMessage(msg)} // Pass the full message object
                               title="Reply to this message"
                             >
                               <CornerUpLeft size={18} className="text-gray-900" />
@@ -575,18 +738,43 @@ export default function ClientMessages() {
           <div className="p-4 border-t border-gray-300 bg-white">
             {/* Reply Context Indicator */}
             {replyContext && (
-              <div className="mb-3 p-3 bg-blue-50 border-l-4 border-blue-500 rounded flex justify-between items-center">
+              <div className="mb-3 p-3 bg-blue-50 border-l-4 border-blue-500 rounded flex justify-between items-start">
                 <div className="flex-1">
-                  <div className="flex items-center text-xs text-blue-600 font-medium mb-1">
+                  <div className="flex items-center text-xs text-black font-medium mb-1">
                     <CornerUpLeft size={14} className="mr-1" />
                     Replying to {replyContext.sender === 'me' ? 'yourself' : replyContext.senderName}
                   </div>
-                  <p className="text-sm text-gray-700">
-                    {replyContext.text.length > 60
-                      ? `${replyContext.text.substring(0, 60)}...`
-                      : replyContext.text
-                    }
-                  </p>
+
+                  {/* Show image if replying to an image message */}
+                  {replyContext.imageUrl ? (
+                    <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-1">
+                        <Image size={14} className="text-black" />
+                      </div>
+                      <img
+                        src={replyContext.imageUrl}
+                        alt="Replied content"
+                        className="w-12 h-12 object-cover rounded border border-blue-300"
+                      />
+                      {/* Show caption if available */}
+                      {replyContext.text && replyContext.text !== 'Image message' && (
+                        <p className="text-sm text-gray-700 flex-1">
+                          {replyContext.text.length > 40
+                            ? `${replyContext.text.substring(0, 40)}...`
+                            : replyContext.text
+                          }
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    /* Show text only if no image */
+                    <p className="text-sm text-gray-700">
+                      {replyContext.text.length > 60
+                        ? `${replyContext.text.substring(0, 60)}...`
+                        : replyContext.text
+                      }
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => setReplyContext(null)}

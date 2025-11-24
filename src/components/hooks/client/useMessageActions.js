@@ -15,12 +15,20 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
 
     try {
       setError(null);
-      // Using a client-side ID for optimistic update of text messages
       const messageId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
       processedMessageIds.add(messageId);
 
       const replyToId = replyContext?.id || null;
+
+      // Build replyTo object with image support for optimistic update
+      const replyTo = replyContext ? {
+        id: replyContext.id,
+        text: replyContext.text || '',
+        sender: replyContext.sender,
+        senderName: replyContext.sender === 'me' ? 'You' : (replyContext.senderName || 'Admin'),
+        imageUrl: replyContext.imageUrl || null  // ← Include image in optimistic update
+      } : null;
 
       const newMessage = {
         id: messageId,
@@ -29,12 +37,7 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         imageUrl: null,
         replyToId: replyToId,
-        replyTo: replyContext ? {
-          id: replyContext.id,
-          text: replyContext.text,
-          sender: replyContext.sender,
-          senderName: replyContext.sender === 'me' ? 'You' : (replyContext.senderName || 'Admin')
-        } : null
+        replyTo: replyTo  // ← Include complete reply object
       };
 
       addMessage(newMessage);
@@ -101,7 +104,7 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
       const messageId = uploadData.message_id;
       const fullImageUrl = uploadData.image_url;
 
-      // Extract relative path for WebSocket transmission (smaller payload)
+      // Extract relative path for WebSocket transmission
       let relativePath = fullImageUrl;
       if (fullImageUrl.includes('/funeraria/api/components/')) {
         const parts = fullImageUrl.split('/funeraria/api/components/');
@@ -111,38 +114,40 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
       // Add to processed messages to prevent duplicates
       processedMessageIds.add(messageId);
 
-      // Step 2: Add message to UI optimistically with full URL
+      // Build replyTo object with image support for optimistic update
+      const replyTo = replyContext ? {
+        id: replyContext.id,
+        text: replyContext.text || '',
+        sender: replyContext.sender,
+        senderName: replyContext.sender === 'me' ? 'You' : (replyContext.senderName || 'Admin'),
+        imageUrl: replyContext.imageUrl || null  // ← Include image in optimistic update
+      } : null;
+
+      // Step 2: Add message to UI optimistically with full URL and reply info
       const newMessage = {
-        id: messageId, // Use database ID
+        id: messageId,
         text: message || 'Image message',
         sender: 'me',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        imageUrl: fullImageUrl, // Use full URL for display
+        imageUrl: fullImageUrl,
         replyToId: replyContext?.id || null,
-        replyTo: replyContext ? {
-          id: replyContext.id,
-          text: replyContext.text,
-          sender: replyContext.sender,
-          senderName: replyContext.sender === 'me' ? 'You' : (replyContext.senderName || 'Admin')
-        } : null
+        replyTo: replyTo  // ← Include complete reply object with image
       };
 
       addMessage(newMessage);
 
-      // Step 3: Send WebSocket notification ONLY (don't save to DB again)
-      // The message is already saved in the database from Step 1
-      // This WebSocket message is ONLY for real-time notification to other clients
+      // Step 3: Send WebSocket notification
       socket.send(JSON.stringify({
-        type: 'message_notification', // Changed from 'message' to 'message_notification'
-        messageId: messageId, // Use database ID
+        type: 'message_notification',
+        messageId: messageId,
         senderId: userId,
         receiverId: selectedAdmin.id,
         message: message || 'Image message',
         isAdmin: false,
-        imageUrl: relativePath, // Send relative path
+        imageUrl: relativePath,
         replyToId: replyContext?.id || null,
         isOwnMessage: true,
-        alreadySaved: true // Flag to indicate this is already in the database
+        alreadySaved: true
       }));
 
       // Update message count
