@@ -11,7 +11,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
   const [validationErrors, setValidationErrors] = useState({});
   const [formTouched, setFormTouched] = useState(false);
   const { email } = useContext(EmailContext);
-  
+
   // Use custom hooks - only fetch chapels now since caskets are displayed in main component
   const { chapels, loadingItems } = useServiceItems(service.id, showNotification);
   const { orderStatus, submitOrder, setOrderStatus } = useOrder(email, userId, showNotification);
@@ -29,9 +29,10 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
       required: true,
       minLength: 2,
       maxLength: 100,
-      pattern: /^[a-zA-Z\s.'-]+$/,
-      message: 'Please enter a valid name (letters, spaces, apostrophes, hyphens, and periods only)'
+      pattern: /^[a-zA-ZñÑ\s.'-]+$/,
+      message: 'Please enter a valid name (letters, enye, spaces, apostrophes, hyphens, and periods only)'
     },
+
     email: {
       required: true,
       pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -79,7 +80,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
   // Validate entire form
   const validateForm = (data = formData) => {
     const errors = {};
-    
+
     Object.keys(validationRules).forEach(field => {
       const error = validateField(field, data[field]);
       if (error) {
@@ -120,7 +121,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
         return [...prev, chapel];
       }
     });
-    
+
     // Clear chapel validation error when user makes a selection
     if (validationErrors.chapels) {
       setValidationErrors(prev => ({
@@ -157,7 +158,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
   const handleSubmit = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     setFormTouched(true);
     const errors = validateForm();
 
@@ -260,11 +261,10 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                         {chapels.map((chapel) => (
                           <div
                             key={chapel.id}
-                            className={`bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-200 ${
-                              selectedChapels.some(c => c.id === chapel.id) 
-                                ? 'ring-2 ring-gray-900' 
+                            className={`bg-white rounded-xl shadow-sm overflow-hidden cursor-pointer transition-all duration-200 ${selectedChapels.some(c => c.id === chapel.id)
+                                ? 'ring-2 ring-gray-900'
                                 : 'hover:shadow-md'
-                            } ${validationErrors.chapels ? 'border border-red-300' : ''}`}
+                              } ${validationErrors.chapels ? 'border border-red-300' : ''}`}
                             onClick={() => service.name?.toLowerCase().includes('customized') && handleChapelSelect(chapel)}
                           >
                             {chapel.image && (
@@ -287,11 +287,10 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                                 <>
                                   <p className="text-gray-900 font-semibold mt-2">₱{formatCurrency(parseFloat(chapel.price))}</p>
                                   <div className="mt-2">
-                                    <span className={`inline-block px-3 py-1 rounded-full text-sm ${
-                                      selectedChapels.some(c => c.id === chapel.id)
+                                    <span className={`inline-block px-3 py-1 rounded-full text-sm ${selectedChapels.some(c => c.id === chapel.id)
                                         ? 'bg-gray-900 text-white'
                                         : 'bg-gray-100 text-gray-700'
-                                    }`}>
+                                      }`}>
                                       {selectedChapels.some(c => c.id === chapel.id) ? 'Selected' : 'Click to select'}
                                     </span>
                                   </div>
@@ -328,13 +327,12 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
           ) : (
             <div className="max-w-2xl mx-auto">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Place Order for {service.name}</h3>
-              
+
               {orderStatus && (
-                <div className={`p-4 mb-6 rounded-lg ${
-                  orderStatus.type === 'success' ? 'bg-green-50 text-green-700' :
-                  orderStatus.type === 'error' ? 'bg-red-50 text-red-700' :
-                  'bg-blue-50 text-blue-700'
-                }`}>
+                <div className={`p-4 mb-6 rounded-lg ${orderStatus.type === 'success' ? 'bg-green-50 text-green-700' :
+                    orderStatus.type === 'error' ? 'bg-red-50 text-red-700' :
+                      'bg-blue-50 text-blue-700'
+                  }`}>
                   {orderStatus.message}
                 </div>
               )}
@@ -350,11 +348,10 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                     value={formData.customer_name}
                     onChange={(e) => handleInputChange('customer_name', e.target.value)}
                     onBlur={(e) => handleBlur('customer_name', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent ${
-                      validationErrors.customer_name 
-                        ? 'border-red-500 focus:ring-red-500' 
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent ${validationErrors.customer_name
+                        ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300'
-                    }`}
+                      }`}
                     required
                     minLength="2"
                     maxLength="100"
@@ -363,7 +360,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                     <p className="mt-1 text-sm text-red-600">{validationErrors.customer_name}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Email Address *
@@ -374,11 +371,10 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                     value={email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     onBlur={(e) => handleBlur('email', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent ${
-                      validationErrors.email 
-                        ? 'border-red-500 focus:ring-red-500' 
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent ${validationErrors.email
+                        ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300'
-                    }`}
+                      }`}
                     required
                     disabled
                   />
@@ -386,7 +382,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                     <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Phone Number *
@@ -397,11 +393,10 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                     value={formData.customer_phone}
                     onChange={(e) => handleInputChange('customer_phone', e.target.value)}
                     onBlur={(e) => handleBlur('customer_phone', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent ${
-                      validationErrors.customer_phone 
-                        ? 'border-red-500 focus:ring-red-500' 
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent ${validationErrors.customer_phone
+                        ? 'border-red-500 focus:ring-red-500'
                         : 'border-gray-300'
-                    }`}
+                      }`}
                     required
                     placeholder="e.g., 912 345 6789"
                   />
