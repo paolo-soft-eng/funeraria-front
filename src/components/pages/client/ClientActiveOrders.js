@@ -143,7 +143,7 @@ const ClientActiveOrders = () => {
                                                 ₱{formatCurrency(order.total_amount)}
                                             </span>
                                             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                                                {order.payment_method?.toUpperCase() || 'COD'}
+                                                {order.payment_method?.toUpperCase() || 'PAYLATER'}
                                             </span>
                                         </div>
                                     </div>

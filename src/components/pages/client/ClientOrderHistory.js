@@ -256,7 +256,7 @@ const ClientOrderHistory = () => {
                                                         {order.payment_status?.toUpperCase() || 'UNPAID'}
                                                     </span>
                                                     <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                                                        {order.payment_method?.toUpperCase() || 'COD'}
+                                                        {order.payment_method?.toUpperCase() || 'PAYLATER'}
                                                     </span>
                                                 </div>
                                             </div>
@@ -496,7 +496,7 @@ const ClientOrderHistory = () => {
                                     <div>
                                         <p className="text-sm text-gray-500">Payment Method</p>
                                         <p className="font-medium text-gray-800">
-                                            {selectedOrder.payment_method?.toUpperCase() || 'Cash on Delivery'}
+                                            {selectedOrder.payment_method?.toUpperCase() || 'Pay Later'}
                                         </p>
                                     </div>
                                 </div>

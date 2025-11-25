@@ -6,6 +6,7 @@ const PAYMENT_METHODS = {
   GCASH: 'gcash',
   GRAB_PAY: 'grab_pay',
   PAYMAYA: 'paymaya',
+  PAYLATER: 'paylater'
 };
 
 
@@ -80,7 +81,7 @@ const PaymentForm = ({
     try {
         storePaymentData(state.billingData);
 
-        if (state.paymentMethod === 'cod') {
+        if (state.paymentMethod === 'paylater') {
             await handleCashOnDelivery();
             return;
         }
@@ -268,14 +269,14 @@ const PaymentForm = ({
             }
 
             onSuccess({
-                message: recordData.message || 'Your cash on delivery order has been placed successfully!',
+                message: recordData.message || 'Your pay later order has been placed successfully!',
                 orderId: recordData.orderId,
                 isFuneralService: recordData.isFuneralService,
                 deletedFuneralOrder: recordData.deletedFuneralOrder
             });
 
         } catch (error) {
-            throw new Error(error.message || 'Failed to place cash on delivery order');
+            throw new Error(error.message || 'Failed to place paylater delivery order');
         }
     };
 
@@ -321,11 +322,11 @@ const PaymentForm = ({
     const getPaymentButtonText = () => {
         if (state.processing) {
             if (state.isRetrying) return 'Retrying...';
-            return state.paymentMethod === 'cod' ? 'Processing Order...' : 'Processing Payment...';
+            return state.paymentMethod === 'paylater' ? 'Processing Order...' : 'Processing Payment...';
         }
         
         const amountText = `₱${parseFloat(totalAmount).toFixed(2)}`;
-        return state.paymentMethod === 'cod' ? `Confirm Service - ${amountText}` : `Pay ${amountText}`;
+        return state.paymentMethod === 'paylater' ? `Confirm Service - ${amountText}` : `Pay ${amountText}`;
     };
 
     return (
@@ -349,7 +350,7 @@ const PaymentForm = ({
                                 {value === 'gcash' && 'GCash'}
                                 {value === 'grab_pay' && 'GrabPay'}
                                 {value === 'paymaya' && 'PayMaya'}
-                                {value === 'cod' && 'Cash on Delivery'}
+                                {value === 'paylater' && 'Pay Later'}
                             </span>
                         </label>
                     ))}
