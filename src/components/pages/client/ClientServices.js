@@ -14,6 +14,14 @@ const ClientServices = () => {
   const { services, loading: servicesLoading, error: servicesError, refetch: refetchServices } = useServices();
   const { userId, isLoggedIn } = useUser(email);
 
+  // Helper function to format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-PH', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
   // Intersection Observer for scroll animations
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -229,7 +237,13 @@ const ClientServices = () => {
                     <div className="p-6">
                       {!serviceImage.includes('placeholder') && getInclusionIcon(inclusions.length)}
                       <h2 className="text-2xl font-bold text-gray-900 mb-3">{service.name}</h2>
-                      <p className="text-gray-600 mb-6 line-clamp-3">{service.description}</p>
+                      <p className="text-gray-600 mb-4 line-clamp-3">{service.description}</p>
+                      <div className="mb-4">
+                        <p className="text-2xl font-bold text-gray-900">
+                          Price: ₱{formatCurrency(parseFloat(service.price_range))}
+                        </p>
+                      </div>
+
                       <div className="flex items-center text-sm text-gray-500 mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

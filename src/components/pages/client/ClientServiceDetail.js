@@ -27,7 +27,7 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
   const validationRules = {
     customer_name: {
       required: true,
-      minLength: 2,
+      minLength: 4,
       maxLength: 100,
       pattern: /^[a-zA-ZñÑ\s.'-]+$/,
       message: 'Please enter a valid name (letters, enye, spaces, apostrophes, hyphens, and periods only)'

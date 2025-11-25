@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import axios from 'axios';
-import { MessageSquare, Trash2, Send, ArrowLeft, X, ZoomIn, Image, Camera, CornerUpLeft, Copy } from 'lucide-react';
+import { MessageSquare, Trash2, Send, ArrowLeft, X, ZoomIn, Image, Camera, CornerUpLeft, Copy, AlertTriangle } from 'lucide-react';
 import AdminLayout from './AdminLayout';
 import { EmailContext } from '../../utils/EmailContext';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +27,16 @@ const AdminMessages = () => {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
 
+  // Custom confirmation modal state
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    messageId: null,
+    messageDetails: null
+  });
+
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
@@ -37,6 +47,38 @@ const AdminMessages = () => {
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState("");
   const navigate = useNavigate();
+
+  // Show confirmation modal
+  const showConfirmation = (title, message, onConfirm, messageId = null, messageDetails = null) => {
+    setConfirmationModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm,
+      messageId,
+      messageDetails
+    });
+  };
+
+  // Close confirmation modal
+  const closeConfirmation = () => {
+    setConfirmationModal({
+      isOpen: false,
+      title: '',
+      message: '',
+      onConfirm: null,
+      messageId: null,
+      messageDetails: null
+    });
+  };
+
+  // Handle confirmation
+  const handleConfirm = async () => {
+    if (confirmationModal.onConfirm) {
+      await confirmationModal.onConfirm(confirmationModal.messageId, confirmationModal.messageDetails);
+    }
+    closeConfirmation();
+  };
 
   // Activity logging function
   const addActivity = async (activityType, description, relatedId = null) => {
@@ -596,13 +638,8 @@ const AdminMessages = () => {
     }
   };
 
-  const handleDeleteMessage = async (messageId) => {
-  if (!window.confirm('Are you sure you want to delete this message?')) {
-    return;
-  }
-
-  try {
-    const messageToDelete = messages.find(msg => msg.id === messageId);
+  const handleDeleteMessage = async (messageId, messageDetails = null) => {
+    const messageToDelete = messageDetails || messages.find(msg => msg.id === messageId);
     const isAdminMsg = messageToDelete?.is_admin_message === "1" || messageToDelete?.is_admin_message === 1;
 
     if (!isAdminMsg) {
@@ -610,46 +647,62 @@ const AdminMessages = () => {
       return;
     }
 
-    console.log('Deleting message:', messageId);
-    console.log('Admin email:', email);
+    const messagePreview = messageToDelete?.message 
+      ? (messageToDelete.message.length > 50 
+          ? `${messageToDelete.message.substring(0, 50)}...` 
+          : messageToDelete.message)
+      : 'Image message';
 
-    // Try POST method as fallback since some servers block DELETE
-    const response = await axios.post(API_URL, {
-      action: 'delete',
-      messageId: messageId,
-      adminEmail: email
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    showConfirmation(
+      'Delete Message',
+      `Are you sure you want to delete this message? This action cannot be undone.\n\nMessage: "${messagePreview}"`,
+      async (id) => {
+        try {
+          console.log('Deleting message:', id);
+          console.log('Admin email:', email);
 
-    console.log('Delete response:', response.data);
+          // Try POST method as fallback since some servers block DELETE
+          const response = await axios.post(API_URL, {
+            action: 'delete',
+            messageId: id,
+            adminEmail: email
+          }, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
 
-    if (response.data.success) {
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-      setSelectedMessage(null);
+          console.log('Delete response:', response.data);
 
-      if (messageToDelete) {
-        addActivity(
-          'Message',
-          `Deleted message in conversation with '${selectedUser.name}': "${messageToDelete.message?.substring(0, 50) || 'Image message'}${messageToDelete.message?.length > 50 ? '...' : ''}"`,
-          selectedUser.user_id
-        );
-      }
-    } else {
-      setError('Failed to delete message: ' + (response.data.error || 'Unknown error'));
-    }
-  } catch (err) {
-    console.error('Error deleting message:', err);
-    console.error('Error response:', err.response);
-    if (err.response?.data?.error) {
-      setError(err.response.data.error);
-    } else {
-      setError('Failed to delete message. Please try again.');
-    }
-  }
-};
+          if (response.data.success) {
+            setMessages(prev => prev.filter(msg => msg.id !== id));
+            setSelectedMessage(null);
+
+            if (messageToDelete) {
+              addActivity(
+                'Message',
+                `Deleted message in conversation with '${selectedUser.name}': "${messagePreview}"`,
+                selectedUser.user_id
+              );
+            }
+          } else {
+            setError('Failed to delete message: ' + (response.data.error || 'Unknown error'));
+          }
+        } catch (err) {
+          console.error('Error deleting message:', err);
+          console.error('Error response:', err.response);
+          if (err.response?.data?.error) {
+            setError(err.response.data.error);
+          } else {
+            setError('Failed to delete message. Please try again.');
+          }
+        }
+      },
+      messageId,
+      messageToDelete
+    );
+  };
+
   const handleBackToList = () => {
     setSelectedUser(null);
     setMessages([]);
@@ -864,7 +917,7 @@ const AdminMessages = () => {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteMessage(msg.id);
+                                  handleDeleteMessage(msg.id, msg);
                                 }}
                                 className="ml-2 opacity-50 hover:opacity-100 text-black"
                                 title="Delete message"
@@ -1111,6 +1164,43 @@ const AdminMessages = () => {
                 className="absolute inset-0 -z-10"
                 onClick={closeEnlargedImage}
               />
+            </div>
+          </div>
+        )}
+
+        {/* Custom Confirmation Modal */}
+        {confirmationModal.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-start mb-4">
+                <div className="flex-shrink-0 mr-3 text-red-500">
+                  <AlertTriangle size={24} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">
+                    {confirmationModal.title}
+                  </h3>
+                  <p className="text-gray-600 whitespace-pre-line">
+                    {confirmationModal.message}
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeConfirmation}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Delete Message
+                </button>
+              </div>
             </div>
           </div>
         )}

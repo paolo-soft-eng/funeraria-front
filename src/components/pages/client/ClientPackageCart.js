@@ -14,8 +14,12 @@ const ClientPackageCart = () => {
         setSuccessMessage: setOrdersSuccessMessage,
         processingOrderId,
         setProcessingOrderId,
+        showDeleteConfirm,
+        orderToDelete,
         fetchOrders,
         handleDeleteOrder,
+        confirmDeleteOrder,
+        cancelDeleteOrder,
         formatDate,
         getServiceId,
         clearMessages: clearOrdersMessages
@@ -25,7 +29,7 @@ const ClientPackageCart = () => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [packageCartItems, setPackageCartItems] = useState([]);
     const [currentUserId, setCurrentUserId] = useState(null);
-    const [serviceDate, setServiceDate] = useState(''); // New state for service date
+    const [serviceDate, setServiceDate] = useState('');
 
     const error = ordersError;
     const successMessage = ordersSuccessMessage;
@@ -34,17 +38,14 @@ const ClientPackageCart = () => {
         fetchOrders();
     }, []);
 
-    // Function to format date for datetime-local input
     const formatDateForInput = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
         return date.toISOString().slice(0, 16);
     };
 
-    // Function to get default service date (next available date)
     const getDefaultServiceDate = () => {
         const now = new Date();
-        // Set default to tomorrow at 9:00 AM
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(9, 0, 0, 0);
@@ -70,13 +71,11 @@ const ClientPackageCart = () => {
             order.client_id ||
             order.clientId;
 
-        // Convert to number and check if it's valid (not 0)
         orderUserId = orderUserId ? parseInt(orderUserId) : null;
         if (orderUserId === 0) orderUserId = null;
 
         console.log('Found userId:', orderUserId);
 
-        // If still no user ID, try to get from session/local storage
         if (!orderUserId) {
             const sessionUserId = sessionStorage.getItem('userId') ||
                 localStorage.getItem('userId') ||
@@ -89,7 +88,6 @@ const ClientPackageCart = () => {
             }
         }
 
-        // If STILL no user ID, show detailed error
         if (!orderUserId) {
             console.error('Cannot find user_id. Order structure:', {
                 orderId: order.id,
@@ -106,12 +104,9 @@ const ClientPackageCart = () => {
         }
 
         setCurrentUserId(orderUserId);
-
-        // Set default service date when opening payment
         setServiceDate(getDefaultServiceDate());
         console.log('Successfully set userId for payment:', orderUserId);
 
-        // Get the service ID from the order
         const serviceId = getServiceId(order);
 
         let totalAmount = 0;
@@ -179,7 +174,7 @@ const ClientPackageCart = () => {
         setSelectedOrder(null);
         setPackageCartItems([]);
         setCurrentUserId(null);
-        setServiceDate(''); // Reset service date
+        setServiceDate('');
     };
 
     const handleCheckoutError = (errorMessage) => {
@@ -193,7 +188,7 @@ const ClientPackageCart = () => {
             setSelectedOrder(null);
             setPackageCartItems([]);
             setCurrentUserId(null);
-            setServiceDate(''); // Reset service date
+            setServiceDate('');
         }
     };
 
@@ -219,6 +214,39 @@ const ClientPackageCart = () => {
 
     return (
         <div className="flex flex-col min-h-screen">
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                        <div className="flex items-center mb-4">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                                <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h3 className="ml-4 text-lg font-semibold text-gray-900">Cancel Memorial Service</h3>
+                        </div>
+                        <p className="text-gray-600 mb-6">
+                            Are you sure you want to cancel this memorial service? This action cannot be undone and all arrangements will be removed.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={cancelDeleteOrder}
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+                            >
+                                Keep Service
+                            </button>
+                            <button
+                                onClick={confirmDeleteOrder}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+                            >
+                                Cancel Service
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="container mx-auto p-4 flex-grow">
                 <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl sm:tracking-tight lg:text-5xl text-center mb-6">
                     Funeral Package Cart
@@ -265,7 +293,7 @@ const ClientPackageCart = () => {
                                 </button>
                             </div>
 
-                            {/* Service Date Selection - ADDED THIS SECTION */}
+                            {/* Service Date Selection */}
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                                 <h3 className="text-lg font-semibold text-blue-800 mb-3">Service Date & Time</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -328,7 +356,6 @@ const ClientPackageCart = () => {
                                                 <p className="text-sm text-gray-600">User ID</p>
                                                 <p className="font-semibold">{currentUserId}</p>
                                             </div>
-                                            {/* Display selected service date */}
                                             <div>
                                                 <p className="text-sm text-gray-600">Service Date</p>
                                                 <p className="font-semibold text-green-600">
@@ -347,21 +374,17 @@ const ClientPackageCart = () => {
                                         {item.service_inclusions && (
                                             <div className="mt-4">
                                                 <p className="text-sm text-gray-600">Inclusions</p>
-
                                                 {(() => {
                                                     let inclusions = item.service_inclusions;
 
-                                                    // Convert string → array
                                                     if (typeof inclusions === "string") {
                                                         try {
                                                             inclusions = JSON.parse(inclusions);
                                                         } catch {
-                                                            // fallback if parsing fails
                                                             inclusions = [inclusions];
                                                         }
                                                     }
 
-                                                    // Render as bullet list
                                                     return (
                                                         <ul className="list-disc ml-6 text-gray-800">
                                                             {inclusions.map((inc, index) => (
@@ -372,7 +395,6 @@ const ClientPackageCart = () => {
                                                 })()}
                                             </div>
                                         )}
-
 
                                         <div className="mt-4 pt-4 border-t flex justify-between items-center">
                                             <span className="text-lg font-semibold">Total Amount:</span>
@@ -398,7 +420,7 @@ const ClientPackageCart = () => {
                                         email: packageCartItems[0]?.customer_email,
                                         phone: packageCartItems[0]?.customer_phone
                                     }}
-                                    serviceDate={serviceDate} // Pass service date to PaymentForm
+                                    serviceDate={serviceDate}
                                 />
                             </div>
                         </div>

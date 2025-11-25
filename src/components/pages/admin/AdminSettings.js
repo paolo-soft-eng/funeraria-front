@@ -9,7 +9,10 @@ import {
   Bug,
   Smartphone,
   Save,
-  ChevronRight
+  ChevronRight,
+  AlertCircle,
+  Trash2,
+  X
 } from 'lucide-react';
 
 import AdminLayout from './AdminLayout';
@@ -19,13 +22,17 @@ import { usePassword } from '../../hooks/admin/usePassword';
 import { useStaff } from '../../hooks/admin/useStaff';
 import { useBugReport } from '../../hooks/admin/useReportBug';
 import { useStatusMessage } from '../../hooks/admin/useStatusMessage';
-import { data } from 'react-router-dom';
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const { email } = useContext(EmailContext);
   const [profileImageRemovalCancelled, setProfileImageRemovalCancelled] = useState(false);
   
+  // State for profile image removal confirmation
+  const [profileImageDeleteModal, setProfileImageDeleteModal] = useState({
+    isOpen: false
+  });
+
   const {
     formData,
     profilePreview,
@@ -88,10 +95,10 @@ const AdminSettings = () => {
     clearMessage();
 
     if (profileImageRemovalCancelled) {
-    showSuccess('Profile updated (image removal was cancelled)');
-    setProfileImageRemovalCancelled(false);
-    return;
-  }
+      showSuccess('Profile updated (image removal was cancelled)');
+      setProfileImageRemovalCancelled(false);
+      return;
+    }
 
     try {
       const data = await updateProfile();
@@ -104,7 +111,6 @@ const AdminSettings = () => {
       showError(`Error: ${error.message}`);
     }
   };
-
 
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
@@ -122,28 +128,41 @@ const AdminSettings = () => {
     }
   };
 
- const handleRemoveProfileImage = async () => {
-    const confirmed = window.confirm("Are you sure you want to remove your profile picture?");
-    if (confirmed) {
-      try {
-        const result = await removeProfileImage();
-        if (result.success) {
-          showSuccess("Profile successfully removed");
-        } else {
-          showError(result.message || "Failed to remove profile picture");
-        }
-      } catch (err) {
-        showError("Error removing profile picture");
+  // Open profile image removal confirmation modal
+  const openProfileImageDeleteModal = () => {
+    setProfileImageDeleteModal({
+      isOpen: true
+    });
+  };
+
+  // Close profile image removal confirmation modal
+  const closeProfileImageDeleteModal = () => {
+    setProfileImageDeleteModal({
+      isOpen: false
+    });
+  };
+
+  // Handle profile image removal with custom modal
+  const handleRemoveProfileImage = async () => {
+    try {
+      const result = await removeProfileImage();
+      if (result.success) {
+        showSuccess("Profile picture removed successfully");
+      } else {
+        showError(result.message || "Failed to remove profile picture");
       }
+    } catch (err) {
+      showError("Error removing profile picture");
+    } finally {
+      closeProfileImageDeleteModal();
     }
   };
+
   // Enhanced profile image upload handler with success message
   const handleProfileImageUploadWithMessage = async (e) => {
     const file = e.target.files[0];
     if (file) {
       try {
-        // You'll need to modify your useProfile hook to return a function that handles the upload
-        // For now, using the existing handleProfileImageChange
         handleProfileImageChange(e);
         showSuccess('Profile picture updated successfully!');
       } catch (error) {
@@ -321,7 +340,8 @@ const AdminSettings = () => {
                           <p className="text-sm text-gray-500 mb-3">Upload a professional photo</p>
                           {profilePreview && (
                             <button
-                              onClick={handleRemoveProfileImage}
+                              type="button"
+                              onClick={openProfileImageDeleteModal}
                               className="px-4 py-2 bg-red-600 text-white rounded-md text-sm font-medium hover:bg-red-700 transition-colors"
                             >
                               Remove Picture
@@ -663,13 +683,66 @@ const AdminSettings = () => {
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Profile Image Delete Confirmation Modal */}
+      {profileImageDeleteModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h3 className="text-lg font-medium text-red-600">Remove Profile Picture</h3>
+              <button
+                onClick={closeProfileImageDeleteModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <AlertCircle size={24} className="text-red-500 mr-3" />
+                <p className="text-gray-700">
+                  Are you sure you want to remove your profile picture?
+                </p>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                This action cannot be undone. Your profile will use the default avatar.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-3 p-6 border-t">
+              <button
+                onClick={closeProfileImageDeleteModal}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRemoveProfileImage}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center transition-colors"
+              >
+                <Trash2 size={16} className="mr-2" />
+                Remove Picture
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Staff Delete Confirmation Dialog */}
       {staffToDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Confirm Staff Removal</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-red-600">Confirm Staff Removal</h3>
+              <button
+                onClick={cancelDelete}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to remove {staffToDelete.full_name} from the staff list? This action cannot be undone.
+              Are you sure you want to remove <strong>{staffToDelete.full_name}</strong> from the staff list? This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-3">
               <button
@@ -680,8 +753,9 @@ const AdminSettings = () => {
               </button>
               <button
                 onClick={() => handleDeleteStaff(staffToDelete.id)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center"
               >
+                <Trash2 size={16} className="mr-2" />
                 Remove Staff
               </button>
             </div>
@@ -699,9 +773,7 @@ const AdminSettings = () => {
                 onClick={closeEditModal}
                 className="text-gray-500 hover:text-gray-700"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X size={20} />
               </button>
             </div>
 

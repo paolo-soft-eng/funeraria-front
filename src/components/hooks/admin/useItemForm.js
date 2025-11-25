@@ -13,6 +13,43 @@ export const useItemForm = (userId, userName, fetchItems) => {
   });
   const [imagePreview, setImagePreview] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    itemId: null
+  });
+
+  // Show confirmation modal
+  const showConfirmation = (title, message, onConfirm, itemId = null) => {
+    setConfirmationModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm,
+      itemId
+    });
+  };
+
+  // Close confirmation modal
+  const closeConfirmation = () => {
+    setConfirmationModal({
+      isOpen: false,
+      title: '',
+      message: '',
+      onConfirm: null,
+      itemId: null
+    });
+  };
+
+  // Handle confirmation
+  const handleConfirm = async () => {
+    if (confirmationModal.onConfirm) {
+      await confirmationModal.onConfirm(confirmationModal.itemId);
+    }
+    closeConfirmation();
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -115,21 +152,26 @@ export const useItemForm = (userId, userName, fetchItems) => {
   };
 
   const deleteItem = async (id) => {
-    if (window.confirm('Are you sure you want to delete this item?')) {
-      try {
-        setIsLoading(true);
-        await axios.delete(
-          `http://localhost/funeraria/api/components/itemlist.php?id=${id}&user_id=${userId}&user_name=${encodeURIComponent(userName)}`
-        );
-        fetchItems();
-        toast.success('Item deleted successfully 🗑️');
-      } catch (err) {
-        toast.error('Error deleting item ❌');
-        console.error('Error deleting item:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+    showConfirmation(
+      'Delete Item',
+      'Are you sure you want to delete this item? This action cannot be undone.',
+      async (itemId) => {
+        try {
+          setIsLoading(true);
+          await axios.delete(
+            `http://localhost/funeraria/api/components/itemlist.php?id=${itemId}&user_id=${userId}&user_name=${encodeURIComponent(userName)}`
+          );
+          fetchItems();
+          toast.success('Item deleted successfully 🗑️');
+        } catch (err) {
+          toast.error('Error deleting item ❌');
+          console.error('Error deleting item:', err);
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      id
+    );
   };
 
   const editItem = (item) => {
@@ -164,11 +206,14 @@ export const useItemForm = (userId, userName, fetchItems) => {
     imagePreview,
     setImagePreview,
     isLoading,
+    confirmationModal,
     handleChange,
     handleImageChange,
     handleSubmit,
     resetForm,
     editItem,
     deleteItem,
+    closeConfirmation,
+    handleConfirm,
   };
 };

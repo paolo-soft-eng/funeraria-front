@@ -20,10 +20,14 @@ const ClientCart = () => {
         setEditingQuantity,
         isOrderCart,
         setIsOrderCart,
+        showDeleteConfirm,
+        itemToDelete,
         fetchCartItems,
         handleEditClick,
         handleUpdateQuantity,
         handleDeleteClick,
+        confirmDelete,
+        cancelDelete,
         calculateTotal,
         clearMessages: clearCartMessages
     } = useCart();
@@ -128,6 +132,39 @@ const ClientCart = () => {
 
     return (
         <div className="flex flex-col min-h-screen">
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                        <div className="flex items-center mb-4">
+                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                                <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h3 className="ml-4 text-lg font-semibold text-gray-900">Confirm Removal</h3>
+                        </div>
+                        <p className="text-gray-600 mb-6">
+                            Are you sure you want to remove this service from your cart? This action cannot be undone.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={cancelDelete}
+                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+                            >
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="container mx-auto p-4 flex-grow">
                 <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl sm:tracking-tight lg:text-5xl text-center mb-6">
                     Customized Cart

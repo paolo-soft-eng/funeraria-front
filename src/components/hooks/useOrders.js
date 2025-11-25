@@ -8,6 +8,8 @@ const useOrders = () => {
     const { error, setError, success, setSuccess, clear } = useNotifications();
     const [successMessage, setSuccessMessage] = useState(null);
     const [processingOrderId, setProcessingOrderId] = useState(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [orderToDelete, setOrderToDelete] = useState(null);
     const { email } = useContext(EmailContext);
 
     useEffect(() => {
@@ -53,10 +55,13 @@ const useOrders = () => {
         }
     };
 
-    const handleDeleteOrder = async (orderId) => {
-        if (!window.confirm('Are you sure you want to cancel this memorial service?')) {
-            return;
-        }
+    const handleDeleteOrder = (orderId) => {
+        setOrderToDelete(orderId);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDeleteOrder = async () => {
+        if (!orderToDelete) return;
 
         try {
             const response = await fetch('http://localhost/funeraria/api/components/deleteOrder.php', {
@@ -65,7 +70,7 @@ const useOrders = () => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    orderId: orderId,
+                    orderId: orderToDelete,
                     userEmail: email
                 }),
             });
@@ -85,7 +90,7 @@ const useOrders = () => {
             const result = await response.json();
 
             if (result.success) {
-                setOrders(orders.filter(order => order.id !== orderId));
+                setOrders(orders.filter(order => order.id !== orderToDelete));
                 setSuccessMessage(result.message || 'Memorial service cancelled successfully');
             } else {
                 throw new Error(result.message || 'Cancellation failed');
@@ -94,7 +99,15 @@ const useOrders = () => {
             console.error('Delete error:', error);
             const cleanError = error.message.replace(/<[^>]*>?/gm, '');
             setError(cleanError || 'Failed to cancel memorial service');
+        } finally {
+            setShowDeleteConfirm(false);
+            setOrderToDelete(null);
         }
+    };
+
+    const cancelDeleteOrder = () => {
+        setShowDeleteConfirm(false);
+        setOrderToDelete(null);
     };
 
     const formatDate = (dateString) => {
@@ -122,9 +135,14 @@ const useOrders = () => {
         setSuccessMessage,
         processingOrderId,
         setProcessingOrderId,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        orderToDelete,
         email,
         fetchOrders,
         handleDeleteOrder,
+        confirmDeleteOrder,
+        cancelDeleteOrder,
         formatDate,
         getServiceId,
         clear

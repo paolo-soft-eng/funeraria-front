@@ -44,13 +44,13 @@ const Auth = () => {
 
     if (formData.email === 'super@gmail.com' && formData.password === 'super12345') {
       toast.success('Login successful as super admin', {
-              duration: 2000,
-              position: 'top-right',
-            });
-            setTimeout(() => navigate('/gomez/super-admin'), 1000);
+        duration: 2000,
+        position: 'top-right',
+      });
+      setTimeout(() => navigate('/gomez/super-admin'), 1000);
       return;
     }
-    
+
     if (!isLogin && formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
       setIsLoading(false);
@@ -112,10 +112,20 @@ const Auth = () => {
       console.error("Error:", error);
       if (error.response) {
         if (error.response.status === 403 && error.response.data.status === 'disabled') {
-          toast.error('Your account has been disabled. Please contact the administrator.', {
-            duration: 4000,
-            position: 'top-right',
-          });
+          // Check if the disabled account is an admin
+          const userRole = error.response.data.role || formData.role;
+
+          if (userRole === 'admin') {
+            toast.error('Your account has been disabled by the manager. Please contact your manager.', {
+              duration: 4000,
+              position: 'top-right',
+            });
+          } else {
+            toast.error('Your account has been disabled. Please contact the administrator.', {
+              duration: 4000,
+              position: 'top-right',
+            });
+          }
         } else if (error.response.data) {
           toast.error('Error: ' + error.response.data.message);
         } else {
@@ -161,7 +171,7 @@ const Auth = () => {
 
         // Show different messages for new vs existing users
         const loginMessage = isNewUser ? 'Welcome! Account created successfully' : 'Welcome back!';
-        
+
         if (userRole === 'admin') {
           toast.success(`${loginMessage} - Logged in as admin`, {
             duration: 5000,
@@ -189,15 +199,25 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("Google auth error:", error);
-      
+
       if (error.response) {
         if (error.response.status === 403 && error.response.data.status === 'disabled') {
-          // Account disabled
-          toast.error('Your account has been disabled. Please contact the administrator.', {
-            duration: 5000,
-            position: 'top-right',
-            icon: '🚫',
-          });
+          // Check if the disabled account is an admin
+          const userRole = error.response.data.role;
+
+          if (userRole === 'admin') {
+            toast.error('Your account has been disabled by the manager. Please contact your manager.', {
+              duration: 5000,
+              position: 'top-right',
+              icon: '🚫',
+            });
+          } else {
+            toast.error('Your account has been disabled. Please contact the administrator.', {
+              duration: 5000,
+              position: 'top-right',
+              icon: '🚫',
+            });
+          }
         } else {
           // Other errors
           toast.error(error.response.data?.message || 'Google authentication failed. Please try again.', {
@@ -311,11 +331,10 @@ const Auth = () => {
 
             {/* Form panel */}
             <div
-              className={`mx-auto w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur-xl transition-all duration-500 sm:p-8 lg:p-6 ${
-                animateForm ? 'translate-y-2 opacity-0' : 'translate-y-0 opacity-100'
-              }`}
+              className={`mx-auto w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-5 shadow-xl backdrop-blur-xl transition-all duration-500 sm:p-8 lg:p-6 ${animateForm ? 'translate-y-2 opacity-0' : 'translate-y-0 opacity-100'
+                }`}
             >
-              <div className="mb-6 flex items-center gap-3"> 
+              <div className="mb-6 flex items-center gap-3">
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-400/15 ring-1 ring-emerald-300/30">
                   <svg viewBox="0 0 24 24" className="h-6 w-6 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M12 3c2 3 3 5 6 6-3 2-4 4-6 6-2-2-3-4-6-6 3-1 4-3 6-6z" strokeLinecap="round" strokeLinejoin="round" />
@@ -344,7 +363,7 @@ const Auth = () => {
                         onChange={handleChange}
                         placeholder='Username'
                         className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
-                        
+
                         required
                       />
                     </div>
@@ -485,25 +504,25 @@ const Auth = () => {
                 </div>
 
                 <div className="mt-2 flex items-center justify-center">
-                    <GoogleLogin
-                      onSuccess={handleGoogleSuccess}
-                      onError={handleGoogleFailure}
-                      useOneTap
-                      theme="filled_blue"
-                      size="medium"
-                      type="icon"
-                      shape="circle"
-                      logo_alignment="left"
-                      logo_type="default"
-                      logo_color="white"
-                      logo_size="small"
-                      logo_style="filled"
-                      logo_shape="circle"
-                      logo_shape_color_style_scheme="light"
+                  <GoogleLogin
+                    onSuccess={handleGoogleSuccess}
+                    onError={handleGoogleFailure}
+                    useOneTap
+                    theme="filled_blue"
+                    size="medium"
+                    type="icon"
+                    shape="circle"
+                    logo_alignment="left"
+                    logo_type="default"
+                    logo_color="white"
+                    logo_size="small"
+                    logo_style="filled"
+                    logo_shape="circle"
+                    logo_shape_color_style_scheme="light"
 
-                      auto_select
+                    auto_select
                     width="48"
-                    />
+                  />
                 </div>
               </div>
 

@@ -12,6 +12,8 @@ const SuperAdminReport = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, reportId: null, reportEmail: '' });
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -83,36 +85,54 @@ const SuperAdminReport = () => {
     }
   };
 
-  const handleDeleteReport = async (reportId) => {
-    if (window.confirm('Are you sure you want to delete this report?')) {
-      try {
-        const response = await fetch('http://localhost/funeraria/api/components/superAdminReport.php', {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'delete_report',
-            report_id: reportId
-          }),
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to delete report');
-        }
-        
-        const result = await response.json();
-        
-        if (result.status === 'success') {
-          setReports(prevReports => prevReports.filter(report => report.id !== reportId));
-          showNotification('Report deleted successfully', 'success');
-        } else {
-          throw new Error(result.message || 'Unknown error occurred');
-        }
-      } catch (error) {
-        setError('Error deleting report: ' + error.message);
-        showNotification(error.message, 'error');
+  const openDeleteModal = (reportId, reportEmail) => {
+    setDeleteModal({
+      isOpen: true,
+      reportId,
+      reportEmail
+    });
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({
+      isOpen: false,
+      reportId: null,
+      reportEmail: ''
+    });
+  };
+
+  const handleDeleteReport = async () => {
+    const { reportId } = deleteModal;
+    
+    try {
+      const response = await fetch('http://localhost/funeraria/api/components/superAdminReport.php', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete_report',
+          report_id: reportId
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete report');
       }
+      
+      const result = await response.json();
+      
+      if (result.status === 'success') {
+        setReports(prevReports => prevReports.filter(report => report.id !== reportId));
+        showNotification('Report deleted successfully', 'success');
+        closeDeleteModal();
+      } else {
+        throw new Error(result.message || 'Unknown error occurred');
+      }
+    } catch (error) {
+      setError('Error deleting report: ' + error.message);
+      showNotification(error.message, 'error');
+      closeDeleteModal();
     }
   };
 
@@ -202,24 +222,91 @@ const SuperAdminReport = () => {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  const handleLogout = async () => {
-    const userConfirmed = window.confirm("Are you sure you want to log out?");
+  const handleLogoutClick = () => setShowLogoutModal(true);
 
-    if (userConfirmed) {
-      try {
-        await axios.post('http://localhost/funeraria/api/config/logout.php');
-        localStorage.removeItem('userEmail');
-        localStorage.removeItem('userRole');
-        navigate('/gomez/auth');
-      } catch (error) {
-        console.error('Error logging out:', error);
-        alert('Failed to log out. Please try again.');
-      }
+  const handleLogoutConfirm = async () => {
+    try {
+      await axios.post('http://localhost/funeraria/api/config/logout.php');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userRole');
+      navigate('/gomez/auth');
+    } catch (error) {
+      console.error('Error logging out:', error);
+      showNotification('Failed to log out. Please try again.', 'error');
+    } finally {
+      setShowLogoutModal(false);
     }
   };
 
+  const handleLogoutCancel = () => setShowLogoutModal(false);
+
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Delete Confirmation Modal */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full animate-fade-in">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <AlertCircle className="text-red-600" size={24} />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 text-center mb-2">
+                Confirm Deletion
+              </h3>
+              <p className="text-gray-600 text-center mb-6">
+                Are you sure you want to delete the report from <strong>{deleteModal.reportEmail}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={closeDeleteModal}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteReport}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  Delete Report
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full animate-fade-in">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <AlertCircle className="text-red-600" size={24} />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 text-center mb-2">
+                Confirm Logout
+              </h3>
+              <p className="text-gray-600 text-center mb-6">
+                Are you sure you want to log out? You'll need to sign in again to access the dashboard.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleLogoutCancel}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleLogoutConfirm}
+                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Header */}
@@ -244,7 +331,7 @@ const SuperAdminReport = () => {
                   <RefreshCw size={18} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                   Refresh
                 </button>
-                <button className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200" onClick={handleLogout}>
+                <button className="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg flex items-center shadow transition-all duration-200" onClick={handleLogoutClick}>
                   Logout
                 </button>
               </div>
@@ -417,7 +504,7 @@ const SuperAdminReport = () => {
                                 </>
                               )}
                               <button
-                                onClick={() => handleDeleteReport(report.id)}
+                                onClick={() => openDeleteModal(report.id, report.email)}
                                 className="px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-md text-sm font-medium"
                               >
                                 Delete
@@ -484,7 +571,7 @@ const SuperAdminReport = () => {
                               </>
                             )}
                             <button
-                              onClick={() => handleDeleteReport(report.id)}
+                              onClick={() => openDeleteModal(report.id, report.email)}
                               className="px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-md text-sm font-medium"
                             >
                               Delete
@@ -588,8 +675,25 @@ const SuperAdminReport = () => {
           )}
         </div>
       </div>
+
+      <style>{`
+        .animate-fade-in {
+          animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };
 
-export default SuperAdminReport; 
+export default SuperAdminReport;

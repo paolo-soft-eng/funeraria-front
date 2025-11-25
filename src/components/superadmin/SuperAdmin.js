@@ -7,6 +7,7 @@ import {
   CheckCircle, XCircle, Eye, Copy
 } from 'lucide-react';
 import axios from 'axios';
+import DeleteModal from '../utils/DeleteModal';
 
 const SuperAdmin = () => {
   const [users, setUsers] = useState([]);
@@ -33,6 +34,8 @@ const SuperAdmin = () => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [activeUserMenu, setActiveUserMenu] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -69,29 +72,43 @@ const SuperAdmin = () => {
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        const response = await fetch(`http://localhost/funeraria/api/components/superadmin/delete_user.php?id=${id}`, {
-          method: 'DELETE',
-        });
+  const handleDeleteClick = (user, event) => {
+    event?.stopPropagation?.();
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
 
-        if (!response.ok) {
-          throw new Error('Failed to delete user');
-        }
+  const handleDeleteConfirm = async () => {
+    if (!userToDelete) return;
 
-        const result = await response.json();
-        if (result.success) {
-          setUsers(users.filter(user => user.id !== id));
-          showNotification('User deleted successfully', 'success');
-        } else {
-          throw new Error(result.error || 'Unknown error occurred');
-        }
-      } catch (error) {
-        setError('Error deleting user: ' + error.message);
-        showNotification(error.message, 'error');
+    try {
+      const response = await fetch(`http://localhost/funeraria/api/components/superadmin/delete_user.php?id=${userToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
       }
+
+      const result = await response.json();
+      if (result.success) {
+        setUsers(users.filter(user => user.id !== userToDelete.id));
+        showNotification('User deleted successfully', 'success');
+      } else {
+        throw new Error(result.error || 'Unknown error occurred');
+      }
+    } catch (error) {
+      setError('Error deleting user: ' + error.message);
+      showNotification(error.message, 'error');
+    } finally {
+      setShowDeleteModal(false);
+      setUserToDelete(null);
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setUserToDelete(null);
   };
 
   const validateForm = () => {
@@ -360,6 +377,12 @@ const SuperAdmin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <DeleteModal
+        open={showDeleteModal}
+        user={userToDelete}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
       {/* Logout Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -806,7 +829,7 @@ const SuperAdmin = () => {
                                   {user.status === 'active' ? 'Disable' : 'Enable'}
                                 </button>
                                 <button
-                                  onClick={() => handleDelete(user.id)}
+                                  onClick={(e) => handleDeleteClick(user, e)}
                                   className="px-4 py-2 bg-rose-100 text-rose-700 hover:bg-rose-200 rounded-lg text-sm font-semibold transition-all duration-200"
                                 >
                                   Delete
@@ -867,7 +890,7 @@ const SuperAdmin = () => {
                                 {user.status === 'active' ? <XCircle size={16} /> : <CheckCircle size={16} />}
                               </button>
                               <button
-                                onClick={() => handleDelete(user.id)}
+                                onClick={(e) => handleDeleteClick(user, e)}
                                 className="p-2 bg-rose-100 text-rose-700 hover:bg-rose-200 rounded-lg transition-all duration-200"
                               >
                                 <Trash2 size={16} />

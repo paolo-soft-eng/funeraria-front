@@ -11,6 +11,8 @@ const useCart = () => {
     const [editingItemId, setEditingItemId] = useState(null);
     const [editingQuantity, setEditingQuantity] = useState(1);
     const [isOrderCart, setIsOrderCart] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
     const { email } = useContext(EmailContext);
 
     useEffect(() => {
@@ -72,7 +74,6 @@ const useCart = () => {
         }
     };
 
-
     const handleEditClick = (itemId, currentQuantity) => {
         setEditingItemId(itemId);
         setEditingQuantity(parseInt(currentQuantity) || 1);
@@ -121,14 +122,17 @@ const useCart = () => {
         }
     };
 
-    const handleDeleteClick = async (itemId) => {
-        if (!window.confirm('Are you sure you want to remove this service from your cart?')) {
-            return;
-        }
+    const handleDeleteClick = (itemId) => {
+        setItemToDelete(itemId);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!itemToDelete) return;
 
         const payload = {
             userId: parseInt(userId),
-            itemId: parseInt(itemId)
+            itemId: parseInt(itemToDelete)
         };
 
         try {
@@ -146,14 +150,22 @@ const useCart = () => {
 
             const data = await response.json();
             if (data.success) {
-                setCartItems(cartItems.filter(item => item.id !== itemId));
+                setCartItems(cartItems.filter(item => item.id !== itemToDelete));
                 setSuccessMessage('Item menu removed successfully!');
             } else {
                 setError('Error removing service: ' + (data.error || 'Unknown error'));
             }
         } catch (error) {
             setError('Error removing service: ' + error.message);
+        } finally {
+            setShowDeleteConfirm(false);
+            setItemToDelete(null);
         }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteConfirm(false);
+        setItemToDelete(null);
     };
 
     const calculateTotal = () => {
@@ -183,11 +195,16 @@ const useCart = () => {
         setEditingQuantity,
         isOrderCart,
         setIsOrderCart,
+        showDeleteConfirm,
+        setShowDeleteConfirm,
+        itemToDelete,
         email,
         fetchCartItems,
         handleEditClick,
         handleUpdateQuantity,
         handleDeleteClick,
+        confirmDelete,
+        cancelDelete,
         calculateTotal,
         clearMessages
     };

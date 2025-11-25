@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { FaTable, FaThLarge, FaCheck, FaTrash, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaTable, FaThLarge, FaCheck, FaTrash, FaChevronLeft, FaChevronRight, FaExclamationTriangle } from 'react-icons/fa';
 
 // Import custom hooks
 import { useAuth } from '../../hooks/admin/useAuth';
@@ -18,6 +18,16 @@ const AdminOrders = () => {
   // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [ordersPerPage, setOrdersPerPage] = useState(10);
+
+  // Custom confirmation modal state
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    orderId: null,
+    orderDetails: null
+  });
 
   // Initialize orders hook
   const {
@@ -51,6 +61,38 @@ const AdminOrders = () => {
     formatDateTime
   } = useOrderView('table');
 
+  // Show confirmation modal
+  const showConfirmation = (title, message, onConfirm, orderId = null, orderDetails = null) => {
+    setConfirmationModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm,
+      orderId,
+      orderDetails
+    });
+  };
+
+  // Close confirmation modal
+  const closeConfirmation = () => {
+    setConfirmationModal({
+      isOpen: false,
+      title: '',
+      message: '',
+      onConfirm: null,
+      orderId: null,
+      orderDetails: null
+    });
+  };
+
+  // Handle confirmation
+  const handleConfirm = async () => {
+    if (confirmationModal.onConfirm) {
+      await confirmationModal.onConfirm(confirmationModal.orderId);
+    }
+    closeConfirmation();
+  };
+
   // Helper function to format numbers with commas and no decimals
   const formatCurrency = (amount) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -83,19 +125,28 @@ const AdminOrders = () => {
     }
   };
 
-  const handleDeleteOrderWithFeedback = async (orderId) => {
-    if (window.confirm('Are you sure you want to delete this order?')) {
-      try {
-        const result = await handleDeleteOrder(orderId);
-        if (result.success) {
-          showSuccess('Order deleted successfully');
-          fetchOrders(currentPage, ordersPerPage); // Refresh orders after deletion
+  const handleDeleteOrderWithFeedback = async (orderId, orderDetails = null) => {
+    const order = orders.find(o => o.id === orderId);
+    const orderInfo = order ? `Order #${order.id} for ${order.username || 'N/A'} (₱${formatCurrency(order.total_amount)})` : 'this order';
+    
+    showConfirmation(
+      'Delete Order',
+      `Are you sure you want to delete ${orderInfo}? This action cannot be undone.`,
+      async (id) => {
+        try {
+          const result = await handleDeleteOrder(id);
+          if (result.success) {
+            showSuccess('Order deleted successfully');
+            fetchOrders(currentPage, ordersPerPage); // Refresh orders after deletion
+          }
+        } catch (error) {
+          console.error('Error deleting order:', error);
+          showError('Failed to delete order. Please try again.');
         }
-      } catch (error) {
-        console.error('Error deleting order:', error);
-        showError('Failed to delete order. Please try again.');
-      }
-    }
+      },
+      orderId,
+      orderDetails
+    );
   };
 
   // Calculate display range
@@ -241,7 +292,7 @@ const AdminOrders = () => {
                               </button>
                             )}
                             <button
-                              onClick={() => handleDeleteOrderWithFeedback(order.id)}
+                              onClick={() => handleDeleteOrderWithFeedback(order.id, order)}
                               className="text-red-600 hover:text-red-900"
                               title="Delete Order"
                             >
@@ -332,7 +383,7 @@ const AdminOrders = () => {
                           </button>
                         )}
                         <button
-                          onClick={() => handleDeleteOrderWithFeedback(order.id)}
+                          onClick={() => handleDeleteOrderWithFeedback(order.id, order)}
                           className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
                         >
                           Delete
@@ -409,6 +460,43 @@ const AdminOrders = () => {
             )}
           </div>
         </div>
+
+        {/* Custom Confirmation Modal */}
+        {confirmationModal.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+              <div className="flex items-start mb-4">
+                <div className="flex-shrink-0 mr-3 text-red-500">
+                  <FaExclamationTriangle className="h-6 w-6" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">
+                    {confirmationModal.title}
+                  </h3>
+                  <p className="text-gray-600">
+                    {confirmationModal.message}
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={closeConfirmation}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  Delete Order
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

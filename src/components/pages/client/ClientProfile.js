@@ -9,7 +9,8 @@ import {
   MapPin,
   Bug,
   ChevronRight,
-  Save
+  Save,
+  AlertTriangle
 } from 'lucide-react';
 
 import {
@@ -80,6 +81,17 @@ const ClientProfile = () => {
   // Modal states
   const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
   const [documentFile, setDocumentFile] = useState(null);
+  
+  // Custom confirmation modal state
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    confirmText: 'Confirm',
+    cancelText: 'Cancel',
+    type: 'warning' // 'warning', 'danger', 'info'
+  });
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: <User size={18} /> },
@@ -88,6 +100,40 @@ const ClientProfile = () => {
     { id: 'report bug', label: 'Report Bug', icon: <Bug size={18} /> },
     { id: 'help', label: 'Help', icon: <HelpCircle size={18} /> }
   ];
+
+  // Show confirmation modal
+  const showConfirmation = (title, message, onConfirm, options = {}) => {
+    setConfirmationModal({
+      isOpen: true,
+      title,
+      message,
+      onConfirm,
+      confirmText: options.confirmText || 'Confirm',
+      cancelText: options.cancelText || 'Cancel',
+      type: options.type || 'warning'
+    });
+  };
+
+  // Close confirmation modal
+  const closeConfirmation = () => {
+    setConfirmationModal({
+      isOpen: false,
+      title: '',
+      message: '',
+      onConfirm: null,
+      confirmText: 'Confirm',
+      cancelText: 'Cancel',
+      type: 'warning'
+    });
+  };
+
+  // Handle confirmation
+  const handleConfirm = () => {
+    if (confirmationModal.onConfirm) {
+      confirmationModal.onConfirm();
+    }
+    closeConfirmation();
+  };
 
   // Load data when tab changes
   useEffect(() => {
@@ -142,19 +188,27 @@ const ClientProfile = () => {
   };
 
   const handleDeleteProfilePictureWithMessage = async () => {
-    if (window.confirm("Are you sure you want to delete your profile picture?")) {
-      try {
-        const result = await handleDeleteProfilePicture();
-        if (result.status === 'success') {
-          refetch(); // Refresh user data
-          showMessage('Profile picture deleted successfully!', 'success');
-        } else {
-          showMessage(result.message || 'Failed to delete profile picture', 'error');
+    showConfirmation(
+      'Delete Profile Picture',
+      'Are you sure you want to delete your profile picture? This action cannot be undone.',
+      async () => {
+        try {
+          const result = await handleDeleteProfilePicture();
+          if (result.status === 'success') {
+            refetch(); // Refresh user data
+            showMessage('Profile picture deleted successfully!', 'success');
+          } else {
+            showMessage(result.message || 'Failed to delete profile picture', 'error');
+          }
+        } catch (err) {
+          showMessage('Failed to delete profile picture. Please try again.', 'error');
         }
-      } catch (err) {
-        showMessage('Failed to delete profile picture. Please try again.', 'error');
+      },
+      {
+        confirmText: 'Delete',
+        type: 'danger'
       }
-    }
+    );
   };
 
   const handleDocumentUploadWithMessage = async (e) => {
@@ -181,19 +235,27 @@ const ClientProfile = () => {
   };
 
   const handleDeleteDocumentWithMessage = async (documentId) => {
-    if (window.confirm("Are you sure you want to delete this document?")) {
-      try {
-        const result = await handleDeleteDocument(documentId);
-        if (result.status === 'success') {
-          showMessage('Document deleted successfully', 'success');
-          loadDocuments();
-        } else {
-          showMessage(result.message || 'Failed to delete document', 'error');
+    showConfirmation(
+      'Delete Document',
+      'Are you sure you want to delete this document? This action cannot be undone.',
+      async () => {
+        try {
+          const result = await handleDeleteDocument(documentId);
+          if (result.status === 'success') {
+            showMessage('Document deleted successfully', 'success');
+            loadDocuments();
+          } else {
+            showMessage(result.message || 'Failed to delete document', 'error');
+          }
+        } catch (err) {
+          showMessage('Failed to delete document. Please try again.', 'error');
         }
-      } catch (err) {
-        showMessage('Failed to delete document. Please try again.', 'error');
+      },
+      {
+        confirmText: 'Delete',
+        type: 'danger'
       }
-    }
+    );
   };
 
   const handleReportBugWithMessage = async (e) => {
@@ -380,6 +442,7 @@ const ClientProfile = () => {
                         <p className="text-sm text-gray-500 mb-3">Upload a clear photo of yourself</p>
                         {userData.profile_picture && (
                           <button
+                            type="button"
                             onClick={handleDeleteProfilePictureWithMessage}
                             className="px-3 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 w-full sm:w-auto transition-colors"
                           >
@@ -746,6 +809,53 @@ const ClientProfile = () => {
           </div>
         </div>
       </div>
+
+      {/* Custom Confirmation Modal */}
+      {confirmationModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-start mb-4">
+              <div className={`flex-shrink-0 mr-3 ${
+                confirmationModal.type === 'danger' ? 'text-red-500' : 
+                confirmationModal.type === 'warning' ? 'text-yellow-500' : 
+                'text-blue-500'
+              }`}>
+                <AlertTriangle size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-medium text-gray-900 mb-1">
+                  {confirmationModal.title}
+                </h3>
+                <p className="text-gray-600">
+                  {confirmationModal.message}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                type="button"
+                onClick={closeConfirmation}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                {confirmationModal.cancelText}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirm}
+                className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${
+                  confirmationModal.type === 'danger' 
+                    ? 'bg-red-600 hover:bg-red-700' 
+                    : confirmationModal.type === 'warning'
+                    ? 'bg-yellow-600 hover:bg-yellow-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
+              >
+                {confirmationModal.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

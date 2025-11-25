@@ -594,40 +594,46 @@ const AdminDashboard = () => {
                                             Upcoming Orders
                                         </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {dashboardStats.upcoming_orders && dashboardStats.upcoming_orders.map((order) => (
-                                                <div key={order.id} className="p-5 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-lg transition-shadow duration-300">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs bg-indigo-100 text-indigo-800 px-4 py-1 rounded-full whitespace-nowrap min-w-[140px] text-center mb-3 self-end">
-                                                            {new Date(order.delivery_date).toLocaleDateString('en-US', {
-                                                                month: 'long',
-                                                                day: 'numeric',
-                                                                year: 'numeric'
-                                                            })}
-                                                        </span>
-                                                        {/* Show either order items or service name, but not both */}
-                                                        {order.order_items ? (
-                                                            <h6 className="font-medium text-gray-800">Order Items: {order.order_items}</h6>
-                                                        ) : order.service_name ? (
-                                                            <p className="text-sm text-gray-600">
-                                                                <span className="font-medium">Service: </span>
-                                                                {order.service_name}
-                                                            </p>
-                                                        ) : null}
+                                            {dashboardStats.upcoming_orders && dashboardStats.upcoming_orders.length > 0 ? (
+                                                dashboardStats.upcoming_orders.map((order) => (
+                                                    <div key={order.id} className="p-5 border border-gray-200 rounded-lg bg-white shadow-sm hover:shadow-lg transition-shadow duration-300">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs bg-indigo-100 text-indigo-800 px-4 py-1 rounded-full whitespace-nowrap min-w-[140px] text-center mb-3 self-end">
+                                                                {new Date(order.delivery_date).toLocaleDateString('en-US', {
+                                                                    month: 'long',
+                                                                    day: 'numeric',
+                                                                    year: 'numeric'
+                                                                })}
+                                                            </span>
+                                                            {/* Show either order items or service name, but not both */}
+                                                            {order.order_items ? (
+                                                                <h6 className="font-medium text-gray-800">Order Items: {order.order_items}</h6>
+                                                            ) : order.service_name ? (
+                                                                <p className="text-sm text-gray-600">
+                                                                    <span className="font-medium">Service: </span>
+                                                                    {order.service_name}
+                                                                </p>
+                                                            ) : null}
+                                                        </div>
+                                                        <p className="text-gray-600 text-sm mt-3 flex items-center">
+                                                            <MapPin size={16} className="mr-2 text-gray-400" />
+                                                            <span>{order.address}</span>
+                                                        </p>
+                                                        <div className="mt-4 flex items-center text-sm text-gray-500">
+                                                            <User size={16} className="mr-2" />
+                                                            <span>Client: {order.client_name} family</span>
+                                                        </div>
+                                                        <div className="mt-3 text-sm">
+                                                            <span className="font-medium">Amount: </span>
+                                                            <span className="font-semibold text-gray-900">₱{typeof order.total_amount === 'number' ? formatCurrency(order.total_amount) : formatCurrency(order.total_amount)}</span>
+                                                        </div>
                                                     </div>
-                                                    <p className="text-gray-600 text-sm mt-3 flex items-center">
-                                                        <MapPin size={16} className="mr-2 text-gray-400" />
-                                                        <span>{order.address}</span>
-                                                    </p>
-                                                    <div className="mt-4 flex items-center text-sm text-gray-500">
-                                                        <User size={16} className="mr-2" />
-                                                        <span>Client: {order.client_name} family</span>
-                                                    </div>
-                                                    <div className="mt-3 text-sm">
-                                                        <span className="font-medium">Amount: </span>
-                                                        <span className="font-semibold text-gray-900">₱{typeof order.total_amount === 'number' ? formatCurrency(order.total_amount) : formatCurrency(order.total_amount)}</span>
-                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="col-span-2 text-center text-gray-500 py-4">
+                                                    No upcoming orders found
                                                 </div>
-                                            ))}
+                                            )}
                                         </div>
                                         <div className="mt-6 text-center">
                                             <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium py-2 px-4 border border-indigo-600 rounded hover:bg-indigo-50 transition-colors duration-300" onClick={handleOrders}>

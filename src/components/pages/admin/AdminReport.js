@@ -58,6 +58,13 @@ export const AdminReport = () => {
     formatDate
   } = useReportUtils();
 
+  // State for delete confirmation modal
+  const [deleteModal, setDeleteModal] = React.useState({
+    isOpen: false,
+    reportId: null,
+    reportEmail: ''
+  });
+
   // Handle report status update with message
   const handleStatusUpdate = async (reportId, newStatus) => {
     try {
@@ -74,21 +81,41 @@ export const AdminReport = () => {
     }
   };
 
-  // Handle report deletion with confirmation
-  const handleDeleteReport = async (reportId) => {
-    if (window.confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
-      try {
-        const data = await deleteReport(reportId);
-        if (data.status === 'success') {
-          showSuccess('Report deleted successfully');
-          fetchReports(); // Refresh the list
-        } else {
-          showError(data.message || 'Failed to delete report');
-        }
-      } catch (err) {
-        console.error('Error deleting report:', err);
-        showError('Failed to delete report. Please try again.');
+  // Open delete confirmation modal
+  const openDeleteModal = (reportId, reportEmail) => {
+    setDeleteModal({
+      isOpen: true,
+      reportId,
+      reportEmail: reportEmail || 'Anonymous'
+    });
+  };
+
+  // Close delete confirmation modal
+  const closeDeleteModal = () => {
+    setDeleteModal({
+      isOpen: false,
+      reportId: null,
+      reportEmail: ''
+    });
+  };
+
+  // Handle report deletion
+  const handleDeleteReport = async () => {
+    const { reportId } = deleteModal;
+    
+    try {
+      const data = await deleteReport(reportId);
+      if (data.status === 'success') {
+        showSuccess('Report deleted successfully');
+        fetchReports(); // Refresh the list
+      } else {
+        showError(data.message || 'Failed to delete report');
       }
+    } catch (err) {
+      console.error('Error deleting report:', err);
+      showError('Failed to delete report. Please try again.');
+    } finally {
+      closeDeleteModal();
     }
   };
 
@@ -268,7 +295,7 @@ export const AdminReport = () => {
                             )}
                             
                             <button
-                              onClick={() => handleDeleteReport(report.id)}
+                              onClick={() => openDeleteModal(report.id, report.email)}
                               className="text-red-600 hover:text-red-900 p-1"
                               title="Delete Report"
                             >
@@ -391,6 +418,51 @@ export const AdminReport = () => {
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h3 className="text-lg font-medium text-red-600">Confirm Deletion</h3>
+              <button
+                onClick={closeDeleteModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XCircle size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <AlertCircle size={24} className="text-red-500 mr-3" />
+                <p className="text-gray-700">
+                  Are you sure you want to delete the report from <strong>{deleteModal.reportEmail}</strong>?
+                </p>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                This action cannot be undone. The report will be permanently removed from the system.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-3 p-6 border-t">
+              <button
+                onClick={closeDeleteModal}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteReport}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center transition-colors"
+              >
+                <Trash2 size={16} className="mr-2" />
+                Delete Report
               </button>
             </div>
           </div>
