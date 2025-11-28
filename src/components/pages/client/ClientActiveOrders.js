@@ -254,7 +254,7 @@ const ClientActiveOrders = () => {
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Method:</span>
                                             <span className="font-medium text-gray-800">
-                                                {selectedOrder.payment_method?.toUpperCase() || 'Cash on Delivery'}
+                                                {selectedOrder.payment_method?.toUpperCase() || 'Pay Later'}
                                             </span>
                                         </div>
                                     </div>

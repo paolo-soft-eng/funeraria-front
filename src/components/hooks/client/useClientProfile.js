@@ -2,8 +2,8 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { EmailContext } from '../../utils/EmailContext';
 
-const API_BASE_URL = 'http://localhost/funeraria/api/components/user_profile.php';
-const IMAGE_BASE_URL = 'http://localhost/funeraria/api/components/';
+const API_BASE_URL = 'http://192.168.100.99:8000/components/user_profile.php';
+const IMAGE_BASE_URL = 'http://192.168.100.99:8000/components/';
 
 // Authentication Hook
 export const useAuth = () => {
@@ -16,7 +16,7 @@ export const useAuth = () => {
     const validateLogin = async () => {
       if (email) {
         try {
-          const response = await fetch(`http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(email)}`);
+          const response = await fetch(`http://192.168.100.99:8000/components/getUserId.php?email=${encodeURIComponent(email)}`);
           const data = await response.json();
           
           if (data.userId) {
@@ -422,7 +422,7 @@ export const useDocuments = (userData) => {
     try {
       if (!userData?.id) return;
 
-      const response = await fetch(`http://localhost/funeraria/api/components/documents.php?user_id=${userData.id}`, {
+      const response = await fetch(`http://192.168.100.99:8000/components/documents.php?user_id=${userData.id}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -448,7 +448,7 @@ export const useDocuments = (userData) => {
     formData.append('document_name', documentDetails.documentName);
     formData.append('document_type', documentDetails.documentType);
 
-    const response = await fetch('http://localhost/funeraria/api/components/documents.php', {
+    const response = await fetch('http://192.168.100.99:8000/components/documents.php', {
       method: 'POST',
       body: formData
     });
@@ -456,7 +456,7 @@ export const useDocuments = (userData) => {
   };
 
   const handleDeleteDocument = async (documentId) => {
-    const response = await fetch(`http://localhost/funeraria/api/components/documents.php`, {
+    const response = await fetch(`http://192.168.100.99:8000/components/documents.php`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
@@ -491,7 +491,7 @@ export const useBugReport = (userData, email) => {
     setBugReportStatus(null);
 
     try {
-      const response = await fetch('http://localhost/funeraria/api/components/report.php', {
+      const response = await fetch('http://192.168.100.99:8000/components/report.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

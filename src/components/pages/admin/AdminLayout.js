@@ -52,7 +52,7 @@ const AdminLayout = ({ children, currentPage }) => {
     }
 
     try {
-      const response = await axios.post('http://localhost/funeraria/api/components/getUserId.php', {
+      const response = await axios.post('http://192.168.100.99:8000/components/getUserId.php', {
         email: email
       });
 
@@ -100,7 +100,7 @@ const AdminLayout = ({ children, currentPage }) => {
     const fetchUserData = async () => {
       if (!isValidatingAdmin && email) {
         try {
-          const response = await axios.post('http://localhost/funeraria/api/components/fetchAdminProfile.php', { email });
+          const response = await axios.post('http://192.168.100.99:8000/components/fetchAdminProfile.php', { email });
           setUserData(response.data.data);
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -135,7 +135,7 @@ const AdminLayout = ({ children, currentPage }) => {
   const handleLogoutConfirm = async () => {
     try {
       showNotification('Logging out...', 'info');
-      await axios.post('http://localhost/funeraria/api/config/logout.php');
+      await axios.post('http://192.168.100.99:8000/config/logout.php');
       localStorage.removeItem('userEmail');
       localStorage.removeItem('userRole');
       showNotification('Successfully logged out!', 'success');
@@ -283,7 +283,7 @@ const AdminLayout = ({ children, currentPage }) => {
           <div className={`px-4 py-6 ${isSidebarOpen ? 'flex items-center' : 'flex flex-col items-center'}`}>
             <div className="rounded-full  flex items-center justify-center">
               {userData && userData.profileImage ? (
-                <img src={`http://localhost/funeraria/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
+                <img src={`http://192.168.100.99:8000/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
               ) : (
                 <User size={isSidebarOpen ? 24 : 18} />
               )}
@@ -354,7 +354,7 @@ const AdminLayout = ({ children, currentPage }) => {
                 >
                   <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700">
                     {userData && userData.profileImage ? (
-                      <img src={`http://localhost/funeraria/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-8 h-8 object-cover" />
+                      <img src={`http://192.168.100.99:8000/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-8 h-8 object-cover" />
                     ) : (
                       <User size={18} />
                     )}

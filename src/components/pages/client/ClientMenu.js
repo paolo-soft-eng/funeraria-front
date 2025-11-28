@@ -173,7 +173,7 @@ const ClientMenu = () => {
                             >
                                 <div className="relative">
                                     <img
-                                        src={`http://localhost/funeraria/api/components/${item.image_path}`}
+                                        src={`http://192.168.100.99:8000/components/${item.image_path}`}
                                         alt={item.name}
                                         className="w-full h-56 sm:h-64 object-cover"
                                         onError={(e) => {

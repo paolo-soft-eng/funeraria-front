@@ -1,9 +1,9 @@
-export const API_BASE_URL = 'http://localhost/funeraria';
+export const API_BASE_URL = 'http://192.168.100.99:8000';
 
 // Fetch all available funeral services
 export const fetchServices = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/components/services.php`, {
+        const response = await fetch(`${API_BASE_URL}/components/services.php`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -41,7 +41,7 @@ export const fetchServices = async () => {
 export const fetchServiceById = async (serviceId) => {
     try {
         // Fixed URL path
-        const response = await fetch(`${API_BASE_URL}/api/components/services.php?id=${serviceId}`);
+        const response = await fetch(`${API_BASE_URL}/components/services.php?id=${serviceId}`);
         if (!response.ok) {
             throw new Error(`Error: ${response.statusText}`);
         }
@@ -56,7 +56,7 @@ export const fetchServiceById = async (serviceId) => {
 export const placeOrder = async (orderData) => {
     try {
         // Fixed URL path
-        const response = await fetch(`${API_BASE_URL}/api/components/orders.php`, {
+        const response = await fetch(`${API_BASE_URL}/components/orders.php`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ export const placeOrder = async (orderData) => {
 };
 export const fetchCaskets = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/components/caskets.php`, {
+        const response = await fetch(`${API_BASE_URL}/components/caskets.php`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -131,7 +131,7 @@ export const fetchCaskets = async () => {
 // Fetch all chapels
 export const fetchChapels = async () => {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/components/chapel.php`, {
+        const response = await fetch(`${API_BASE_URL}/components/chapel.php`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

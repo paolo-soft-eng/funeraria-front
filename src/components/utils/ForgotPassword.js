@@ -18,7 +18,7 @@ const ForgotPassword = () => {
     setIsSuccess(false);
 
     try {
-      const response = await axios.post('http://localhost/funeraria/api/components/forgot-password.php', {
+      const response = await axios.post('http://192.168.100.99:8000/components/forgot-password.php', {
         email
       });
 

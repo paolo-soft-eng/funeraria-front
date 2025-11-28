@@ -17,7 +17,7 @@ export const usePassword = (email) => {
       throw new Error('New password and confirmation do not match.');
     }
 
-    const res = await fetch('http://localhost/funeraria/api/components/updateAdminPassword.php', {
+    const res = await fetch('http://192.168.100.99:8000/components/updateAdminPassword.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

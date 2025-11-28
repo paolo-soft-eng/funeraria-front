@@ -23,7 +23,7 @@ export const useProfile = (email) => {
   const fetchProfileData = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('http://localhost/funeraria/api/components/fetchAdminProfile.php', {
+      const res = await fetch('http://192.168.100.99:8000/components/fetchAdminProfile.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -98,7 +98,7 @@ export const useProfile = (email) => {
       formDataToSend.append('profileImage', formData.profileImage);
     }
 
-    const res = await fetch('http://localhost/funeraria/api/components/updateAdminProfile.php', {
+    const res = await fetch('http://192.168.100.99:8000/components/updateAdminProfile.php', {
       method: 'POST',
       body: formDataToSend
     });
@@ -116,7 +116,7 @@ export const useProfile = (email) => {
 
   
   const removeProfileImage = async () => {
-  const res = await fetch('http://localhost/funeraria/api/components/removeProfileImage.php', {
+  const res = await fetch('http://192.168.100.99:8000/components/removeProfileImage.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: formData.email })

@@ -4,8 +4,8 @@ import { EmailContext } from '../../utils/EmailContext';
 import { useServiceItems } from '../../hooks/client/useServiceItems';
 import { useOrder } from '../../hooks/client/useOrder';
 
-const ServiceDetail = ({ service, onClose, refetchServices, showNotification, userId, isLoggedIn }) => {
-  const [showOrderForm, setShowOrderForm] = useState(false);
+const ServiceDetail = ({ service, onClose, refetchServices, showNotification, userId, isLoggedIn, openDirectlyToForm = false }) => {
+  const [showOrderForm, setShowOrderForm] = useState(openDirectlyToForm);
   const [selectedCaskets, setSelectedCaskets] = useState([]);
   const [selectedChapels, setSelectedChapels] = useState([]);
   const [validationErrors, setValidationErrors] = useState({});
@@ -22,6 +22,11 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
     email: email,
     customer_phone: ''
   });
+
+  // Set form visibility based on prop
+  useEffect(() => {
+    setShowOrderForm(openDirectlyToForm);
+  }, [openDirectlyToForm]);
 
   // Validation rules
   const validationRules = {
@@ -270,12 +275,12 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                             {chapel.image && (
                               <div className="h-48 w-full">
                                 <img
-                                  src={`${API_BASE_URL}/api/components/uploads/chapels/${chapel.image}`}
+                                  src={`${API_BASE_URL}/components/uploads/chapels/${chapel.image}`}
                                   alt={chapel.name}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
                                     e.target.onerror = null;
-                                    e.target.src = `${API_BASE_URL}/api/components/uploads/default.jpg`;
+                                    e.target.src = `${API_BASE_URL}/components/uploads/default.jpg`;
                                   }}
                                 />
                               </div>
@@ -336,6 +341,48 @@ const ServiceDetail = ({ service, onClose, refetchServices, showNotification, us
                   {orderStatus.message}
                 </div>
               )}
+
+              {/* Order Summary */}
+              <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h4>
+                
+                <div className="space-y-3">
+                  {/* Base Service */}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium text-gray-900">{service.name}</p>
+                      <p className="text-sm text-gray-600">Base package</p>
+                    </div>
+                    <p className="font-semibold text-gray-900">₱{formatCurrency(parseFloat(service.price_range))}</p>
+                  </div>
+
+                  {/* Selected Chapels */}
+                  {selectedChapels.length > 0 && (
+                    <div className="border-t border-gray-200 pt-3 mt-3">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Selected Chapels:</p>
+                      {selectedChapels.map(chapel => (
+                        <div key={chapel.id} className="flex justify-between items-center ml-4 mb-2">
+                          <p className="text-sm text-gray-600">{chapel.name}</p>
+                          <p className="text-sm font-medium text-gray-900">₱{formatCurrency(parseFloat(chapel.price))}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Total */}
+                  <div className="border-t border-gray-300 pt-3 mt-3">
+                    <div className="flex justify-between items-center">
+                      <p className="text-lg font-bold text-gray-900">Total Amount</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        ₱{formatCurrency(
+                          parseFloat(service.price_range) +
+                          selectedChapels.reduce((sum, chapel) => sum + parseFloat(chapel.price), 0)
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                 <div>

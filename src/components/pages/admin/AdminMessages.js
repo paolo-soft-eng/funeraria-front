@@ -5,7 +5,7 @@ import AdminLayout from './AdminLayout';
 import { EmailContext } from '../../utils/EmailContext';
 import { useNavigate } from 'react-router-dom';
 
-const API_URL = 'http://localhost/funeraria/api/components/admin_messages.php';
+const API_URL = 'http://192.168.100.99:8000/components/admin_messages.php';
 
 const AdminMessages = () => {
   const [senders, setSenders] = useState([]);
@@ -83,7 +83,7 @@ const AdminMessages = () => {
   // Activity logging function
   const addActivity = async (activityType, description, relatedId = null) => {
     try {
-      await axios.post('http://localhost/funeraria/api/components/addActivity.php', {
+      await axios.post('http://192.168.100.99:8000/components/addActivity.php', {
         activity_type: activityType,
         description: description,
         related_id: relatedId,
@@ -102,7 +102,7 @@ const AdminMessages = () => {
   // Login validation
   useEffect(() => {
     if (email) {
-      fetch(`http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(email)}`)
+      fetch(`http://192.168.100.99:8000/components/getUserId.php?email=${encodeURIComponent(email)}`)
         .then(response => response.json())
         .then(data => {
           if (data.userId) {
@@ -129,7 +129,7 @@ const AdminMessages = () => {
   useEffect(() => {
     fetchSenders();
 
-    const ws = new WebSocket('ws://localhost:8080');
+    const ws = new WebSocket('ws://192.168.100.99:8080');
     ws.onopen = () => {
       console.log('WebSocket connected');
       setIsConnected(true);
@@ -449,7 +449,7 @@ const AdminMessages = () => {
     const formData = new FormData();
     formData.append('image', selectedFile);
 
-    const uploadResponse = await fetch('http://localhost/funeraria/api/components/upload.php', {
+    const uploadResponse = await fetch('http://192.168.100.99:8000/components/upload.php', {
       method: 'POST',
       body: formData
     });
@@ -790,7 +790,7 @@ const AdminMessages = () => {
                       >
                         <div className="bg-indigo-100 text-indigo-800 rounded-full h-10 w-10 flex items-center justify-center mr-3">
                           {sender.profile_image ? (
-                            <img src={`http://localhost/funeraria/api/components/${sender.profile_image}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
+                            <img src={`http://192.168.100.99:8000/components/${sender.profile_image}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
                           ) : (
                             sender.name.charAt(0).toUpperCase()
                           )}
@@ -856,7 +856,7 @@ const AdminMessages = () => {
                           src={
                             replyingTo.imagePath.startsWith('http')
                               ? replyingTo.imagePath
-                              : `http://localhost/funeraria/api/components/${replyingTo.imagePath}`
+                              : `http://192.168.100.99:8000/components/${replyingTo.imagePath}`
                           }
                           alt="Replied content"
                           className="w-12 h-12 object-cover rounded border border-blue-300"
@@ -943,7 +943,7 @@ const AdminMessages = () => {
                                     src={
                                       msg.reply_image_path.startsWith('http')
                                         ? msg.reply_image_path
-                                        : `http://localhost/funeraria/api/components/${msg.reply_image_path}`
+                                        : `http://192.168.100.99:8000/components/${msg.reply_image_path}`
                                     }
                                     alt="Replied image"
                                     className="w-16 h-16 object-cover rounded border border-blue-300 cursor-pointer"
@@ -977,7 +977,7 @@ const AdminMessages = () => {
                                 src={
                                   msg.image_path.startsWith('http')
                                     ? msg.image_path
-                                    : `http://localhost/funeraria/api/components/${msg.image_path}`
+                                    : `http://192.168.100.99:8000/components/${msg.image_path}`
                                 }
                                 alt="Attached"
                                 className="w-60 h-auto rounded cursor-pointer hover:opacity-90 transition-opacity"
@@ -1154,7 +1154,7 @@ const AdminMessages = () => {
               </button>
 
               <img
-                src={`http://localhost/funeraria/api/components/${enlargedImage}`}
+                src={`http://192.168.100.99:8000/components/${enlargedImage}`}
                 alt="Enlarged view"
                 className="max-w-[70vw] max-h-[70vh] object-contain rounded-lg shadow-2xl"
                 onClick={closeEnlargedImage}

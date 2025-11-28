@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import useCart from '../../hooks/useCart';
 import ClientCartItem from './ClientCartItem';
 import PaymentForm from './ClientPaymentForm';
@@ -35,6 +36,7 @@ const ClientCart = () => {
     const [showCheckout, setShowCheckout] = useState(false);
     const [userInfo, setUserInfo] = useState(null);
     const [loadingUserInfo, setLoadingUserInfo] = useState(false);
+    const [addressMissing, setAddressMissing] = useState(false);
 
     const error = cartError;
     const successMessage = cartSuccessMessage;
@@ -49,6 +51,7 @@ const ClientCart = () => {
 
     const fetchUserInfo = async () => {
         setLoadingUserInfo(true);
+        setAddressMissing(false);
         try {
             // Get email from session storage or local storage
             const userEmail = sessionStorage.getItem('userEmail') || 
@@ -63,7 +66,7 @@ const ClientCart = () => {
             }
 
             const response = await fetch(
-                `http://localhost/funeraria/api/components/getUserInfo.php?email=${encodeURIComponent(userEmail)}`,
+                `http://192.168.100.99:8000/components/get_user_details.php?email=${userEmail}`,
                 {
                     method: 'GET',
                     headers: {
@@ -86,10 +89,18 @@ const ClientCart = () => {
                     phone: data.user.telephone || '',
                     address: data.user.address || ''
                 };
+                
+                // Check if address is missing
+                if (!userInfoData.address || userInfoData.address.trim() === '') {
+                    setAddressMissing(true);
+                    setError('Address is required. Please fill up your address in the settings before proceeding to checkout.');
+                }
+                
                 setUserInfo(userInfoData);
             }
         } catch (error) {
             console.error('Error fetching user info:', error);
+            setError('Failed to load user information. Please try again.');
         } finally {
             setLoadingUserInfo(false);
         }
@@ -118,6 +129,9 @@ const ClientCart = () => {
         if (!showCheckout) {
             // Fetch user info when opening checkout
             await fetchUserInfo();
+        } else {
+            setAddressMissing(false);
+            setError(null);
         }
         setShowCheckout(!showCheckout);
     };
@@ -167,12 +181,27 @@ const ClientCart = () => {
 
             <div className="container mx-auto p-4 flex-grow">
                 <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl sm:tracking-tight lg:text-5xl text-center mb-6">
-                    Customized Cart
+                    Customized Order
                 </h1>
 
                 {error && (
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow">
-                        <p>{error}</p>
+                        <div className="flex items-start">
+                            <svg className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                            <div className="flex-1">
+                                <p>{error}</p>
+                                {addressMissing && (
+                                    <Link 
+                                        to="/gomez/dashboard-client/settings" 
+                                        className="inline-block mt-2 text-sm font-semibold text-red-800 hover:text-red-900 underline"
+                                    >
+                                        Go to Settings to update your address →
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 )}
                 {successMessage && (
@@ -238,7 +267,7 @@ const ClientCart = () => {
                                                 <div className="flex-shrink-0 h-10 w-10 mr-3">
                                                     <img
                                                         className="h-10 w-10 rounded-full object-cover"
-                                                        src={`http://localhost/funeraria/api/components/${item.image_path}`}
+                                                        src={`http://192.168.100.99:8000/components/${item.image_path}`}
                                                         alt={item.name}
                                                     />
                                                 </div>
@@ -286,6 +315,35 @@ const ClientCart = () => {
                                 {loadingUserInfo ? (
                                     <div className="bg-blue-50 border border-blue-200 text-blue-700 p-3 mb-4 rounded">
                                         <p className="text-sm">Loading your information...</p>
+                                    </div>
+                                ) : addressMissing ? (
+                                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                                        <div className="flex">
+                                            <div className="flex-shrink-0">
+                                                <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                </svg>
+                                            </div>
+                                            <div className="ml-3">
+                                                <p className="text-sm text-yellow-700 font-medium">
+                                                    Address is required to proceed with checkout.
+                                                </p>
+                                                <p className="mt-2 text-sm text-yellow-700">
+                                                    Please update your address in settings before completing your order.
+                                                </p>
+                                                <div className="mt-4">
+                                                    <Link
+                                                        to="/gomez/dashboard-client/settings"
+                                                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-yellow-600 hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                                                    >
+                                                        Go to Settings
+                                                        <svg className="ml-2 -mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                        </svg>
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 ) : (
                                     <>

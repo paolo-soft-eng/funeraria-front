@@ -24,7 +24,7 @@ const useOrders = () => {
         setOrdersLoading(true);
         try {
             const response = await fetch(
-                `http://localhost/funeraria/api/components/fetchOrders.php?customer_email=${encodeURIComponent(email)}`,
+                `http://192.168.100.99:8000/components/fetchOrders.php?customer_email=${encodeURIComponent(email)}`,
                 {
                     method: 'GET',
                     headers: {
@@ -64,7 +64,7 @@ const useOrders = () => {
         if (!orderToDelete) return;
 
         try {
-            const response = await fetch('http://localhost/funeraria/api/components/deleteOrder.php', {
+            const response = await fetch('http://192.168.100.99:8000/components/deleteOrder.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

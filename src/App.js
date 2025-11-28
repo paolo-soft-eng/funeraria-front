@@ -131,22 +131,22 @@ const App = () => {
                       <ClientAppointment />
                   </Suspense>
                 } />
-                <Route path="cart" element={
+                <Route path="order/customized-order" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientCart />
                   </Suspense>
                 } />
-                <Route path="cart/funeral-cart" element={
+                <Route path="order/funeral-order" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientPackageCart />
                   </Suspense>
                 } />
-                <Route path="cart/active-orders" element={
+                <Route path="order/active-orders" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientActiveOrders />
                   </Suspense>
                 } />
-                <Route path="cart/order-history" element={
+                <Route path="order/order-history" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientOrderHistory />
                   </Suspense>

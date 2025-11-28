@@ -7,9 +7,10 @@ import ServiceDetail from './ClientServiceDetail';
 
 const ClientServices = () => {
   const [selectedService, setSelectedService] = useState(null);
+  const [openDirectlyToForm, setOpenDirectlyToForm] = useState(false);
   const { email } = useContext(EmailContext);
   const servicesRef = useRef([]);
-  
+
   // Custom hooks for services
   const { services, loading: servicesLoading, error: servicesError, refetch: refetchServices } = useServices();
   const { userId, isLoggedIn } = useUser(email);
@@ -59,40 +60,41 @@ const ClientServices = () => {
     }
   };
 
-  const getInclusionIcon = (inclusionsCount) => {
-    if (!inclusionsCount) return null;
+  const handleOrderNow = (service) => {
+    setSelectedService(service);
+    setOpenDirectlyToForm(true);
+  };
 
-    return (
-      <div className="flex justify-center mb-4">
-        <div className="h-16 w-16 rounded-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200">
-          <span className="text-xl font-bold text-blue-600">
-            {inclusionsCount}{inclusionsCount > 6 ? '+' : ''}
-          </span>
-        </div>
-      </div>
-    );
+  const handleViewDetails = (service) => {
+    setSelectedService(service);
+    setOpenDirectlyToForm(false);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedService(null);
+    setOpenDirectlyToForm(false);
   };
 
   // Function to get the best available image for service card
   const getServiceImage = (service) => {
     // Priority: casket_image > cover_image > first casket image > placeholder
-    
+
     // Check if service has direct casket_image
     if (service.casket_image) {
-      return `http://localhost/funeraria/api/components/uploads/caskets/${service.casket_image}`;
+      return `http://192.168.100.99:8000/components/uploads/caskets/${service.casket_image}`;
     }
-    
+
     // Check if service has cover_image
     if (service.cover_image) {
-      return `http://localhost/funeraria/api/components/uploads/caskets/${service.cover_image}`;
+      return `http://192.168.100.99:8000/components/uploads/caskets/${service.cover_image}`;
     }
-    
+
     // Check if service has caskets array and first casket has image
     if (service.caskets && Array.isArray(service.caskets) && service.caskets.length > 0 && service.caskets[0].image) {
-      return `http://localhost/funeraria/api/components/uploads/caskets/${service.caskets[0].image}`;
+      return `http://192.168.100.99:8000/components/uploads/caskets/${service.caskets[0].image}`;
     }
-    
-    return `http://localhost/funeraria/api/components/uploads/caskets/${service.cover_image}`;
+
+    return `http://192.168.100.99:8000/components/uploads/caskets/${service.cover_image}`;
   };
 
   const loading = servicesLoading;
@@ -224,7 +226,7 @@ const ClientServices = () => {
                     key={service.id}
                     ref={el => servicesRef.current[index] = el}
                     className="service-card rounded-xl overflow-hidden cursor-pointer"
-                    onClick={() => isLoggedIn && setSelectedService(service)}
+                    onClick={() => isLoggedIn && handleViewDetails(service)}
                   >
                     <div className="relative h-48 w-full overflow-hidden">
                       <img
@@ -235,12 +237,10 @@ const ClientServices = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                     </div>
                     <div className="p-6">
-                      {!serviceImage.includes('placeholder') && getInclusionIcon(inclusions.length)}
                       <h2 className="text-2xl font-bold text-gray-900 mb-3">{service.name}</h2>
                       <p className="text-gray-600 mb-4 line-clamp-3">{service.description}</p>
                       <div className="mb-4">
-                        <p className="text-2xl font-bold text-gray-900">
-                          Price: ₱{formatCurrency(parseFloat(service.price_range))}
+                        <p className="text-2xl font-bold text-gray-900">₱{formatCurrency(parseFloat(service.price_range))}
                         </p>
                       </div>
 
@@ -250,16 +250,28 @@ const ClientServices = () => {
                         </svg>
                         {inclusions.length} inclusions
                       </div>
+
                       {isLoggedIn && (
-                        <button
-                          className="w-full btn-primary text-white py-2 px-4 rounded-lg font-medium"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedService(service);
-                          }}
-                        >
-                          View Details
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOrderNow(service);
+                            }}
+                          >
+                            Order Now
+                          </button>
+                          <button
+                            className="flex-1 btn-primary text-white py-2 px-4 rounded-lg font-medium"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewDetails(service);
+                            }}
+                          >
+                            View Details
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -273,11 +285,12 @@ const ClientServices = () => {
       {selectedService && (
         <ServiceDetail
           service={selectedService}
-          onClose={() => setSelectedService(null)}
+          onClose={handleCloseModal}
           refetchServices={refetchServices}
           showNotification={showNotification}
           userId={userId}
           isLoggedIn={isLoggedIn}
+          openDirectlyToForm={openDirectlyToForm}
         />
       )}
     </div>

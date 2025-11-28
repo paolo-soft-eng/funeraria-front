@@ -11,7 +11,7 @@ export const useOrderHistory = (email) => {
 
             try {
                 setLoading(true);
-                const response = await fetch('http://localhost/funeraria/api/components/order-history.php', {
+                const response = await fetch('http://192.168.100.99:8000/components/order-history.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

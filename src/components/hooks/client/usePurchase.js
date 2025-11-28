@@ -16,7 +16,7 @@ export const usePurchase = (isLoggedIn, userId, updateItemStock) => {
         setPurchasing(true);
 
         try {
-            const response = await fetch('http://localhost/funeraria/api/components/buyItems.php', {
+            const response = await fetch('http://192.168.100.99:8000/components/buyItems.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -31,7 +31,7 @@ export const usePurchase = (isLoggedIn, userId, updateItemStock) => {
             const data = await response.json();
 
             if (data.success) {
-                toast.success('Item added to cart successfully', {
+                toast.success('Item added to orders successfully', {
                     duration: 2000,
                     position: 'top-right',
                 });

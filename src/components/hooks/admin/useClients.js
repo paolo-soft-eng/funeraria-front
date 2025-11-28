@@ -21,7 +21,7 @@ export const useClients = (isLoggedIn, currentPage, itemsPerPage, searchTerm, st
       if (searchTerm) params.append('search', searchTerm);
       if (statusFilter) params.append('status', statusFilter);
 
-      const response = await axios.get(`http://localhost/funeraria/api/components/fetchClients.php?${params}`);
+      const response = await axios.get(`http://192.168.100.99:8000/components/fetchClients.php?${params}`);
       
       if (response.data.success) {
         setClients(response.data.data || []);

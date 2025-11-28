@@ -91,139 +91,139 @@ export default function ClientMessages() {
   } = useMessages(userId, selectedAdmin);
 
   useEffect(() => {
-  if (!socket) return;
+    if (!socket) return;
 
-  const handleMessage = (event) => {
-    const data = JSON.parse(event.data);
-    console.log("WebSocket received:", data);
+    const handleMessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("WebSocket received:", data);
 
-    // Handle incoming messages from admin (not own messages)
-    if (data.type === 'message' && !data.isOwnMessage) {
-      const messageId = data.messageId || data.id || `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Handle incoming messages from admin (not own messages)
+      if (data.type === 'message' && !data.isOwnMessage) {
+        const messageId = data.messageId || data.id || `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      if (processedMessageIds.has(messageId)) {
-        console.log("Duplicate message detected, skipping:", messageId);
-        return;
-      }
-
-      processedMessageIds.add(messageId);
-
-      // Construct the full image URL if imageUrl exists
-      let fullImageUrl = null;
-      if (data.imageUrl) {
-        if (data.imageUrl.startsWith('http')) {
-          fullImageUrl = data.imageUrl;
-        } else {
-          fullImageUrl = `http://localhost/funeraria/api/components/${data.imageUrl}`;
+        if (processedMessageIds.has(messageId)) {
+          console.log("Duplicate message detected, skipping:", messageId);
+          return;
         }
-      }
 
-      // Construct reply information with image support
-      let replyTo = null;
-      if (data.replyToId) {
-        // Construct full image URL for reply if it exists
-        let replyImageUrl = null;
-        if (data.replyImagePath) {
-          if (data.replyImagePath.startsWith('http')) {
-            replyImageUrl = data.replyImagePath;
+        processedMessageIds.add(messageId);
+
+        // Construct the full image URL if imageUrl exists
+        let fullImageUrl = null;
+        if (data.imageUrl) {
+          if (data.imageUrl.startsWith('http')) {
+            fullImageUrl = data.imageUrl;
           } else {
-            replyImageUrl = `http://localhost/funeraria/api/components/${data.replyImagePath}`;
+            fullImageUrl = `http://192.168.100.99:8000/components/${data.imageUrl}`;
           }
         }
 
-        // Determine the sender type based on replySenderId
-        const replySender = data.replySenderId === userId ? 'me' : 'admin';
+        // Construct reply information with image support
+        let replyTo = null;
+        if (data.replyToId) {
+          // Construct full image URL for reply if it exists
+          let replyImageUrl = null;
+          if (data.replyImagePath) {
+            if (data.replyImagePath.startsWith('http')) {
+              replyImageUrl = data.replyImagePath;
+            } else {
+              replyImageUrl = `http://192.168.100.99:8000/components/${data.replyImagePath}`;
+            }
+          }
 
-        replyTo = {
-          id: data.replyToId,
-          text: data.replyToMessage || '',
-          sender: replySender,
-          senderName: data.replySenderName || (replySender === 'me' ? 'You' : 'Admin'),
-          imageUrl: replyImageUrl
+          // Determine the sender type based on replySenderId
+          const replySender = data.replySenderId === userId ? 'me' : 'admin';
+
+          replyTo = {
+            id: data.replyToId,
+            text: data.replyToMessage || '',
+            sender: replySender,
+            senderName: data.replySenderName || (replySender === 'me' ? 'You' : 'Admin'),
+            imageUrl: replyImageUrl
+          };
+
+          console.log("Reply context constructed:", replyTo);
+        }
+
+        const newMessage = {
+          id: messageId,
+          text: data.message,
+          sender: 'admin',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          imageUrl: fullImageUrl,
+          replyToId: data.replyToId || null,
+          replyTo: replyTo
         };
 
-        console.log("Reply context constructed:", replyTo);
+        console.log("Adding new message:", newMessage);
+        currentAddMessage(newMessage);
       }
 
-      const newMessage = {
-        id: messageId,
-        text: data.message,
-        sender: 'admin',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        imageUrl: fullImageUrl,
-        replyToId: data.replyToId || null,
-        replyTo: replyTo
-      };
+      // Handle confirmation of own messages (replace temp message with real one)
+      if (data.type === 'message' && data.isOwnMessage && data.tempId) {
+        console.log("Received confirmation for temp message:", data.tempId);
 
-      console.log("Adding new message:", newMessage);
-      currentAddMessage(newMessage);
-    }
+        // Remove the temp message
+        currentRemoveMessage(data.tempId);
 
-    // Handle confirmation of own messages (replace temp message with real one)
-    if (data.type === 'message' && data.isOwnMessage && data.tempId) {
-      console.log("Received confirmation for temp message:", data.tempId);
-      
-      // Remove the temp message
-      currentRemoveMessage(data.tempId);
-      
-      // Construct the full image URL if imageUrl exists
-      let fullImageUrl = null;
-      if (data.imageUrl) {
-        if (data.imageUrl.startsWith('http')) {
-          fullImageUrl = data.imageUrl;
-        } else {
-          fullImageUrl = `http://localhost/funeraria/api/components/${data.imageUrl}`;
-        }
-      }
-
-      // Construct reply information with image support for confirmation
-      let replyTo = null;
-      if (data.replyToId) {
-        let replyImageUrl = null;
-        if (data.replyImagePath) {
-          if (data.replyImagePath.startsWith('http')) {
-            replyImageUrl = data.replyImagePath;
+        // Construct the full image URL if imageUrl exists
+        let fullImageUrl = null;
+        if (data.imageUrl) {
+          if (data.imageUrl.startsWith('http')) {
+            fullImageUrl = data.imageUrl;
           } else {
-            replyImageUrl = `http://localhost/funeraria/api/components/${data.replyImagePath}`;
+            fullImageUrl = `http://192.168.100.99:8000/components/${data.imageUrl}`;
           }
         }
 
-        const replySender = data.replySenderId === userId ? 'me' : 'admin';
+        // Construct reply information with image support for confirmation
+        let replyTo = null;
+        if (data.replyToId) {
+          let replyImageUrl = null;
+          if (data.replyImagePath) {
+            if (data.replyImagePath.startsWith('http')) {
+              replyImageUrl = data.replyImagePath;
+            } else {
+              replyImageUrl = `http://192.168.100.99:8000/components/${data.replyImagePath}`;
+            }
+          }
 
-        replyTo = {
-          id: data.replyToId,
-          text: data.replyToMessage || '',
-          sender: replySender,
-          senderName: data.replySenderName || (replySender === 'me' ? 'You' : 'Admin'),
-          imageUrl: replyImageUrl
+          const replySender = data.replySenderId === userId ? 'me' : 'admin';
+
+          replyTo = {
+            id: data.replyToId,
+            text: data.replyToMessage || '',
+            sender: replySender,
+            senderName: data.replySenderName || (replySender === 'me' ? 'You' : 'Admin'),
+            imageUrl: replyImageUrl
+          };
+        }
+
+        // Add the confirmed message with database ID
+        const confirmedMessage = {
+          id: data.id || data.messageId,
+          text: data.message,
+          sender: 'me',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          imageUrl: fullImageUrl,
+          replyToId: data.replyToId || null,
+          replyTo: replyTo
         };
+
+        processedMessageIds.add(confirmedMessage.id);
+        currentAddMessage(confirmedMessage);
+        console.log("Added confirmed message with reply info:", confirmedMessage);
       }
 
-      // Add the confirmed message with database ID
-      const confirmedMessage = {
-        id: data.id || data.messageId,
-        text: data.message,
-        sender: 'me',
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        imageUrl: fullImageUrl,
-        replyToId: data.replyToId || null,
-        replyTo: replyTo
-      };
+      // Handle message deletion from admin
+      if (data.type === 'message_deleted') {
+        currentRemoveMessage(data.messageId);
+      }
+    };
 
-      processedMessageIds.add(confirmedMessage.id);
-      currentAddMessage(confirmedMessage);
-      console.log("Added confirmed message with reply info:", confirmedMessage);
-    }
-
-    // Handle message deletion from admin
-    if (data.type === 'message_deleted') {
-      currentRemoveMessage(data.messageId);
-    }
-  };
-
-  socket.addEventListener('message', handleMessage);
-  return () => socket.removeEventListener('message', handleMessage);
-}, [socket, processedMessageIds, currentAddMessage, currentRemoveMessage, userId]);
+    socket.addEventListener('message', handleMessage);
+    return () => socket.removeEventListener('message', handleMessage);
+  }, [socket, processedMessageIds, currentAddMessage, currentRemoveMessage, userId]);
 
 
   useEffect(() => {
@@ -239,7 +239,7 @@ export default function ClientMessages() {
       }
     }
   }, [selectedAdmin, userId, currentMessages, markMessagesAsRead, currentMarkAsRead]);
-  
+
 
   // Handle admin selection
   const handleAdminClick = (admin) => {
@@ -304,24 +304,24 @@ export default function ClientMessages() {
     }
   };
   const handleReplyToMessage = (message) => {
-  setReplyContext({
-    id: message.id,
-    text: message.text || '',
-    sender: message.sender,
-    senderName: message.sender === 'me' ? 'You' : selectedAdmin?.username,
-    imageUrl: message.imageUrl || null
-  });
-  
-  setSelectedMessage(null); // Close the action menu
-  
-  // Focus on the input field
-  setTimeout(() => {
-    const input = document.querySelector('input[type="text"]');
-    if (input) {
-      input.focus();
-    }
-  }, 100);
-};
+    setReplyContext({
+      id: message.id,
+      text: message.text || '',
+      sender: message.sender,
+      senderName: message.sender === 'me' ? 'You' : selectedAdmin?.username,
+      imageUrl: message.imageUrl || null
+    });
+
+    setSelectedMessage(null); // Close the action menu
+
+    // Focus on the input field
+    setTimeout(() => {
+      const input = document.querySelector('input[type="text"]');
+      if (input) {
+        input.focus();
+      }
+    }, 100);
+  };
 
   const handleCopyMessage = (text) => {
     copyMessage(text);
@@ -430,7 +430,7 @@ export default function ClientMessages() {
                   <div className="h-10 w-10 rounded-full mr-3 relative">
                     {admin.image_path ? (
                       <img
-                        src={`http://${window.location.hostname}/funeraria/api/components/${admin.image_path}`}
+                        src={`http://192.169.100.99:8000/components/${admin.image_path}`}
                         alt={admin.username}
                         className="h-10 w-10 rounded-full object-cover"
                       />
@@ -515,6 +515,7 @@ export default function ClientMessages() {
                       ref={videoRef}
                       autoPlay
                       playsInline
+                      webkit-playsinline="true"
                       muted
                       className="w-full h-full object-cover"
                       style={{ transform: 'scaleX(-1)' }}
@@ -587,7 +588,7 @@ export default function ClientMessages() {
                         <div className="h-8 w-8 bg-gray-300 rounded-full mr-3 flex-shrink-0 self-end overflow-hidden">
                           {selectedAdmin.image_path ? (
                             <img
-                              src={`http://${window.location.hostname}/funeraria/api/components/${selectedAdmin.image_path}`}
+                              src={`http://192.168.100.99:8000/components/${selectedAdmin.image_path}`}
                               alt={selectedAdmin.username}
                               className="h-8 w-8 object-cover"
                             />
@@ -681,6 +682,7 @@ export default function ClientMessages() {
                                 handleImageClick(msg.imageUrl);
                               }}
                             />
+                            {console.log(msg.imageUrl)}
                             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();

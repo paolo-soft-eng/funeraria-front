@@ -6,7 +6,7 @@ export const useWebSocket = (userId) => {
   const processedMessageIds = useRef(new Set());
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8080');
+    const ws = new WebSocket('ws://192.168.100.99:8080');
 
     ws.onopen = () => {
       console.log('WebSocket connected');

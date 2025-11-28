@@ -25,7 +25,7 @@ const ResetPassword = () => {
       }
 
       try {
-        const response = await axios.post('http://localhost/funeraria/api/components/validate-reset-token.php', {
+        const response = await axios.post('http://192.168.100.99:8000/components/validate-reset-token.php', {
           token
         });
 
@@ -85,7 +85,7 @@ const ResetPassword = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost/funeraria/api/components/reset-password.php', {
+      const response = await axios.post('http://192.168.100.99:8000/components/reset-password.php', {
         token,
         password
       });

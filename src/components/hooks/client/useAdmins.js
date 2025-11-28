@@ -6,7 +6,7 @@ export const useAdmins = (userId) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const API_BASE_URL = 'http://localhost/funeraria/api/components/send_message.php';
+  const API_BASE_URL = 'http://192.168.100.99:8000/components/send_message.php';
 
   const fetchAdmins = useCallback(async () => {
     try {

@@ -313,7 +313,7 @@ const AdminSettings = () => {
                               <img
                                 src={profilePreview.startsWith('blob:')
                                   ? profilePreview
-                                  : `http://localhost/funeraria/api/components/${profilePreview}`}
+                                  : `http://192.168.100.99:8000/components/${profilePreview}`}
                                 alt="Profile"
                                 className="h-full w-full object-cover"
                               />

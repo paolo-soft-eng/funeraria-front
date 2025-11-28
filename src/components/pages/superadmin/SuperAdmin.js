@@ -44,7 +44,7 @@ const SuperAdmin = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost/funeraria/api/components/superadmin/users.php');
+      const response = await fetch('http://192.168.100.99:8000/components/superadmin/users.php');
 
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -83,7 +83,7 @@ const SuperAdmin = () => {
     if (!userToDelete) return;
 
     try {
-      const response = await fetch(`http://localhost/funeraria/api/components/superadmin/delete_user.php?id=${userToDelete.id}`, {
+      const response = await fetch(`http://192.168.100.99:8000/components/superadmin/delete_user.php?id=${userToDelete.id}`, {
         method: 'DELETE',
       });
 
@@ -159,7 +159,7 @@ const SuperAdmin = () => {
     if (!validateForm()) return;
 
     try {
-      const response = await fetch('http://localhost/funeraria/api/components/superadmin/add_admin.php', {
+      const response = await fetch('http://192.168.100.99:8000/components/superadmin/add_admin.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -303,7 +303,7 @@ const SuperAdmin = () => {
 
       const newStatus = effectiveCurrentStatus === 'active' ? 'disabled' : 'active';
 
-      const response = await fetch('http://localhost/funeraria/api/components/superadmin/toggleAdminStatus.php', {
+      const response = await fetch('http://192.168.100.99:8000/components/superadmin/toggleAdminStatus.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -344,7 +344,7 @@ const SuperAdmin = () => {
   const handleLogoutConfirm = async () => {
     try {
       showNotification('Logging out...', 'info');
-      await axios.post('http://localhost/funeraria/api/config/logout.php');
+      await axios.post('http://192.168.100.99:8000/config/logout.php');
       localStorage.removeItem('userRole');
       localStorage.removeItem('email');
       localStorage.removeItem('token'); 

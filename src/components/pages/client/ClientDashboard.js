@@ -39,12 +39,12 @@ const ClientDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileView, setIsMobileView] = useState(false);
-  const [currentPage, setCurrentPage] = useState('Cart');
+  const [currentPage, setCurrentPage] = useState('Service');
   const [profileImage, setProfileImage] = useState(null);
   const [username, setUsername] = useState('');
   const [notification, setNotification] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isCartExpanded, setIsCartExpanded] = useState(false);
+  const [isOrderExpanded, setIsOrderExpanded] = useState(false);
   const [isServicesExpanded, setIsServicesExpanded] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,7 +58,7 @@ const ClientDashboard = () => {
       if (!email) return;
 
       try {
-        const response = await axios.get(`http://localhost/funeraria/api/components/client_picture.php?email=${email}`);
+        const response = await axios.get(`http://192.168.100.99:8000/components/client_picture.php?email=${email}`);
         
         if (response.data?.success) {
           if (response.data.username) {
@@ -72,7 +72,7 @@ const ClientDashboard = () => {
       } catch (err) {
         console.error('Error fetching profile data:', err);
         try {
-          const userResponse = await axios.get(`http://localhost/funeraria/api/components/getUserId.php?email=${email}`);
+          const userResponse = await axios.get(`http://192.168.100.99:8000/components/getUserId.php?email=${email}`);
           if (userResponse.data?.userName) {
             setUsername(userResponse.data.userName);
           }
@@ -102,21 +102,27 @@ const ClientDashboard = () => {
 
   useEffect(() => {
     const path = location.pathname.split('/').pop();
-    const navItem = mainNavItems.find(item => item.name === path);
-    if (navItem) {
-      setCurrentPage(navItem.label);
-    } else if (path === 'profile') {
-      setCurrentPage('Profile');
-    } else {
-      setCurrentPage('Cart');
-    }
     
-    if (path === 'cart' || path === 'active-orders' || path === 'order-history' || path === 'funeral-cart') {
-      setIsCartExpanded(true);
+    // Check for order-related paths
+    if (path === 'active-orders' || path === 'order-history' || path === 'funeral-order' || path === 'customized-order') {
+      setCurrentPage('Order');
+      setIsOrderExpanded(true);
     }
-    
-    if (path === 'services' || path === 'customized-services') {
+    // Check for services-related paths
+    else if (path === 'services' || path === 'customized-services') {
+      setCurrentPage('Services');
       setIsServicesExpanded(true);
+    }
+    // Check for other main nav items
+    else {
+      const navItem = mainNavItems.find(item => item.name === path);
+      if (navItem) {
+        setCurrentPage(navItem.label);
+      } else if (path === 'profile') {
+        setCurrentPage('Profile');
+      } else {
+        setCurrentPage('Dashboard');
+      }
     }
   }, [location.pathname]);
 
@@ -128,7 +134,7 @@ const ClientDashboard = () => {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
-  const toggleCartAccordion = () => setIsCartExpanded(!isCartExpanded);
+  const toggleOrderAccordion = () => setIsOrderExpanded(!isOrderExpanded);
   const toggleServicesAccordion = () => setIsServicesExpanded(!isServicesExpanded);
   const handleLogoutClick = () => { setShowLogoutModal(true); setIsDropdownOpen(false); };
   const handleLogoutConfirm = async () => { 
@@ -165,15 +171,15 @@ const ClientDashboard = () => {
     },
     { name: 'appointments', icon: <Clock size={20} />, label: 'Appointments' }, 
     { 
-      name: 'cart', 
+      name: 'order', 
       icon: <ShoppingCart size={20} />, 
-      label: 'Cart',
+      label: 'Order',
       hasAccordion: true,
       subItems: [
-        { name: 'cart', icon: <ShoppingBag size={18} />, label: 'Customized Package Cart' },
-        { name: 'cart/funeral-cart', icon: <Briefcase size={18} />, label: 'Full Package Cart' },
-        { name: 'cart/active-orders', icon: <Clock size={18} />, label: 'Active Orders' },
-        { name: 'cart/order-history', icon: <CheckCircle size={18} />, label: 'Order History' }
+        { name: 'order/funeral-order', icon: <ShoppingBag size={18} />, label: 'Full Package Order' },
+        { name: 'order/customized-order', icon: <Briefcase size={18} />, label: 'Customized Package Order' },
+        { name: 'order/active-orders', icon: <Clock size={18} />, label: 'Active Orders' },
+        { name: 'order/order-history', icon: <CheckCircle size={18} />, label: 'Order History' }
       ]
     },
     { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
@@ -248,7 +254,7 @@ const ClientDashboard = () => {
             {profileImage ? (
               <div className="rounded-full flex items-center justify-center overflow-hidden bg-white">
                 <img
-                  src={`http://localhost/funeraria/api/components/${profileImage}`}
+                  src={`http://192.168.100.99:8000/components/${profileImage}`}
                   alt="Profile"
                   className="rounded-full w-10 h-10 object-cover"
                 />
@@ -268,7 +274,7 @@ const ClientDashboard = () => {
                   {item.hasAccordion ? (
                     <>
                       <button
-                        onClick={item.name === 'cart' ? toggleCartAccordion : toggleServicesAccordion}
+                        onClick={item.name === 'order' ? toggleOrderAccordion : toggleServicesAccordion}
                         className={`flex items-center w-full px-5 py-4 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}
                       >
                         <div className="flex items-center">
@@ -277,7 +283,7 @@ const ClientDashboard = () => {
                         </div>
                         {isSidebarOpen && (
                           <span className="transition-transform duration-200">
-                            {(item.name === 'cart' ? isCartExpanded : isServicesExpanded) ? 
+                            {(item.name === 'order' ? isOrderExpanded : isServicesExpanded) ? 
                               <ChevronDown size={18}/> : <ChevronRight size={18}/>
                             }
                           </span>
@@ -286,7 +292,7 @@ const ClientDashboard = () => {
 
                       {isSidebarOpen && (
                         <div className={`overflow-hidden transition-all duration-300 ${
-                          (item.name === 'cart' ? isCartExpanded : isServicesExpanded) ? 
+                          (item.name === 'order' ? isOrderExpanded : isServicesExpanded) ? 
                             'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                         }`}>
                           <ul className="bg-gray-900 py-1">
@@ -354,7 +360,7 @@ const ClientDashboard = () => {
                   {profileImage ? (
                     <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden border border-gray-200">
                       <img
-                        src={`http://localhost/funeraria/api/components/${profileImage}`}
+                        src={`http://192.168.100.99:8000/components/${profileImage}`}
                         alt="Profile"
                         className="w-full h-full object-cover"
                       />

@@ -15,7 +15,7 @@ export const useRecentMessages = (email) => {
         
         try {
             const response = await axios.post(
-                'http://localhost/funeraria/api/components/fetchRecentMessages.php',
+                'http://192.168.100.99:8000/components/fetchRecentMessages.php',
                 { email }
             );
 
@@ -35,7 +35,7 @@ export const useRecentMessages = (email) => {
     const markAsRead = async (messageId) => {
         try {
             const response = await axios.post(
-                'http://localhost/funeraria/api/components/markMessageAsRead.php',
+                'http://192.168.100.99:8000/components/markMessageAsRead.php',
                 { message_id: messageId, email }
             );
 
