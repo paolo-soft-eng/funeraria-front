@@ -12,6 +12,7 @@ const ClientCustomized = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [loadingPackage, setLoadingPackage] = useState(false);
+  const n = process.env.REACT_APP_API_URL;
   
   // Order form modal states
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -42,7 +43,7 @@ const ClientCustomized = () => {
   const fetchUserDetails = async () => {
     setLoadingUserData(true);
     try {
-      const response = await fetch(`http://localhost/funeraria/api/components/get_user_details.php?email=${email}`);
+      const response = await fetch(`${n}/api/components/get_user_details.php?email=${email}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -113,7 +114,7 @@ const ClientCustomized = () => {
     setPurchasing(true);
 
     try {
-      const response = await fetch('http://localhost/funeraria/api/components/buyItems.php', {
+      const response = await fetch(`${n}/api/components/buyItems.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -157,7 +158,7 @@ const ClientCustomized = () => {
     setLoadingPackage(true);
     try {
       const packageId = mapItemIdToPackageId(itemId);
-      const response = await fetch(`http://localhost/funeraria/api/components/fetchPackagesById.php?id=${packageId}`);
+      const response = await fetch(`${n}/api/components/fetchPackagesById.php?id=${packageId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -226,7 +227,7 @@ const ClientCustomized = () => {
     >
       <div className="relative">
         <img
-          src={`http://localhost/funeraria/api/components/${item.image_path}`}
+          src={`${n}/api/components/${item.image_path}`}
           alt={item.name}
           className="w-full h-56 sm:h-64 object-cover"
         />

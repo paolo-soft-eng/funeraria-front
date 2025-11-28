@@ -16,6 +16,7 @@ export default function ClientMessages() {
   const { email } = useContext(EmailContext);
   const [replyContext, setReplyContext] = useState(null);
   const messagesEndRef = useRef(null);
+  const n = process.env.REACT_APP_API_URL;
 
   // Custom hooks
   const { userId, isLoggedIn, loading: authLoading, error: authError, setError: setAuthError } = useAuth(email);
@@ -114,7 +115,7 @@ export default function ClientMessages() {
           if (data.imageUrl.startsWith('http')) {
             fullImageUrl = data.imageUrl;
           } else {
-            fullImageUrl = `http://localhost/funeraria/api/components/${data.imageUrl}`;
+            fullImageUrl = `${n}/api/components/${data.imageUrl}`;
           }
         }
 
@@ -127,7 +128,7 @@ export default function ClientMessages() {
             if (data.replyImagePath.startsWith('http')) {
               replyImageUrl = data.replyImagePath;
             } else {
-              replyImageUrl = `http://localhost/funeraria/api/components/${data.replyImagePath}`;
+              replyImageUrl = `${n}/api/components/${data.replyImagePath}`;
             }
           }
 
@@ -172,7 +173,7 @@ export default function ClientMessages() {
           if (data.imageUrl.startsWith('http')) {
             fullImageUrl = data.imageUrl;
           } else {
-            fullImageUrl = `http://localhost/funeraria/api/components/${data.imageUrl}`;
+            fullImageUrl = `${n}/api/components/${data.imageUrl}`;
           }
         }
 
@@ -184,7 +185,7 @@ export default function ClientMessages() {
             if (data.replyImagePath.startsWith('http')) {
               replyImageUrl = data.replyImagePath;
             } else {
-              replyImageUrl = `http://localhost/funeraria/api/components/${data.replyImagePath}`;
+              replyImageUrl = `${n}/api/components/${data.replyImagePath}`;
             }
           }
 
@@ -430,7 +431,7 @@ export default function ClientMessages() {
                   <div className="h-10 w-10 rounded-full mr-3 relative">
                     {admin.image_path ? (
                       <img
-                        src={`http://localhost/funeraria/api/components/${admin.image_path}`}
+                        src={`${n}/api/components/${admin.image_path}`}
                         alt={admin.username}
                         className="h-10 w-10 rounded-full object-cover"
                       />
@@ -588,7 +589,7 @@ export default function ClientMessages() {
                         <div className="h-8 w-8 bg-gray-300 rounded-full mr-3 flex-shrink-0 self-end overflow-hidden">
                           {selectedAdmin.image_path ? (
                             <img
-                              src={`http://localhost/funeraria/api/components/${selectedAdmin.image_path}`}
+                              src={`${n}/api/components/${selectedAdmin.image_path}`}
                               alt={selectedAdmin.username}
                               className="h-8 w-8 object-cover"
                             />

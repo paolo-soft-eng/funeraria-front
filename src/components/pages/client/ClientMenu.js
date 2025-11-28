@@ -10,6 +10,7 @@ import { usePurchase } from '../../hooks/client/usePurchase';
 
 const ClientMenu = () => {
     const { email } = useContext(EmailContext);
+    const n = process.env.REACT_APP_API_URL;
     
     // Custom hooks
     const { userId, isLoggedIn } = useUser(email);
@@ -173,7 +174,7 @@ const ClientMenu = () => {
                             >
                                 <div className="relative">
                                     <img
-                                        src={`http://localhost/funeraria/api/components/${item.image_path}`}
+                                        src={`${n}/api/components/${item.image_path}`}
                                         alt={item.name}
                                         className="w-full h-56 sm:h-64 object-cover"
                                         onError={(e) => {

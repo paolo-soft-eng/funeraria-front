@@ -178,7 +178,7 @@ const ClientAbout = () => {
                     </div>
                     <div className="md:w-1/2 bg-gray-200 rounded-lg overflow-hidden slide-right">
                         <img
-                            src="/assets/family.webp"
+                            src="/funeraria/assets/family.webp"
                             alt="The Gomez family - founders and current operators of Gomez Funeral Home"
                             className="w-full h-64 object-cover"
                         />
@@ -216,7 +216,7 @@ const ClientAbout = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <div className="text-center delay-100">
                             <img
-                                src="/assets/pawlo.jpg"
+                                src="/funeraria/assets/pawlo.jpg"
                                 alt="Pawlo Villanueva - Funeral Director and Owner of Gomez Funeral Home"
                                 className="h-48 w-48 rounded-full mx-auto mb-4 transform transition-transform hover:scale-105 object-cover"
                             />
@@ -225,7 +225,7 @@ const ClientAbout = () => {
                         </div>
                         <div className="text-center delay-300">
                             <img
-                                src="/assets/reynan.jpg"
+                                src="/funeraria/assets/reynan.jpg"
                                 alt="Elena Gomez - Family Services Director at Gomez Funeral Home"
                                 className="h-48 w-48 rounded-full mx-auto mb-4 transform transition-transform hover:scale-105 object-cover"
                             />
@@ -234,7 +234,7 @@ const ClientAbout = () => {
                         </div>
                         <div className="text-center delay-500">
                             <img
-                                src="/assets/nin.jpg"
+                                src="/funeraria/assets/nin.jpg"
                                 alt="Carlos Mendez - Grief Counselor at Gomez Funeral Home"
                                 className="h-48 w-48 rounded-full mx-auto mb-4 transform transition-transform hover:scale-105 object-cover"
                             />
@@ -249,7 +249,7 @@ const ClientAbout = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="bg-gray-200 rounded-lg overflow-hidden slide-left">
                             <img
-                                src="/assets/chapel4.jpg"
+                                src="/funeraria/assets/chapel4.jpg"
                                 alt="Main chapel interior at Gomez Funeral Home with seating for memorial services"
                                 className="w-full h-64 transform transition-transform hover:scale-105 object-cover"
                             />
@@ -263,7 +263,7 @@ const ClientAbout = () => {
                         </div>
                         <div className="bg-gray-200 rounded-lg overflow-hidden slide-right">
                             <img
-                                src="/assets/chapel1.jpg"
+                                src="/funeraria/assets/chapel1.jpg"
                                 alt="Reception room at Gomez Funeral Home set up for family gatherings"
                                 className="w-full h-64 transform transition-transform hover:scale-105 object-cover"
                             />

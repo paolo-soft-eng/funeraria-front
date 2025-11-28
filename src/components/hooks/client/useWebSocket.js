@@ -4,6 +4,7 @@ export const useWebSocket = (userId) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const processedMessageIds = useRef(new Set());
+  const n = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
   const ws = new WebSocket('ws://localhost:8080');

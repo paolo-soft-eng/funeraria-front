@@ -5,6 +5,7 @@ export const useUser = (email) => {
     const [username, setUsername] = useState('');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [error, setError] = useState(null);
+    const n = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         if (!email) {
@@ -15,7 +16,7 @@ export const useUser = (email) => {
 
         const fetchUserId = async () => {
             try {
-                const response = await fetch(`http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(email)}`);
+                const response = await fetch(`${n}/api/components/getUserId.php?email=${encodeURIComponent(email)}`);
                 const data = await response.json();
 
                 if (data.userId) {

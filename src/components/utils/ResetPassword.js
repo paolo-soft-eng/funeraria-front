@@ -14,6 +14,7 @@ const ResetPassword = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const n = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     const validateToken = async () => {
@@ -25,7 +26,7 @@ const ResetPassword = () => {
       }
 
       try {
-        const response = await axios.post('http://localhost/funeraria/api/components/validate-reset-token.php', {
+        const response = await axios.post(`${n}/api/components/validate-reset-token.php`, {
           token
         });
 
@@ -85,7 +86,7 @@ const ResetPassword = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost/funeraria/api/components/reset-password.php', {
+      const response = await axios.post(`${n}/api/components/reset-password.php`, {
         token,
         password
       });

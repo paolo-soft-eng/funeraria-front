@@ -14,6 +14,7 @@ const useCart = () => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [itemToDelete, setItemToDelete] = useState(null);
     const { email } = useContext(EmailContext);
+    const n = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         if (email) {
@@ -37,7 +38,7 @@ const useCart = () => {
     const fetchUserId = async (userEmail) => {
         try {
             const response = await fetch(
-                `http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(userEmail)}`
+                `${n}/api/components/getUserId.php?email=${encodeURIComponent(userEmail)}`
             );
             if (!response.ok) {
                 throw new Error('Failed to fetch user ID');
@@ -60,7 +61,7 @@ const useCart = () => {
         setIsOrderCart(false);
         setCartLoading(true);
         try {
-            const response = await fetch(`http://localhost/funeraria/api/components/fetchCart.php?userId=${userId}`);
+            const response = await fetch(`${n}/api/components/fetchCart.php?userId=${userId}`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -93,7 +94,7 @@ const useCart = () => {
         };
 
         try {
-            const response = await fetch('http://localhost/funeraria/api/components/updatedCartItem.php', {
+            const response = await fetch(`${n}/api/components/updatedCartItem.php`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -136,7 +137,7 @@ const useCart = () => {
         };
 
         try {
-            const response = await fetch('http://localhost/funeraria/api/components/deleteCartItem.php', {
+            const response = await fetch(`${n}/api/components/deleteCartItem.php`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

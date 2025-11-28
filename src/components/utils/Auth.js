@@ -7,6 +7,8 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { jwtDecode } from "jwt-decode";
 import toast, { Toaster } from 'react-hot-toast';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/funeraria';
+
 const Auth = () => {
   const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
@@ -57,7 +59,10 @@ const Auth = () => {
       return;
     }
 
-    const url = isLogin ? 'http://localhost/funeraria/api/components/login.php' : 'http://localhost/funeraria/api/components/register.php';
+    // Updated URLs to use API_BASE_URL
+    const url = isLogin 
+      ? `${API_BASE_URL}/api/components/login.php`
+      : `${API_BASE_URL}/api/components/register.php`;
 
     try {
       const response = await axios.post(url, formData);
@@ -65,7 +70,6 @@ const Auth = () => {
       if (response && response.data) {
         if (response.data.message === "Login successful") {
           setEmail(formData.email);
-          // Store user role in localStorage
           localStorage.setItem('userRole', response.data.user.role);
 
           const userRole = response.data.user.role;
@@ -89,7 +93,6 @@ const Auth = () => {
             });
             setTimeout(() => navigate('/gomez/super-admin'), 1000);
           } else {
-            // Default case if role is undefined or not recognized
             toast.success('Login successful', {
               duration: 2000,
               position: 'top-right',
@@ -101,7 +104,7 @@ const Auth = () => {
             duration: 3000,
             position: 'top-right',
           });
-          setIsLogin(true); // Switch to login form after successful registration
+          setIsLogin(true);
         } else {
           toast.error(response.data.message);
         }
@@ -112,7 +115,6 @@ const Auth = () => {
       console.error("Error:", error);
       if (error.response) {
         if (error.response.status === 403 && error.response.data.status === 'disabled') {
-          // Check if the disabled account is an admin
           const userRole = error.response.data.role || formData.role;
 
           if (userRole === 'admin') {
@@ -143,33 +145,29 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      // Use jwtDecode instead of jwt_decode
       const decoded = jwtDecode(credentialResponse.credential);
       const { email, name, picture, sub } = decoded;
 
-      // Prepare data for backend
       const googleData = {
         email,
-        username: name || email.split('@')[0], // Fallback to email prefix if no name
+        username: name || email.split('@')[0],
         googleId: sub,
         avatar: picture
       };
 
-      // Send to backend for verification/registration
+      // Updated URL to use API_BASE_URL
       const response = await axios.post(
-        'http://localhost/funeraria/api/components/google-auth.php',
+        `${API_BASE_URL}/api/components/google-auth.php`,
         googleData
       );
 
       if (response.data.message === "Login successful" || response.data.message === "Registration and login successful") {
         setEmail(email);
-        // Store user role in localStorage
         localStorage.setItem('userRole', response.data.user?.role || 'client');
 
         const userRole = response.data.user?.role || 'client';
         const isNewUser = response.data.isNewUser || false;
 
-        // Show different messages for new vs existing users
         const loginMessage = isNewUser ? 'Welcome! Account created successfully' : 'Welcome back!';
 
         if (userRole === 'admin') {
@@ -202,7 +200,6 @@ const Auth = () => {
 
       if (error.response) {
         if (error.response.status === 403 && error.response.data.status === 'disabled') {
-          // Check if the disabled account is an admin
           const userRole = error.response.data.role;
 
           if (userRole === 'admin') {
@@ -219,7 +216,6 @@ const Auth = () => {
             });
           }
         } else {
-          // Other errors
           toast.error(error.response.data?.message || 'Google authentication failed. Please try again.', {
             duration: 5000,
             position: 'top-right',
@@ -252,7 +248,6 @@ const Auth = () => {
         className="relative min-h-screen overflow-hidden text-slate-100"
         style={{ background: 'linear-gradient(135deg, #2c3e50 0%, #bdc3c7 100%)' }}
       >
-        {/* Toast Container */}
         <Toaster
           position="top-right"
           reverseOrder={false}
@@ -260,7 +255,6 @@ const Auth = () => {
           containerClassName=""
           containerStyle={{}}
           toastOptions={{
-            // Define default options
             className: '',
             duration: 3000,
             style: {
@@ -271,7 +265,6 @@ const Auth = () => {
               padding: '12px 16px',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
             },
-            // Default options for specific types
             success: {
               duration: 4000,
               theme: {
@@ -297,7 +290,6 @@ const Auth = () => {
           }}
         />
 
-        {/* Ambient shapes */}
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-amber-500/10 blur-3xl" />
 
@@ -363,7 +355,6 @@ const Auth = () => {
                         onChange={handleChange}
                         placeholder='Username'
                         className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
-
                         required
                       />
                     </div>
@@ -467,7 +458,7 @@ const Auth = () => {
                       Remember me
                     </label>
                     <div className="text-sm">
-                      <a href="/gomez/forgot-password" className="font-medium text-gray-100 hover:text-gray-200 transition-colors">
+                      <a href="/funeraria/gomez/forgot-password" className="font-medium text-gray-100 hover:text-gray-200 transition-colors">
                         Forgot password?
                       </a>
                     </div>
@@ -513,13 +504,6 @@ const Auth = () => {
                     type="icon"
                     shape="circle"
                     logo_alignment="left"
-                    logo_type="default"
-                    logo_color="white"
-                    logo_size="small"
-                    logo_style="filled"
-                    logo_shape="circle"
-                    logo_shape_color_style_scheme="light"
-
                     auto_select
                     width="48"
                   />

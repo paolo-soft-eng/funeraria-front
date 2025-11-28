@@ -113,9 +113,10 @@ const PaymentForm = ({
 
     const handleUnifiedPayment = async (amountInCentavos) => {
     try {
+        const n = process.env.REACT_APP_API_URL;
         // Step 1: Always create payment intent first (for all payment methods)
         const intentResponse = await fetchWithRetry(
-            'http://localhost/funeraria/api/components/create-payment-intent.php',
+            `${n}/api/components/create-payment-intent.php`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -163,8 +164,9 @@ const PaymentForm = ({
 };
 
     const createUnifiedCheckoutSession = async (amountInCentavos, intentId) => {
+        const n = process.env.REACT_APP_API_URL;
         const sessionResponse = await fetchWithRetry(
-            'http://localhost/funeraria/api/components/create-checkout-session.php',
+            `${n}/api/components/create-checkout-session.php`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -221,6 +223,7 @@ const PaymentForm = ({
     };
 
     const handleCashOnDelivery = async () => {
+        const n = process.env.REACT_APP_API_URL;
         try {
             const payload = {
                 userId: parseInt(userId),
@@ -244,7 +247,7 @@ const PaymentForm = ({
             };
 
             const recordResponse = await fetchWithRetry(
-                'http://localhost/funeraria/api/components/cod-order.php',
+                `${n}/api/components/cod-order.php`,
                 {
                     method: 'POST',
                     headers: {

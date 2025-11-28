@@ -37,6 +37,7 @@ const ClientCart = () => {
     const [userInfo, setUserInfo] = useState(null);
     const [loadingUserInfo, setLoadingUserInfo] = useState(false);
     const [addressMissing, setAddressMissing] = useState(false);
+    const n = process.env.REACT_APP_API_URL;
 
     const error = cartError;
     const successMessage = cartSuccessMessage;
@@ -66,7 +67,7 @@ const ClientCart = () => {
             }
 
             const response = await fetch(
-                `http://localhost/funeraria/api/components/get_user_details.php?email=${userEmail}`,
+                `${n}/api/components/get_user_details.php?email=${userEmail}`,
                 {
                     method: 'GET',
                     headers: {

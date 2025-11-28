@@ -51,6 +51,7 @@ const ClientDashboard = () => {
   const dropdownRef = useRef(null);
   
   const { email } = useContext(EmailContext);
+  const n = process.env.REACT_APP_API_URL;
 
   // Fetch profile image and username
   useEffect(() => {
@@ -58,7 +59,7 @@ const ClientDashboard = () => {
       if (!email) return;
 
       try {
-        const response = await axios.get(`http://localhost/funeraria/api/components/client_picture.php?email=${email}`);
+        const response = await axios.get(`${n}/api/components/client_picture.php?email=${email}`);
         
         if (response.data?.success) {
           if (response.data.username) {
@@ -72,7 +73,7 @@ const ClientDashboard = () => {
       } catch (err) {
         console.error('Error fetching profile data:', err);
         try {
-          const userResponse = await axios.get(`http://localhost/funeraria/api/components/getUserId.php?email=${email}`);
+          const userResponse = await axios.get(`${n}/api/components/getUserId.php?email=${email}`);
           if (userResponse.data?.userName) {
             setUsername(userResponse.data.userName);
           }
@@ -254,7 +255,7 @@ const ClientDashboard = () => {
             {profileImage ? (
               <div className="rounded-full flex items-center justify-center overflow-hidden bg-white">
                 <img
-                  src={`http://localhost/funeraria/api/components/${profileImage}`}
+                  src={`${n}/api/components/${profileImage}`}
                   alt="Profile"
                   className="rounded-full w-10 h-10 object-cover"
                 />
@@ -360,7 +361,7 @@ const ClientDashboard = () => {
                   {profileImage ? (
                     <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden border border-gray-200">
                       <img
-                        src={`http://localhost/funeraria/api/components/${profileImage}`}
+                        src={`${n}/api/components/${profileImage}`}
                         alt="Profile"
                         className="w-full h-full object-cover"
                       />

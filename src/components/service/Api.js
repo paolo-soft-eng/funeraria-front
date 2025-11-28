@@ -1,4 +1,6 @@
-export const API_BASE_URL = 'http://localhost/funeraria/api';
+const n = process.env.REACT_APP_API_URL;
+export const API_BASE_URL = `${n}/api`;
+
 
 // Fetch all available funeral services
 export const fetchServices = async () => {

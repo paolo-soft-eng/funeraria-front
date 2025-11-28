@@ -10,6 +10,7 @@ const ClientServices = () => {
   const [openDirectlyToForm, setOpenDirectlyToForm] = useState(false);
   const { email } = useContext(EmailContext);
   const servicesRef = useRef([]);
+  const n = process.env.REACT_APP_API_URL;
 
   // Custom hooks for services
   const { services, loading: servicesLoading, error: servicesError, refetch: refetchServices } = useServices();
@@ -81,20 +82,20 @@ const ClientServices = () => {
 
     // Check if service has direct casket_image
     if (service.casket_image) {
-      return `http://localhost/funeraria/api/components/uploads/caskets/${service.casket_image}`;
+      return `${n}/api/components/uploads/caskets/${service.casket_image}`;
     }
 
     // Check if service has cover_image
     if (service.cover_image) {
-      return `http://localhost/funeraria/api/components/uploads/caskets/${service.cover_image}`;
+      return `${n}/api/components/uploads/caskets/${service.cover_image}`;
     }
 
     // Check if service has caskets array and first casket has image
     if (service.caskets && Array.isArray(service.caskets) && service.caskets.length > 0 && service.caskets[0].image) {
-      return `http://localhost/funeraria/api/components/uploads/caskets/${service.caskets[0].image}`;
+      return `${n}/api/components/uploads/caskets/${service.caskets[0].image}`;
     }
 
-    return `http://localhost/funeraria/api/components/uploads/caskets/${service.cover_image}`;
+    return `${n}/api/components/uploads/caskets/${service.cover_image}`;
   };
 
   const loading = servicesLoading;

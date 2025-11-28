@@ -15,6 +15,7 @@ const PaymentSuccess = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const n = process.env.REACT_APP_API_URL;
 
   // SINGLE SOURCE OF TRUTH for identifiers - extract once and store in state
   const [identifiers, setIdentifiers] = useState(null);
@@ -152,14 +153,14 @@ const PaymentSuccess = () => {
 
     switch (type) {
       case 'session':
-        endpoint = `http://localhost/funeraria/api/components/check-checkout-session.php?sessionId=${identifier}`;
+        endpoint = `${n}/api/components/check-checkout-session.php?sessionId=${identifier}`;
         break;
       case 'source':
-        endpoint = `http://localhost/funeraria/api/components/check-ewallet-payment.php?sourceId=${identifier}${identifiers.userId ? `&userId=${identifiers.userId}` : ''}`;
+        endpoint = `${n}/api/components/check-ewallet-payment.php?sourceId=${identifier}${identifiers.userId ? `&userId=${identifiers.userId}` : ''}`;
         break;
       case 'intent':
       default:
-        endpoint = `http://localhost/funeraria/api/components/check-payment-status.php?paymentIntentId=${identifier}`;
+        endpoint = `${n}/api/components/check-payment-status.php?paymentIntentId=${identifier}`;
         break;
     }
 
@@ -731,8 +732,8 @@ const PaymentSuccess = () => {
       const isEwallet = ['gcash', 'grab_pay', 'paymaya'].includes(storedMethod);
 
       const endpoint = isEwallet
-        ? "http://localhost/funeraria/api/components/create-payment-source.php"
-        : "http://localhost/funeraria/api/components/create-checkout-session.php";
+        ? `${n}/api/components/create-payment-source.php`
+        : `${n}/api/components/create-checkout-session.php`;
 
       // Use userId from identifiers or location.state
       const userId = identifiers.userId || (location.state ? location.state.userId : null);
@@ -761,13 +762,13 @@ const PaymentSuccess = () => {
       if (isEwallet) {
         payload.type = storedMethod || 'gcash';
         payload.redirect = {
-          success: `${window.location.origin}/gomez/payment-success`,
-          failed: `${window.location.origin}/gomez/payment-failed`
+          success: `${window.location.origin}/funeraria/gomez/payment-success`,
+          failed: `${window.location.origin}/funeraria/gomez/payment-failed`
         };
       } else {
         payload.payment_method = "card";
-        payload.successUrl = `${window.location.origin}/gomez/payment-success?payment_intent=${encodeURIComponent(intentId)}&userId=${encodeURIComponent(userId || '')}`;
-        payload.cancelUrl = `${window.location.origin}/gomez/payment-failed`;
+        payload.successUrl = `${window.location.origin}/funeraria/gomez/payment-success?payment_intent=${encodeURIComponent(intentId)}&userId=${encodeURIComponent(userId || '')}`;
+        payload.cancelUrl = `${window.location.origin}/funeraria/gomez/payment-failed`;
         payload.paymentIntentId = intentId;
       }
 

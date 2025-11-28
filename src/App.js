@@ -49,7 +49,7 @@ const App = () => {
   return (
     <GoogleOAuthProvider clientId={clientId}>
       <EmailProvider>
-        <Router>
+        <Router basename="/funeraria">
           <Suspense fallback={<LoadingScreen />}>
             <Routes>
               <Route path="/gomez/auth" element={
@@ -282,7 +282,7 @@ const App = () => {
                   <LoadingWrapper>
                     <SuperAdminReport/>
                   </LoadingWrapper>
-                </Suspense>
+                  </Suspense>
               } />
             </Routes>
           </Suspense>

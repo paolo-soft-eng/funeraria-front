@@ -4,11 +4,12 @@ export const useMenuItems = () => {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const n = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         const fetchItems = async () => {
             try {
-                const response = await fetch('http://localhost/funeraria/api/components/fetchItems.php');
+                const response = await fetch(`${n}/api/components/fetchItems.php`);
                 const data = await response.json();
                 setItems(data);
                 setLoading(false);

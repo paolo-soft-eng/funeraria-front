@@ -4,6 +4,7 @@ export const useActiveOrders = (email) => {
     const [activeOrders, setActiveOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const n = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         const fetchActiveOrders = async () => {
@@ -11,7 +12,7 @@ export const useActiveOrders = (email) => {
 
             try {
                 setLoading(true);
-                const response = await fetch('http://localhost/funeraria/api/components/active-orders.php', {
+                const response = await fetch(`${n}/api/components/active-orders.php`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

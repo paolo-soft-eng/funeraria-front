@@ -9,6 +9,7 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const navigate = useNavigate();
+  const n = process.env.REACT_APP_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,7 +19,7 @@ const ForgotPassword = () => {
     setIsSuccess(false);
 
     try {
-      const response = await axios.post('http://localhost/funeraria/api/components/forgot-password.php', {
+      const response = await axios.post(`${n}/api/components/forgot-password.php`, {
         email
       });
 

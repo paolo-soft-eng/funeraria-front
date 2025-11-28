@@ -6,13 +6,14 @@ export const useAppointmentsAndOrders = (email) => {
     const [recentOrders, setRecentOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const n = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         if (!email) return;
 
         const fetchData = async () => {
             try {
-                const response = await fetch('http://localhost/funeraria/api/components/get_upcoming.php', {
+                const response = await fetch(`${n}/api/components/get_upcoming.php`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email }),

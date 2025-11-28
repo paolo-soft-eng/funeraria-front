@@ -6,8 +6,9 @@ export const useMessages = (userId, selectedAdmin, processedMessageIds) => {
   const [error, setError] = useState(null);
   const [messageCount, setMessageCount] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
+  const n = process.env.REACT_APP_API_URL;
 
-  const API_BASE_URL = 'http://localhost/funeraria/api/components/send_message.php';
+  const API_BASE_URL = `${n}/api/components/send_message.php`;
 
   const fetchMessages = useCallback(async () => {
     if (!userId || !selectedAdmin) return;

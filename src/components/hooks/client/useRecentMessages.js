@@ -6,6 +6,7 @@ export const useRecentMessages = (email) => {
     const [recentMessages, setRecentMessages] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const n = process.env.REACT_APP_API_URL;
 
     const fetchRecentMessages = async () => {
         if (!email) return;
@@ -15,7 +16,7 @@ export const useRecentMessages = (email) => {
         
         try {
             const response = await axios.post(
-                'http://localhost/funeraria/api/components/fetchRecentMessages.php',
+                `${n}/api/components/fetchRecentMessages.php`,
                 { email }
             );
 
@@ -35,7 +36,7 @@ export const useRecentMessages = (email) => {
     const markAsRead = async (messageId) => {
         try {
             const response = await axios.post(
-                'http://localhost/funeraria/api/components/markMessageAsRead.php',
+                `${n}/api/components/markMessageAsRead.php`,
                 { message_id: messageId, email }
             );
 

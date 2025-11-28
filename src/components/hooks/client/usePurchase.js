@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 
 export const usePurchase = (isLoggedIn, userId, updateItemStock) => {
     const [purchasing, setPurchasing] = useState(false);
+    const n = process.env.REACT_APP_API_URL;
 
     const handleBuy = async (itemId, quantity) => {
         // Check if user is logged in
@@ -16,7 +17,7 @@ export const usePurchase = (isLoggedIn, userId, updateItemStock) => {
         setPurchasing(true);
 
         try {
-            const response = await fetch('http://localhost/funeraria/api/components/buyItems.php', {
+            const response = await fetch(`${n}/api/components/buyItems.php`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

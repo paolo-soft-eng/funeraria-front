@@ -3,8 +3,9 @@ import { useState, useCallback } from 'react';
 export const useMessageActions = (socket, isConnected, userId, processedMessageIds) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const n = process.env.REACT_APP_API_URL;
 
-  const API_BASE_URL = 'http://localhost/funeraria/api/components/send_message.php';
+  const API_BASE_URL = `${n}/api/components/send_message.php`;
 
   const sendMessage = useCallback(async (message, selectedAdmin, addMessage, countMessages, replyContext = null) => {
     if (!message.trim() || !selectedAdmin || !socket || !isConnected) {
@@ -106,8 +107,8 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
 
       // Extract relative path for WebSocket transmission
       let relativePath = fullImageUrl;
-      if (fullImageUrl.includes('/localhost/funeraria/api/components/')) {
-        const parts = fullImageUrl.split('/localhost/funeraria/api/components/');
+      if (fullImageUrl.includes(`/${n}/api/components/`)) {
+        const parts = fullImageUrl.split(`/${n}/api/components/`);
         relativePath = parts[1];
       }
 

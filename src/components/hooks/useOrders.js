@@ -11,6 +11,7 @@ const useOrders = () => {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [orderToDelete, setOrderToDelete] = useState(null);
     const { email } = useContext(EmailContext);
+    const n = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         if (email) {
@@ -24,7 +25,7 @@ const useOrders = () => {
         setOrdersLoading(true);
         try {
             const response = await fetch(
-                `http://localhost/funeraria/api/components/fetchOrders.php?customer_email=${encodeURIComponent(email)}`,
+                `${n}/api/components/fetchOrders.php?customer_email=${encodeURIComponent(email)}`,
                 {
                     method: 'GET',
                     headers: {
@@ -64,7 +65,7 @@ const useOrders = () => {
         if (!orderToDelete) return;
 
         try {
-            const response = await fetch('http://localhost/funeraria/api/components/deleteOrder.php', {
+            const response = await fetch(`${n}/api/components/deleteOrder.php`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

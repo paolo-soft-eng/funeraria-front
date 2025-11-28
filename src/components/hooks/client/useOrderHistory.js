@@ -4,6 +4,7 @@ export const useOrderHistory = (email) => {
     const [orderHistory, setOrderHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const n = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         const fetchOrderHistory = async () => {
@@ -11,7 +12,7 @@ export const useOrderHistory = (email) => {
 
             try {
                 setLoading(true);
-                const response = await fetch('http://localhost/funeraria/api/components/order-history.php', {
+                const response = await fetch(`${n}/api/components/order-history.php`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

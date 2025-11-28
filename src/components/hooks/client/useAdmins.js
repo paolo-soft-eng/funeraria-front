@@ -5,8 +5,9 @@ export const useAdmins = (userId) => {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const n = process.env.REACT_APP_API_URL;
 
-  const API_BASE_URL = 'http://localhost/funeraria/api/components/send_message.php';
+  const API_BASE_URL = `${n}/api/components/send_message.php`;
 
   const fetchAdmins = useCallback(async () => {
     try {
