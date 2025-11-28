@@ -22,7 +22,7 @@ export const useDashboardStats = (email, isValidatingAdmin) => {
             setIsLoading(true);
             try {
                 const response = await axios.post(
-                    'http://192.168.100.99:8000/components/fetchDashboardStats.php',
+                    'http://localhost/funeraria/api/components/fetchDashboardStats.php',
                     { email }
                 );
                 if (response.data.success) {

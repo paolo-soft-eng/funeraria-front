@@ -16,7 +16,7 @@ export const usePurchase = (isLoggedIn, userId, updateItemStock) => {
         setPurchasing(true);
 
         try {
-            const response = await fetch('http://192.168.100.99:8000/components/buyItems.php', {
+            const response = await fetch('http://localhost/funeraria/api/components/buyItems.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -31,8 +31,8 @@ const AdminAnalytics = lazy(() => import('./components/pages/admin/AdminAnalytic
 const AdminReport = lazy(() => import('./components/pages/admin/AdminReport'));
 const AdminDocuments = lazy(() => import('./components/pages/admin/AdminDocuments'));
 const LandingPage = lazy(() => import('./components/LandingPage'));
-const SuperAdmin = lazy(() => import('./components/superadmin/SuperAdmin'));
-const SuperAdminReport = lazy(() => import('./components/superadmin/SuperAdminReport'));
+const SuperAdmin = lazy(() => import('./components/pages/superadmin/SuperAdmin'));
+const SuperAdminReport = lazy(() => import('./components/pages/superadmin/SuperAdminReport'));
 const ErrorPage = lazy(() => import('./components/static/error/ErrorPage'));
 const ForgotPassword = lazy(() => import('./components/utils/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/utils/ResetPassword'));

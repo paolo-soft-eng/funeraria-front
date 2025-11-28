@@ -152,14 +152,14 @@ const PaymentSuccess = () => {
 
     switch (type) {
       case 'session':
-        endpoint = `http://192.168.100.99:8000/components/check-checkout-session.php?sessionId=${identifier}`;
+        endpoint = `http://localhost/funeraria/api/components/check-checkout-session.php?sessionId=${identifier}`;
         break;
       case 'source':
-        endpoint = `http://192.168.100.99:8000/components/check-ewallet-payment.php?sourceId=${identifier}${identifiers.userId ? `&userId=${identifiers.userId}` : ''}`;
+        endpoint = `http://localhost/funeraria/api/components/check-ewallet-payment.php?sourceId=${identifier}${identifiers.userId ? `&userId=${identifiers.userId}` : ''}`;
         break;
       case 'intent':
       default:
-        endpoint = `http://192.168.100.99:8000/components/check-payment-status.php?paymentIntentId=${identifier}`;
+        endpoint = `http://localhost/funeraria/api/components/check-payment-status.php?paymentIntentId=${identifier}`;
         break;
     }
 
@@ -731,8 +731,8 @@ const PaymentSuccess = () => {
       const isEwallet = ['gcash', 'grab_pay', 'paymaya'].includes(storedMethod);
 
       const endpoint = isEwallet
-        ? "http://192.168.100.99:8000/components/create-payment-source.php"
-        : "http://192.168.100.99:8000/components/create-checkout-session.php";
+        ? "http://localhost/funeraria/api/components/create-payment-source.php"
+        : "http://localhost/funeraria/api/components/create-checkout-session.php";
 
       // Use userId from identifiers or location.state
       const userId = identifiers.userId || (location.state ? location.state.userId : null);

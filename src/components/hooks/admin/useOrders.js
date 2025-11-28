@@ -12,7 +12,7 @@ export const useOrders = () => {
     setError(null);
     try {
       const response = await axios.get(
-        `http://192.168.100.99:8000/components/adminOrders.php?page=${currentPage}&limit=${ordersPerPage}`
+        `http://localhost/funeraria/api/components/adminOrders.php?page=${currentPage}&limit=${ordersPerPage}`
       );
       
       const data = response.data;

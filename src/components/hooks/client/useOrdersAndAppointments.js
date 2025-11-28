@@ -12,7 +12,7 @@ export const useAppointmentsAndOrders = (email) => {
 
         const fetchData = async () => {
             try {
-                const response = await fetch('http://192.168.100.99:8000/components/get_upcoming.php', {
+                const response = await fetch('http://localhost/funeraria/api/components/get_upcoming.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email }),

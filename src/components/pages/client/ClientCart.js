@@ -66,7 +66,7 @@ const ClientCart = () => {
             }
 
             const response = await fetch(
-                `http://192.168.100.99:8000/components/get_user_details.php?email=${userEmail}`,
+                `http://localhost/funeraria/api/components/get_user_details.php?email=${userEmail}`,
                 {
                     method: 'GET',
                     headers: {
@@ -267,7 +267,7 @@ const ClientCart = () => {
                                                 <div className="flex-shrink-0 h-10 w-10 mr-3">
                                                     <img
                                                         className="h-10 w-10 rounded-full object-cover"
-                                                        src={`http://192.168.100.99:8000/components/${item.image_path}`}
+                                                        src={`http://localhost/funeraria/api/components/${item.image_path}`}
                                                         alt={item.name}
                                                     />
                                                 </div>

@@ -4,7 +4,7 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const API_BASE_URL = 'http://192.168.100.99:8000/components/send_message.php';
+  const API_BASE_URL = 'http://localhost/funeraria/api/components/send_message.php';
 
   const sendMessage = useCallback(async (message, selectedAdmin, addMessage, countMessages, replyContext = null) => {
     if (!message.trim() || !selectedAdmin || !socket || !isConnected) {
@@ -106,8 +106,8 @@ export const useMessageActions = (socket, isConnected, userId, processedMessageI
 
       // Extract relative path for WebSocket transmission
       let relativePath = fullImageUrl;
-      if (fullImageUrl.includes('/192.168.100.99:8000/components/')) {
-        const parts = fullImageUrl.split('/192.168.100.99:8000/components/');
+      if (fullImageUrl.includes('/localhost/funeraria/api/components/')) {
+        const parts = fullImageUrl.split('/localhost/funeraria/api/components/');
         relativePath = parts[1];
       }
 

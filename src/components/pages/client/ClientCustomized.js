@@ -42,7 +42,7 @@ const ClientCustomized = () => {
   const fetchUserDetails = async () => {
     setLoadingUserData(true);
     try {
-      const response = await fetch(`http://192.168.100.99:8000/components/get_user_details.php?email=${encodeURIComponent(email)}`);
+      const response = await fetch(`http://localhost/funeraria/api/components/get_user_details.php?email=${encodeURIComponent(email)}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -113,7 +113,7 @@ const ClientCustomized = () => {
     setPurchasing(true);
 
     try {
-      const response = await fetch('http://192.168.100.99:8000/components/buyItems.php', {
+      const response = await fetch('http://localhost/funeraria/api/components/buyItems.php', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -157,7 +157,7 @@ const ClientCustomized = () => {
     setLoadingPackage(true);
     try {
       const packageId = mapItemIdToPackageId(itemId);
-      const response = await fetch(`http://192.168.100.99:8000/components/fetchPackagesById.php?id=${packageId}`);
+      const response = await fetch(`http://localhost/funeraria/api/components/fetchPackagesById.php?id=${packageId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -226,7 +226,7 @@ const ClientCustomized = () => {
     >
       <div className="relative">
         <img
-          src={`http://192.168.100.99:8000/components/${item.image_path}`}
+          src={`http://localhost/funeraria/api/components/${item.image_path}`}
           alt={item.name}
           className="w-full h-56 sm:h-64 object-cover"
         />

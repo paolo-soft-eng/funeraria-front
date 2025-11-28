@@ -11,7 +11,7 @@ export const useActiveOrders = (email) => {
 
             try {
                 setLoading(true);
-                const response = await fetch('http://192.168.100.99:8000/components/active-orders.php', {
+                const response = await fetch('http://localhost/funeraria/api/components/active-orders.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

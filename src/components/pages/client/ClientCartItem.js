@@ -64,7 +64,7 @@ const ClientCartItem = ({
                     <div className="flex-shrink-0 h-10 w-10">
                         <img
                             className="h-10 w-10 rounded-full object-cover"
-                            src={`http://192.168.100.99:8000/components/${item.image_path}`}
+                            src={`http://localhost/funeraria/api/components/${item.image_path}`}
                             alt={item.name}
                         />
                     </div>

@@ -6,7 +6,7 @@ export const useAuth = (email) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_BASE_URL = 'http://192.168.100.99:8000/components/send_message.php';
+  const API_BASE_URL = 'http://localhost/funeraria/api/components/send_message.php';
 
   const getUserId = async () => {
     if (!email) {
@@ -37,7 +37,7 @@ export const useAuth = (email) => {
 
   useEffect(() => {
     if (email) {
-      fetch(`http://192.168.100.99:8000/components/getUserId.php?email=${encodeURIComponent(email)}`)
+      fetch(`http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(email)}`)
         .then(response => response.json())
         .then(data => {
           if (data.userId) {

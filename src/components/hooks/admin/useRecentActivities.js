@@ -10,7 +10,7 @@ export const useRecentActivities = (email, isValidatingAdmin) => {
             try {
                 setActivitiesLoading(true);
                 const response = await axios.get(
-                    'http://192.168.100.99:8000/components/fetchRecentActivities.php?limit=7'
+                    'http://localhost/funeraria/api/components/fetchRecentActivities.php?limit=7'
                 );
 
                 if (response.data.success) {

@@ -652,7 +652,7 @@ const ClientProfile = () => {
                           <p className="font-medium">{doc.document_name}</p>
                           <p className="text-sm text-gray-600">{doc.document_type}</p>
                           <a
-                            href={`http://192.168.100.99:8000/components/documents.php?file=${doc.document_path}`}
+                            href={`http://http://localhost/funeraria/api/components/documents.php?file=${doc.document_path}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:underline text-sm"

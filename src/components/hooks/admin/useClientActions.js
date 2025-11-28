@@ -15,7 +15,7 @@ export const useClientActions = (userId, userName, fetchClients) => {
     if (!selectedClient) return;
 
     try {
-      const response = await axios.post("http://192.168.100.99:8000/components/fetchClients.php", {
+      const response = await axios.post("http://localhost/funeraria/api/components/fetchClients.php", {
         id: selectedClient.id,
         action: selectedClient.action,
         userId: userId,

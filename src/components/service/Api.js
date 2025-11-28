@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://192.168.100.99:8000';
+export const API_BASE_URL = 'http://localhost/funeraria/api';
 
 // Fetch all available funeral services
 export const fetchServices = async () => {

@@ -114,7 +114,7 @@ export default function ClientMessages() {
           if (data.imageUrl.startsWith('http')) {
             fullImageUrl = data.imageUrl;
           } else {
-            fullImageUrl = `http://192.168.100.99:8000/components/${data.imageUrl}`;
+            fullImageUrl = `http://localhost/funeraria/api/components/${data.imageUrl}`;
           }
         }
 
@@ -127,7 +127,7 @@ export default function ClientMessages() {
             if (data.replyImagePath.startsWith('http')) {
               replyImageUrl = data.replyImagePath;
             } else {
-              replyImageUrl = `http://192.168.100.99:8000/components/${data.replyImagePath}`;
+              replyImageUrl = `http://localhost/funeraria/api/components/${data.replyImagePath}`;
             }
           }
 
@@ -172,7 +172,7 @@ export default function ClientMessages() {
           if (data.imageUrl.startsWith('http')) {
             fullImageUrl = data.imageUrl;
           } else {
-            fullImageUrl = `http://192.168.100.99:8000/components/${data.imageUrl}`;
+            fullImageUrl = `http://localhost/funeraria/api/components/${data.imageUrl}`;
           }
         }
 
@@ -184,7 +184,7 @@ export default function ClientMessages() {
             if (data.replyImagePath.startsWith('http')) {
               replyImageUrl = data.replyImagePath;
             } else {
-              replyImageUrl = `http://192.168.100.99:8000/components/${data.replyImagePath}`;
+              replyImageUrl = `http://localhost/funeraria/api/components/${data.replyImagePath}`;
             }
           }
 
@@ -430,7 +430,7 @@ export default function ClientMessages() {
                   <div className="h-10 w-10 rounded-full mr-3 relative">
                     {admin.image_path ? (
                       <img
-                        src={`http://192.169.100.99:8000/components/${admin.image_path}`}
+                        src={`http://localhost/funeraria/api/components/${admin.image_path}`}
                         alt={admin.username}
                         className="h-10 w-10 rounded-full object-cover"
                       />
@@ -588,7 +588,7 @@ export default function ClientMessages() {
                         <div className="h-8 w-8 bg-gray-300 rounded-full mr-3 flex-shrink-0 self-end overflow-hidden">
                           {selectedAdmin.image_path ? (
                             <img
-                              src={`http://192.168.100.99:8000/components/${selectedAdmin.image_path}`}
+                              src={`http://localhost/funeraria/api/components/${selectedAdmin.image_path}`}
                               alt={selectedAdmin.username}
                               className="h-8 w-8 object-cover"
                             />

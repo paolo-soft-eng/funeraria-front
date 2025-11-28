@@ -30,7 +30,7 @@ export const useAppointments = () => {
     const fetchAppointments = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://192.168.100.99:8000/components/adminAppointments.php');
+            const response = await fetch('http://localhost/funeraria/api/components/adminAppointments.php');
             const data = await response.json();
 
             if (data.status === 'success') {
@@ -49,7 +49,7 @@ export const useAppointments = () => {
 
     const updateAppointmentStatus = async (appointmentId, newStatus) => {
         try {
-            const response = await fetch('http://192.168.100.99:8000/components/adminAppointments.php', {
+            const response = await fetch('http://localhost/funeraria/api/components/adminAppointments.php', {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -94,7 +94,7 @@ export const useAppointments = () => {
 
 // Hook for API configuration
 export const useApiConfig = () => {
-    const baseUrl = 'http://192.168.100.99:8000/components';
+    const baseUrl = 'http://localhost/funeraria/api/components';
     
     const getImageUrl = (path) => {
         if (!path) return null;

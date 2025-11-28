@@ -15,7 +15,7 @@ export const useUser = (email) => {
 
         const fetchUserId = async () => {
             try {
-                const response = await fetch(`http://192.168.100.99:8000/components/getUserId.php?email=${encodeURIComponent(email)}`);
+                const response = await fetch(`http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(email)}`);
                 const data = await response.json();
 
                 if (data.userId) {

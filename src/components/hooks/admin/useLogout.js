@@ -7,7 +7,7 @@ export const useLogout = (showNotification) => {
     const handleLogout = async () => {
         try {
             showNotification('Logout Successfully', 'success');
-            await axios.post('http://192.168.100.99:8000/config/logout.php');
+            await axios.post('http://localhost/funeraria/api/config/logout.php');
             localStorage.removeItem('userEmail');
             localStorage.removeItem('userRole');
 

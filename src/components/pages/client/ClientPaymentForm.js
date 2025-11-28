@@ -115,7 +115,7 @@ const PaymentForm = ({
     try {
         // Step 1: Always create payment intent first (for all payment methods)
         const intentResponse = await fetchWithRetry(
-            'http://192.168.100.99:8000/components/create-payment-intent.php',
+            'http://localhost/funeraria/api/components/create-payment-intent.php',
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -164,7 +164,7 @@ const PaymentForm = ({
 
     const createUnifiedCheckoutSession = async (amountInCentavos, intentId) => {
         const sessionResponse = await fetchWithRetry(
-            'http://192.168.100.99:8000/components/create-checkout-session.php',
+            'http://localhost/funeraria/api/components/create-checkout-session.php',
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -244,7 +244,7 @@ const PaymentForm = ({
             };
 
             const recordResponse = await fetchWithRetry(
-                'http://192.168.100.99:8000/components/cod-order.php',
+                'http://localhost/funeraria/api/components/cod-order.php',
                 {
                     method: 'POST',
                     headers: {
