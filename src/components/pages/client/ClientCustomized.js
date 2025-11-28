@@ -42,7 +42,7 @@ const ClientCustomized = () => {
   const fetchUserDetails = async () => {
     setLoadingUserData(true);
     try {
-      const response = await fetch(`http://localhost/funeraria/api/components/get_user_details.php?email=${encodeURIComponent(email)}`);
+      const response = await fetch(`http://localhost/funeraria/api/components/get_user_details.php?email=${email}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
