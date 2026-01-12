@@ -17,14 +17,13 @@ import {
   BarChart2,
   Settings,
   Calendar,
-
-  Paperclip,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Archive
 } from 'lucide-react';
 import axios from 'axios';
 import { EmailContext } from '../../utils/EmailContext';
-import LoadingWrapper from '../../static/loading/LoadingWrapper';
+const n = process.env.REACT_APP_API_URL;
 
 const AdminLayout = ({ children, currentPage }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -34,6 +33,7 @@ const AdminLayout = ({ children, currentPage }) => {
   const [userData, setUserData] = useState(null);
   const [isValidatingAdmin, setIsValidatingAdmin] = useState(true);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [ordersAccordionOpen, setOrdersAccordionOpen] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
   const { email } = useContext(EmailContext);
@@ -52,7 +52,7 @@ const AdminLayout = ({ children, currentPage }) => {
     }
 
     try {
-      const response = await axios.post('http://localhost/funeraria/api/components/getUserId.php', {
+      const response = await axios.post(`${n}/api/components/getUserId.php`, {
         email: email
       });
 
@@ -100,7 +100,7 @@ const AdminLayout = ({ children, currentPage }) => {
     const fetchUserData = async () => {
       if (!isValidatingAdmin && email) {
         try {
-          const response = await axios.post('http://localhost/funeraria/api/components/fetchAdminProfile.php', { email });
+          const response = await axios.post(`${n}/api/components/fetchAdminProfile.php`, { email });
           setUserData(response.data.data);
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -111,12 +111,23 @@ const AdminLayout = ({ children, currentPage }) => {
     fetchUserData();
   }, [email, isValidatingAdmin]);
 
+  // Auto-expand orders accordion if on orders or archived-orders page
+  useEffect(() => {
+    if (currentPage === 'orders' || currentPage === 'archived-orders') {
+      setOrdersAccordionOpen(true);
+    }
+  }, [currentPage]);
+
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const toggleOrdersAccordion = () => {
+    setOrdersAccordionOpen(!ordersAccordionOpen);
   };
 
   const handleNavClick = (path) => {
@@ -135,13 +146,12 @@ const AdminLayout = ({ children, currentPage }) => {
   const handleLogoutConfirm = async () => {
     try {
       showNotification('Logging out...', 'info');
-      await axios.post('http://localhost/funeraria/api/config/logout.php');
+      await axios.post(`${n}/api/config/logout.php`);
       localStorage.removeItem('userEmail');
       localStorage.removeItem('userRole');
       showNotification('Successfully logged out!', 'success');
       setShowLogoutModal(false);
 
-      // Delay navigation to show success message
       setTimeout(() => {
         navigate('/gomez/auth');
       }, 1000);
@@ -172,7 +182,16 @@ const AdminLayout = ({ children, currentPage }) => {
   const mainNavItems = [
     { name: 'home', icon: <Home size={20} />, label: 'Home' },
     { name: 'itemlists', icon: <List size={20} />, label: 'Items' },
-    { name: 'orders', icon: <ShoppingCart size={20} />, label: 'Orders' },
+    { 
+      name: 'orders', 
+      icon: <ShoppingCart size={20} />, 
+      label: 'Orders',
+      hasAccordion: true,
+      subItems: [
+        { name: 'orders', icon: <ShoppingCart size={18} />, label: 'Active Orders' },
+        { name: 'archived-orders', icon: <Archive size={18} />, label: 'Archived Orders' }
+      ]
+    },
     { name: 'clients', icon: <Users size={20} />, label: 'Clients' },
     { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
     { name: 'documents', icon: <FileText size={20} />, label: 'Documents' },
@@ -183,8 +202,15 @@ const AdminLayout = ({ children, currentPage }) => {
   ];
 
   const getPageTitle = () => {
-    const page = mainNavItems.find(item => item.name === currentPage);
-    return page ? page.label : '';
+    // Check all items including sub-items
+    for (const item of mainNavItems) {
+      if (item.hasAccordion && item.subItems) {
+        const subItem = item.subItems.find(sub => sub.name === currentPage);
+        if (subItem) return subItem.label;
+      }
+      if (item.name === currentPage) return item.label;
+    }
+    return '';
   };
 
   return (
@@ -224,11 +250,12 @@ const AdminLayout = ({ children, currentPage }) => {
 
       {notification && (
         <div className="fixed top-4 right-4 z-50 animate-fade-in">
-          <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${notification.type === 'success' ? 'bg-green-400 text-white' :
+          <div className={`px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 ${
+            notification.type === 'success' ? 'bg-green-400 text-white' :
             notification.type === 'error' ? 'bg-red-500 text-white' :
-              notification.type === 'warning' ? 'bg-yellow-500 text-white' :
-                'bg-blue-500 text-white'
-            }`}>
+            notification.type === 'warning' ? 'bg-yellow-500 text-white' :
+            'bg-blue-500 text-white'
+          }`}>
             {notification.type === 'success' && (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
@@ -260,8 +287,9 @@ const AdminLayout = ({ children, currentPage }) => {
       )}
 
       <aside
-        className={`fixed lg:static z-30 h-full bg-gray-800 text-white transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0 lg:w-20 overflow-hidden'
-          }`}
+        className={`fixed lg:static z-30 h-full bg-gray-800 text-white transition-all duration-300 ${
+          isSidebarOpen ? 'w-64' : 'w-0 lg:w-20 overflow-hidden'
+        }`}
       >
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-center p-4">
@@ -281,9 +309,9 @@ const AdminLayout = ({ children, currentPage }) => {
 
           {/* Profile Section */}
           <div className={`px-4 py-6 ${isSidebarOpen ? 'flex items-center' : 'flex flex-col items-center'}`}>
-            <div className="rounded-full  flex items-center justify-center">
+            <div className="rounded-full flex items-center justify-center">
               {userData && userData.profileImage ? (
-                <img src={`http://localhost/funeraria/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
+                <img src={`${n}/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
               ) : (
                 <User size={isSidebarOpen ? 24 : 18} />
               )}
@@ -296,23 +324,65 @@ const AdminLayout = ({ children, currentPage }) => {
             )}
           </div>
 
-          <nav className="mt-6 flex-grow">
+          <nav className="mt-6 flex-grow overflow-y-auto">
             <ul className="space-y-1">
               {mainNavItems.map((item) => (
                 <li key={item.name}>
-                  <Link
-                    to={`/gomez/dashboard-admin/${item.name}`}
-                    className={`flex items-center px-5 py-4 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
-                      }`}
-                    onClick={(e) => {
-                      if (isMobileView) {
-                        setIsSidebarOpen(false);
-                      }
-                    }}
-                  >
-                    <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
-                    {isSidebarOpen && <span>{item.label}</span>}
-                  </Link>
+                  {item.hasAccordion ? (
+                    <>
+                      <button
+                        onClick={toggleOrdersAccordion}
+                        className={`flex items-center w-full px-5 py-4 hover:bg-gray-700 transition-colors ${
+                          isSidebarOpen ? 'justify-between' : 'justify-center'
+                        } ${(currentPage === 'orders' || currentPage === 'archived-orders') ? 'bg-gray-700' : ''}`}
+                      >
+                        <div className={`flex items-center ${isSidebarOpen ? '' : 'justify-center'}`}>
+                          <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
+                          {isSidebarOpen && <span>{item.label}</span>}
+                        </div>
+                        {isSidebarOpen && (
+                          ordersAccordionOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />
+                        )}
+                      </button>
+                      {ordersAccordionOpen && isSidebarOpen && (
+                        <ul className="bg-gray-700 space-y-1">
+                          {item.subItems.map((subItem) => (
+                            <li key={subItem.name}>
+                              <Link
+                                to={`/gomez/dashboard-admin/${subItem.name}`}
+                                className={`flex items-center pl-12 pr-5 py-3 hover:bg-gray-600 transition-colors ${
+                                  currentPage === subItem.name ? 'bg-gray-600' : ''
+                                }`}
+                                onClick={(e) => {
+                                  if (isMobileView) {
+                                    setIsSidebarOpen(false);
+                                  }
+                                }}
+                              >
+                                <span className="mr-3">{subItem.icon}</span>
+                                <span>{subItem.label}</span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  ) : (
+                    <Link
+                      to={`/gomez/dashboard-admin/${item.name}`}
+                      className={`flex items-center px-5 py-4 hover:bg-gray-700 transition-colors ${
+                        isSidebarOpen ? 'justify-start' : 'justify-center'
+                      } ${currentPage === item.name ? 'bg-gray-700' : ''}`}
+                      onClick={(e) => {
+                        if (isMobileView) {
+                          setIsSidebarOpen(false);
+                        }
+                      }}
+                    >
+                      <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
+                      {isSidebarOpen && <span>{item.label}</span>}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -321,8 +391,9 @@ const AdminLayout = ({ children, currentPage }) => {
           <div className="p-4 mt-auto">
             <button
               onClick={handleLogoutClick}
-              className={`flex items-center text-red-600 hover:text-red-500 transition-colors ${isSidebarOpen ? 'justify-start w-full' : 'justify-center w-full'
-                }`}
+              className={`flex items-center text-red-600 hover:text-red-500 transition-colors ${
+                isSidebarOpen ? 'justify-start w-full' : 'justify-center w-full'
+              }`}
             >
               <LogOut size={20} className={isSidebarOpen ? 'mr-3' : ''} />
               {isSidebarOpen && <span>Logout</span>}
@@ -354,7 +425,7 @@ const AdminLayout = ({ children, currentPage }) => {
                 >
                   <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700">
                     {userData && userData.profileImage ? (
-                      <img src={`http://localhost/funeraria/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-8 h-8 object-cover" />
+                      <img src={`${n}/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-8 h-8 object-cover" />
                     ) : (
                       <User size={18} />
                     )}

@@ -4,15 +4,20 @@ export const useOrderHistory = (email) => {
     const [orderHistory, setOrderHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const n = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         const fetchOrderHistory = async () => {
-            if (!email) return;
+            if (!email) {
+                setLoading(false);
+                return;
+            }
 
             try {
                 setLoading(true);
-                const response = await fetch(`${n}/api/components/order-history.php`, {
+                setError(null);
+                
+                const apiUrl = process.env.REACT_APP_API_URL;
+                const response = await fetch(`${apiUrl}/api/components/order-history.php`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -20,15 +25,22 @@ export const useOrderHistory = (email) => {
                     body: JSON.stringify({ email }),
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
 
                 if (data.error) {
                     setError(data.error);
+                    setOrderHistory([]);
                 } else {
                     setOrderHistory(data.orders || []);
                 }
             } catch (err) {
-                setError('Failed to fetch order history');
+                console.error('Error fetching order history:', err);
+                setError(err.message || 'Failed to fetch order history');
+                setOrderHistory([]);
             } finally {
                 setLoading(false);
             }

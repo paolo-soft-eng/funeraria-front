@@ -14,10 +14,13 @@ const Auth = () => {
 
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     telephone: '',
+    address: '',
     password: '',
     confirmPassword: '',
   });
@@ -34,10 +37,28 @@ const Auth = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Phone number validation: only allow digits and limit to 10 characters
+    if (name === 'telephone') {
+      const digitsOnly = value.replace(/\D/g, '');
+      if (digitsOnly.length <= 10) {
+        setFormData({
+          ...formData,
+          [name]: digitsOnly,
+        });
+      }
+      return;
+    }
+
     setFormData({
       ...formData,
       [name]: value,
     });
+  };
+
+  const validatePhoneNumber = (phone) => {
+    // Must start with 9 and be exactly 10 digits
+    return /^9\d{9}$/.test(phone);
   };
 
   const handleSubmit = async (e) => {
@@ -53,14 +74,20 @@ const Auth = () => {
       return;
     }
 
+    // Phone number validation for registration
+    if (!isLogin && !validatePhoneNumber(formData.telephone)) {
+      toast.error("Phone number must start with 9 and be exactly 10 digits");
+      setIsLoading(false);
+      return;
+    }
+
     if (!isLogin && formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
       setIsLoading(false);
       return;
     }
 
-    // Updated URLs to use API_BASE_URL
-    const url = isLogin 
+    const url = isLogin
       ? `${API_BASE_URL}/api/components/login.php`
       : `${API_BASE_URL}/api/components/register.php`;
 
@@ -155,7 +182,6 @@ const Auth = () => {
         avatar: picture
       };
 
-      // Updated URL to use API_BASE_URL
       const response = await axios.post(
         `${API_BASE_URL}/api/components/google-auth.php`,
         googleData
@@ -298,7 +324,7 @@ const Auth = () => {
             {/* Visual panel */}
             <div className="relative hidden overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10 lg:flex">
               <img
-                src="/assets/login_bg.jpg"
+                src="/funeraria/assets/login_bg.jpg"
                 alt="Quiet chapel with soft light"
                 className="absolute inset-0 h-full w-full object-cover"
               />
@@ -383,25 +409,51 @@ const Auth = () => {
                 </div>
 
                 {!isLogin && (
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-white/80">Telephone</label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-black/40" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                        </svg>
+                  <>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-white/80">Telephone</label>
+                      <div className="relative">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-black/40" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                          </svg>
+                        </div>
+                        <input
+                          type="tel"
+                          name="telephone"
+                          value={formData.telephone}
+                          onChange={handleChange}
+                          className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
+                          placeholder="9XXXXXXXXX (10 digits)"
+                          pattern="9[0-9]{9}"
+                          title="Phone number must start with 9 and be exactly 10 digits"
+                          required
+                        />
                       </div>
-                      <input
-                        type="tel"
-                        name="telephone"
-                        value={formData.telephone}
-                        onChange={handleChange}
-                        className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
-                        placeholder="Phone number"
-                        required
-                      />
+                      {formData.telephone && !validatePhoneNumber(formData.telephone) && (
+                        <p className="mt-1 text-xs text-red-400">Phone must start with 9 and be 10 digits</p>
+                      )}
                     </div>
-                  </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-white/80">Address</label>
+                      <div className="relative">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-black/40" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <input
+                          type="text"
+                          name="address"
+                          value={formData.address}
+                          onChange={handleChange}
+                          placeholder="Enter your full address"
+                          className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 <div>
@@ -413,14 +465,31 @@ const Auth = () => {
                       </svg>
                     </div>
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
+                      className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 pr-10 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
                       placeholder="••••••••"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-white/60 hover:text-white/80 transition-colors"
+                    >
+                      {showPassword ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                          <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                          <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
                   </div>
                 </div>
 
@@ -434,14 +503,31 @@ const Auth = () => {
                         </svg>
                       </div>
                       <input
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleChange}
-                        className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
+                        className="w-full rounded-xl border border-white/10 bg-white/10 px-10 py-2 pr-10 text-white placeholder:text-white/50 outline-none transition focus:border-emerald-300/40 focus:ring-2 focus:ring-emerald-300/30"
                         placeholder="Re-enter password"
                         required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-white/60 hover:text-white/80 transition-colors"
+                      >
+                        {showConfirmPassword ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                            <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                            <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </button>
                     </div>
                   </div>
                 )}

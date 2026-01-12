@@ -1,9 +1,10 @@
 import axios from 'axios';
+const n = process.env.REACT_APP_API_URL;
 
-export const useOrderActions = (userId, userName, fetchOrders) => {
+export const useOrderActions = (userId, userName) => {
   const handleAcceptOrder = async (orderId) => {
     try {
-      const response = await axios.post('http://localhost/funeraria/api/components/updateClientOrderStatus.php', {
+      const response = await axios.post(`${n}/api/components/updateClientOrderStatus.php`, {
         orderId: orderId,
         status: 'completed',
         payment_status: 'paid',
@@ -22,9 +23,9 @@ export const useOrderActions = (userId, userName, fetchOrders) => {
     }
   };
 
-  const handleDeleteOrder = async (orderId) => {
+  const handleArchiveOrder = async (orderId) => {
     try {
-      const response = await axios.post('http://localhost/funeraria/api/components/deleteClientOrder.php', {
+      const response = await axios.post(`${n}/api/components/archiveClientOrder.php`, {
         orderId: orderId,
         user_id: userId,
         user_name: userName
@@ -33,16 +34,16 @@ export const useOrderActions = (userId, userName, fetchOrders) => {
       if (response.data.success) {
         return { success: true, orderId };
       } else {
-        throw new Error(response.data.message || 'Failed to delete order');
+        throw new Error(response.data.message || 'Failed to archive order');
       }
     } catch (error) {
-      console.error('Error deleting order:', error);
+      console.error('Error archiving order:', error);
       throw error;
     }
   };
 
   return {
     handleAcceptOrder,
-    handleDeleteOrder
+    handleArchiveOrder
   };
 };

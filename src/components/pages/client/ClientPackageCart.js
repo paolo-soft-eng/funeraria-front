@@ -1,42 +1,104 @@
 import React, { useState, useEffect } from 'react';
 import useOrders from '../../hooks/useOrders';
-import FuneralOrders from './ClientFuneralOrders';
 import PaymentForm from './ClientPaymentForm';
 
 const ClientPackageCart = () => {
     const {
         orders,
-        setOrders,
         ordersLoading,
         error: ordersError,
         setError: setOrdersError,
         successMessage: ordersSuccessMessage,
         setSuccessMessage: setOrdersSuccessMessage,
-        processingOrderId,
-        setProcessingOrderId,
         showDeleteConfirm,
-        orderToDelete,
         fetchOrders,
         handleDeleteOrder,
         confirmDeleteOrder,
         cancelDeleteOrder,
         formatDate,
         getServiceId,
-        clearMessages: clearOrdersMessages
+        getExpirationTimeRemaining,
+        handleArchiveOrder,
+        handleUnarchiveOrder,
+        showArchived,
+        setShowArchived,
+        processingOrderId
     } = useOrders();
 
     const [showCheckout, setShowCheckout] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState(null);
     const [packageCartItems, setPackageCartItems] = useState([]);
     const [currentUserId, setCurrentUserId] = useState(null);
     const [serviceDate, setServiceDate] = useState('');
+    const [selectedOrders, setSelectedOrders] = useState([]);
+    const [customerName, setCustomerName] = useState('');
+
+    const API_URL = process.env.REACT_APP_API_URL;
 
     const error = ordersError;
     const successMessage = ordersSuccessMessage;
+    const setError = setOrdersError;
+    const setSuccessMessage = setOrdersSuccessMessage;
 
     useEffect(() => {
+        // Only fetch orders here; the dependency array in useOrders handles refetching on showArchived change
         fetchOrders();
+        fetchCustomerName();
     }, []);
+
+    useEffect(() => {
+        if (orders && orders.length > 0) {
+            const nonExpiredAndNonArchivedOrderIds = orders
+                .filter(order => {
+                    const expiresIn = getExpirationTimeRemaining(order.expiration_date, order.status);
+                    // Filter: not expired AND not archived (is_archived !== '1')
+                    return !expiresIn.isExpired && order.status !== 'expired' && order.is_archived !== '1';
+                })
+                .map(order => order.id);
+
+            setSelectedOrders(nonExpiredAndNonArchivedOrderIds);
+        } else {
+            setSelectedOrders([]);
+        }
+    }, [orders, showArchived]);
+
+    const fetchCustomerName = async () => {
+        try {
+            const userEmail = sessionStorage.getItem('userEmail') ||
+                localStorage.getItem('userEmail') ||
+                sessionStorage.getItem('email') ||
+                localStorage.getItem('email');
+
+            if (!userEmail) {
+                return;
+            }
+
+            const response = await fetch(
+                `${API_URL}/api/components/get_user_details.php?email=${encodeURIComponent(userEmail)}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include'
+                }
+            );
+
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.user) {
+                    const name = data.user.username
+                        ? data.user.username
+                        : `${data.user.first_name || ''} ${data.user.last_name || ''}`.trim();
+
+                    setCustomerName(name || 'Customer');
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching customer name:', error);
+            setCustomerName('Customer');
+        }
+    };
 
     const formatDateForInput = (dateString) => {
         if (!dateString) return '';
@@ -52,129 +114,171 @@ const ClientPackageCart = () => {
         return formatDateForInput(tomorrow);
     };
 
-    const handleOrderPayment = (orderId) => {
-        setProcessingOrderId(orderId);
+    const handleSelectOrder = (orderId) => {
+        setSelectedOrders(prev => {
+            if (prev.includes(orderId)) {
+                return prev.filter(id => id !== orderId);
+            } else {
+                return [...prev, orderId];
+            }
+        });
+    };
 
-        const order = orders.find(order => order.id === orderId);
-        if (!order) {
-            setOrdersError(`Could not find memorial service #${orderId}`);
+    const handleSelectAllOrders = () => {
+        const selectableOrders = orders.filter(order => {
+            const expiresIn = getExpirationTimeRemaining(order.expiration_date);
+            // Only select items that are active AND not archived
+            return !(expiresIn.isExpired || order.status === 'expired' || order.is_archived === '1');
+        });
+
+        if (selectedOrders.length === selectableOrders.length) {
+            setSelectedOrders([]);
+        } else {
+            setSelectedOrders(selectableOrders.map(order => order.id));
+        }
+    };
+
+    const getSelectedOrders = () => {
+        return orders.filter(order => selectedOrders.includes(order.id));
+    };
+
+    // --- NEW: Filter visible orders based on archive status ---
+    const getVisibleOrders = () => {
+        return orders.filter(order => showArchived ? order.is_archived === '1' : order.is_archived !== '1');
+    };
+
+    const calculateTotalAmount = (order) => {
+        const quantity = parseInt(order.quantity) || 1;
+
+        // Use service_price_range as the base price (price per unit)
+        let basePrice = 0;
+        if (order.service_price_range) {
+            basePrice = parseFloat(order.service_price_range);
+        }
+
+        if (order.total_amount && order.total_amount > 0) {
+            const totalAmount = parseFloat(order.total_amount);
+            if (basePrice > 0 && Math.abs(totalAmount - (basePrice * quantity)) < 0.01) {
+                return totalAmount;
+            } else if (basePrice === 0) {
+                return totalAmount;
+            }
+        }
+
+        // Standard case: multiply base price by quantity
+        return basePrice * quantity;
+    }
+
+
+    const calculateSelectedTotal = () => {
+        const selected = getSelectedOrders();
+        const total = selected.reduce((sum, order) => sum + calculateTotalAmount(order), 0);
+        return total.toFixed(2);
+    };
+
+    const calculateTotal = () => {
+        const total = orders.reduce((sum, order) => sum + calculateTotalAmount(order), 0);
+        return total.toFixed(2);
+    };
+
+    const handleBulkPayment = () => {
+        if (selectedOrders.length === 0) {
+            setError('Please select at least one order to proceed with payment.');
             return;
         }
 
-        console.log('=== DEBUGGING ORDER USER ID ===');
-        console.log('Full Order Object:', order);
-        console.log('Available Keys:', Object.keys(order));
-        let orderUserId = order.user_id ||
-            order.userId ||
-            order.customer_id ||
-            order.customerId ||
-            order.client_id ||
-            order.clientId;
+        const selected = getSelectedOrders();
 
-        orderUserId = orderUserId ? parseInt(orderUserId) : null;
-        if (orderUserId === 0) orderUserId = null;
+        let userId = null;
+        if (selected[0]) {
+            userId = selected[0].user_id || selected[0].userId || selected[0].customer_id || selected[0].customerId;
+            userId = userId ? parseInt(userId) : null;
+        }
 
-        console.log('Found userId:', orderUserId);
-
-        if (!orderUserId) {
+        if (!userId) {
             const sessionUserId = sessionStorage.getItem('userId') ||
                 localStorage.getItem('userId') ||
                 sessionStorage.getItem('user_id') ||
                 localStorage.getItem('user_id');
 
             if (sessionUserId) {
-                console.log('Using userId from session:', sessionUserId);
-                orderUserId = parseInt(sessionUserId);
+                userId = parseInt(sessionUserId);
             }
         }
 
-        if (!orderUserId) {
-            console.error('Cannot find user_id. Order structure:', {
-                orderId: order.id,
-                availableFields: Object.keys(order),
-                orderSample: order
-            });
-
-            setOrdersError(
-                `User ID not found for memorial service #${orderId}. ` +
-                `Available fields: ${Object.keys(order).join(', ')}. ` +
-                `Please check the API response structure.`
-            );
+        if (!userId) {
+            setError('User ID not found. Please try logging in again.');
             return;
         }
 
-        setCurrentUserId(orderUserId);
+        setCurrentUserId(userId);
         setServiceDate(getDefaultServiceDate());
-        console.log('Successfully set userId for payment:', orderUserId);
+        setOrdersError(null);
 
-        const serviceId = getServiceId(order);
+        const items = selected.map(order => {
+            const serviceId = getServiceId(order);
+            const orderQuantity = parseInt(order.quantity) || 1;
 
-        let totalAmount = 0;
-        if (order.service_price_range) {
-            totalAmount = parseFloat(order.service_price_range);
-        }
+            // ALWAYS use service_price_range as the base price per unit
+            let basePrice = 0;
+            if (order.service_price_range) {
+                basePrice = parseFloat(order.service_price_range);
+            }
 
-        if (order.total_amount && order.total_amount > 0) {
-            totalAmount = parseFloat(order.total_amount);
-        }
+            // Fallback: if no service_price_range, try to derive from total_amount
+            if (basePrice <= 0 && order.total_amount && order.total_amount > 0) {
+                basePrice = parseFloat(order.total_amount) / orderQuantity;
+            }
 
-        if (totalAmount <= 0) {
-            totalAmount = 100;
-        }
+            if (basePrice <= 0) {
+                basePrice = 100; // Default fallback price
+            }
 
-        const orderItems = [{
-            id: parseInt(order.id),
-            product_id: parseInt(order.id),
-            service_id: serviceId,
-            serviceId: serviceId,
-            name: order.service_name || `Memorial Service #${orderId}`,
-            price: totalAmount,
-            quantity: 1,
-            image_path: "uploads/default.jpg",
-            customer_name: order.customer_name,
-            customer_email: order.customer_email,
-            customer_phone: order.customer_phone,
-            order_date: order.order_date,
-            service_description: order.service_description,
-            service_inclusions: order.service_inclusions,
-            caskets: order.caskets || [],
-            flowers: order.flowers || [],
-            user_id: orderUserId
-        }];
+            return {
+                id: parseInt(order.id),
+                product_id: parseInt(order.id),
+                service_id: serviceId,
+                serviceId: serviceId,
+                name: order.service_name || `Memorial Service #${order.id}`,
+                price: basePrice, // Store ONLY the base price per unit
+                quantity: orderQuantity,
+                image_path: "uploads/default.jpg",
+                customer_name: order.customer_name,
+                customer_email: order.customer_email,
+                customer_phone: order.customer_phone,
+                order_date: order.order_date,
+                service_description: order.service_description,
+                service_inclusions: order.service_inclusions,
+                caskets: order.caskets || [],
+                chapels: order.chapels || [],
+                user_id: userId
+            };
+        });
 
-        setPackageCartItems(orderItems);
-        setSelectedOrder(order);
+        setPackageCartItems(items);
         setShowCheckout(true);
-        setOrdersSuccessMessage(`Ready to process payment for Memorial Service #${orderId} (Service ID: ${serviceId})`);
+        setSuccessMessage(
+            `Ready to process payment for ${selectedOrders.length} memorial service${selectedOrders.length > 1 ? 's' : ''}`
+        );
     };
 
     const handleCheckoutSuccess = (result) => {
-        setProcessingOrderId(null);
-
-        let message, orderId, isFuneralService, deletedFuneralOrder;
+        let message;
 
         if (typeof result === 'string') {
             message = result;
-            isFuneralService = false;
         } else {
             message = result.message;
-            orderId = result.orderId;
-            isFuneralService = result.isFuneralService;
-            deletedFuneralOrder = result.deletedFuneralOrder;
         }
 
         setOrdersSuccessMessage(message);
 
-        if (isFuneralService && deletedFuneralOrder) {
-            setOrders(prevOrders => prevOrders.filter(order => order.id !== deletedFuneralOrder));
-        }
-
         fetchOrders();
         setShowCheckout(false);
-        setSelectedOrder(null);
         setPackageCartItems([]);
         setCurrentUserId(null);
         setServiceDate('');
+        setSelectedOrders([]);
     };
 
     const handleCheckoutError = (errorMessage) => {
@@ -182,26 +286,240 @@ const ClientPackageCart = () => {
     };
 
     const handleToggleCheckout = () => {
-        setShowCheckout(!showCheckout);
-        if (showCheckout) {
-            setProcessingOrderId(null);
-            setSelectedOrder(null);
+        if (!showCheckout && selectedOrders.length === 0) {
+            setError('Please select at least one service to checkout.');
+            return;
+        }
+
+        if (!showCheckout) {
+            handleBulkPayment();
+        } else {
+            setShowCheckout(false);
             setPackageCartItems([]);
             setCurrentUserId(null);
             setServiceDate('');
         }
     };
 
-    const handleServiceDateChange = (e) => {
-        setServiceDate(e.target.value);
-    };
-
-    const calculateTotal = () => {
+    const calculateCheckoutTotal = () => {
         if (packageCartItems.length === 0) return '0.00';
         const total = packageCartItems.reduce((sum, item) => {
             return sum + (parseFloat(item.price) * parseInt(item.quantity));
         }, 0);
         return total.toFixed(2);
+    };
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP',
+            minimumFractionDigits: 2
+        }).format(amount);
+    };
+
+    const getServiceImage = (order) => {
+        let filename = '';
+
+        if (order.caskets && order.caskets.length > 0 && order.caskets[0].image) {
+            filename = order.caskets[0].image;
+        }
+        else if (order.image_path) {
+            filename = order.image_path;
+        }
+
+        if (!filename) {
+            return `${API_URL}/api/components/uploads/caskets/ordinary.jpg`;
+        }
+        return `${API_URL}/api/components/uploads/caskets/${filename}`;
+    };
+
+    const handleDeleteClick = (orderId) => {
+        handleDeleteOrder(orderId);
+    };
+
+    // --- UPDATED RENDER ROW FUNCTION ---
+    const renderOrderRow = (order) => {
+        const quantity = parseInt(order.quantity) || 1;
+        const rowTotal = calculateTotalAmount(order);
+        const rowUnitPrice = rowTotal / (quantity || 1);
+        const expiresIn = getExpirationTimeRemaining(order.expiration_date, order.status);
+        const isExpired = expiresIn.isExpired || order.status === 'expired';
+        const isArchived = order.is_archived === '1';
+        const isProcessing = processingOrderId === order.id;
+
+        const isSelected = selectedOrders.includes(order.id) && !isExpired && !isArchived;
+
+        const isSelectable = !isExpired && !isArchived && !isProcessing;
+
+        return (
+            <div
+                key={order.id}
+                className={`flex flex-wrap items-center py-4 border-b border-gray-100 last:border-b-0 
+                    ${isSelected ? 'bg-green-50' : 'hover:bg-gray-50'} 
+                    ${isExpired ? 'bg-red-50 opacity-70' : ''}
+                    ${isArchived ? 'bg-gray-100 opacity-80' : ''}
+                `}
+            >
+                {/* Checkbox - Disabled for expired/archived/processing items */}
+                <div className="w-[8%] md:w-[4%] flex justify-center order-1">
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => isSelectable && handleSelectOrder(order.id)}
+                        disabled={!isSelectable}
+                        className={`h-5 w-5 focus:ring-2 border-gray-300 rounded cursor-pointer 
+                            ${isSelectable ? 'text-green-600 focus:ring-green-500' : 'cursor-not-allowed opacity-50'}
+                        `}
+                    />
+                </div>
+
+                {/* ITEM DETAILS */}
+                <div className="w-[92%] md:w-[45%] flex items-center pr-2 mb-2 md:mb-0 order-2 md:order-2">
+                    {/* Image */}
+                    <div className="flex-shrink-0 h-16 w-16 mr-4">
+                        <img
+                            className="h-16 w-16 object-cover border border-gray-200 rounded-md"
+                            src={getServiceImage(order)}
+                            alt={order.service_name || `Service #${order.id}`}
+                        />
+                    </div>
+                    {/* Service Name */}
+                    <div className="text-sm text-gray-900 font-medium truncate max-w-[calc(100%-80px)]">
+                        {order.service_name || `Service #${order.id}`}
+                        {isArchived && <span className="text-xs text-gray-500 ml-2">(Archived)</span>}
+                    </div>
+                </div>
+
+                {/* Mobile: Row for Price, Quantity, Total, Expires In, Actions */}
+                <div className="flex w-full md:hidden text-xs text-gray-700 ml-[8%] mt-2 space-y-1 flex-col order-3">
+                    <div className='flex justify-between'>
+                        <span className='font-semibold'>Price:</span> <span>{formatCurrency(rowUnitPrice)}</span>
+                    </div>
+                    <div className='flex justify-between'>
+                        <span className='font-semibold'>Quantity:</span>
+                        <span>{quantity}</span>
+                    </div>
+                    <div className='flex justify-between'>
+                        <span className='font-semibold'>Total:</span> <span className="text-sm font-bold text-gray-900">{formatCurrency(rowTotal)}</span>
+                    </div>
+                    <div className='flex justify-between'>
+                        <span className={`${isExpired ? 'text-red-600 font-bold' : 'text-gray-700'}`}>
+                            <span className='font-semibold'>Expires:</span> {expiresIn.text}
+                        </span>
+                    </div>
+
+                    {/* MOBILE ACTIONS */}
+                    <div className='flex justify-end pt-2 space-x-3'>
+                        {isProcessing ? (
+                            <span className="text-blue-500 font-medium">Processing...</span>
+                        ) : isArchived ? (
+                            <button
+                                className="text-blue-600 hover:text-blue-900 font-medium"
+                                onClick={() => handleUnarchiveOrder(order.id)}
+                            >
+                                Restore
+                            </button>
+                        ) : (
+                            <>
+                                <button
+                                    className="text-gray-600 hover:text-gray-900 font-medium"
+                                    onClick={() => handleArchiveOrder(order.id)}
+                                >
+                                    Archive
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {/* PRICE (w-12%) - DESKTOP (Order 3) */}
+                <div className="hidden md:block md:w-[12%] text-sm text-gray-700 font-medium whitespace-nowrap order-3">
+                    {formatCurrency(rowUnitPrice)}
+                </div>
+
+                {/* QUANTITY (w-8%) - DESKTOP (Order 4) */}
+                <div className="hidden md:block md:w-[8%] text-sm text-gray-700 flex justify-center order-4">
+                    <span className="text-gray-700 mr-2">{quantity}</span>
+                </div>
+
+                {/* TOTAL (w-12%) - DESKTOP (Order 5) */}
+                <div className="hidden md:block md:w-[12%] text-sm text-gray-900 font-bold whitespace-nowrap order-5">
+                    {formatCurrency(rowTotal)}
+                </div>
+
+                {/* EXPIRES IN (w-10%) - DESKTOP (Order 6) */}
+                <div className="hidden md:block md:w-[10%] text-sm order-6">
+                    <span className={`font-medium ${isExpired ? 'text-red-600' : 'text-gray-500'}`}>
+                        {expiresIn.text}
+                    </span>
+                    {isExpired && (
+                        <div className="text-xs text-red-500 mt-1">Expired</div>
+                    )}
+                </div>
+
+                {/* ACTIONS (w-9%) - DESKTOP (Order 7) */}
+                <div className="hidden md:block md:w-[9%] text-sm flex justify-end pr-4 order-7 space-x-2">
+                    {isProcessing ? (
+                        <span className="text-blue-500 text-sm font-medium">Processing...</span>
+                    ) : isArchived ? (
+                        <button
+                            className="text-blue-600 hover:text-blue-900 font-medium"
+                            onClick={() => handleUnarchiveOrder(order.id)}
+                        >
+                            Restore
+                        </button>
+                    ) : ( // Applies to all non-archived, non-processing orders (active AND expired)
+                        <>
+                            <button
+                                className="text-gray-600 hover:text-gray-900 font-medium mr-2"
+                                onClick={() => handleArchiveOrder(order.id)}
+                            >
+                                Archive
+                            </button>
+                        </>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    const renderCheckoutItemCard = (item) => {
+        const itemTotal = parseFloat(item.price) * item.quantity;
+        return (
+            <div key={item.id} className="bg-white p-4 rounded-lg mb-4 border border-gray-200 shadow-sm">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-gray-50 px-3 py-2 rounded-t-lg -mx-4 -mt-4 mb-4 border-b border-gray-200">
+                    <h4 className="font-semibold text-gray-900 text-base">Service: {item.name}</h4>
+                    <span className="text-sm font-medium text-gray-600 mt-1 sm:mt-0">Qty: {item.quantity}</span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className='col-span-2 sm:col-span-1'>
+                        <p className="text-xs font-medium text-gray-600">Customer Name</p>
+                        <p className="font-semibold text-gray-800">{item.customer_name || customerName || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <p className="text-xs font-medium text-gray-600">Order ID</p>
+                        <p className="font-semibold text-gray-800">#{item.id}</p>
+                    </div>
+                    <div>
+                        <p className="text-xs font-medium text-gray-600">Order Date</p>
+                        <p className="font-semibold text-gray-800">{formatDate(item.order_date)}</p>
+                    </div>
+                    <div>
+                        <p className="text-xs font-medium text-gray-600">Price per Unit</p>
+                        <p className="font-semibold text-green-700">{formatCurrency(parseFloat(item.price))}</p>
+                    </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t">
+                    <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-gray-700">Subtotal for this service:</span>
+                        <span className="text-lg font-bold text-green-600">
+                            {formatCurrency(itemTotal)}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     if (ordersLoading) {
@@ -212,49 +530,35 @@ const ClientPackageCart = () => {
         );
     }
 
+    // Determine counts for header display
+    const activeOrders = orders.filter(o => o.is_archived !== '1');
+    const archivedOrders = orders.filter(o => o.is_archived === '1');
+    const selectableOrdersCount = activeOrders.filter(order => {
+        const expiresIn = getExpirationTimeRemaining(order.expiration_date);
+        return !(expiresIn.isExpired || order.status === 'expired');
+    }).length;
+
+
     return (
-        <div className="flex flex-col min-h-screen">
-            {/* Delete Confirmation Modal */}
-            {showDeleteConfirm && (
-                <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-                        <div className="flex items-center mb-4">
-                            <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                                <svg className="h-6 w-6 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                            </div>
-                            <h3 className="ml-4 text-lg font-semibold text-gray-900">Cancel Memorial Service</h3>
-                        </div>
-                        <p className="text-gray-600 mb-6">
-                            Are you sure you want to cancel this memorial service? This action cannot be undone and all arrangements will be removed.
-                        </p>
-                        <div className="flex gap-3 justify-end">
-                            <button
-                                onClick={cancelDeleteOrder}
-                                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
-                            >
-                                Keep Service
-                            </button>
-                            <button
-                                onClick={confirmDeleteOrder}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
-                            >
-                                Cancel Service
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+        <div className="flex flex-col min-h-screen bg-gray-50">
 
-            <div className="container mx-auto p-4 flex-grow">
-                <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl sm:tracking-tight lg:text-5xl text-center mb-6">
-                    Funeral Package Cart
-                </h1>
+            {/* H1 Title */}
+            <div className="text-center p-4">
+                <h1 className="text-3xl font-extrabold text-gray-800">Full Package Order </h1>
+            </div>
 
+            <div className="container mx-auto px-4 md:p-4 flex-grow">
+                {/* Notification messages (Error/Success) */}
                 {error && (
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded shadow">
-                        <p className="whitespace-pre-wrap">{error}</p>
+                        <div className="flex items-start">
+                            <svg className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                            <div className="flex-1">
+                                <p>{error}</p>
+                            </div>
+                        </div>
                     </div>
                 )}
                 {successMessage && (
@@ -264,28 +568,146 @@ const ClientPackageCart = () => {
                 )}
 
                 {!showCheckout && (
-                    <FuneralOrders
-                        orders={orders}
-                        ordersLoading={ordersLoading}
-                        processingOrderId={processingOrderId}
-                        onOrderPayment={handleOrderPayment}
-                        onDeleteOrder={handleDeleteOrder}
-                        formatDate={formatDate}
-                        getServiceId={getServiceId}
-                    />
+                    <>
+                        {/* Main Cart Content Container */}
+                        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                            {/* Header Section */}
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-gray-100 border-b border-gray-200">
+                                <div className="text-sm font-medium text-gray-700 mb-1 sm:mb-0">
+                                    <span className="font-bold">
+                                        {showArchived
+                                            ? `${getVisibleOrders().length} Archived item(s) found`
+                                            : `${selectedOrders.length} of ${selectableOrdersCount} item(s) selected`
+                                        }
+                                    </span>
+                                    {activeOrders.length > 0 && !showArchived && (
+                                        <> | Customer: <span className="text-blue-600">{customerName || 'Customer'}</span></>
+                                    )}
+                                </div>
+
+                                <div className="flex space-x-4">
+                                    {/* NEW: Toggle Button for Archived Orders */}
+                                    {archivedOrders.length > 0 && (
+                                        <button
+                                            onClick={() => setShowArchived(prev => !prev)}
+                                            className="text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                            </svg>
+                                            {showArchived ? 'Show Active Orders' : `View Archived Orders (${archivedOrders.length})`}
+                                        </button>
+                                    )}
+
+                                    {/* Select All Button (Only visible for Active view) */}
+                                    {!showArchived && selectableOrdersCount > 0 && (
+                                        <button
+                                            onClick={handleSelectAllOrders}
+                                            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                                        >
+                                            {selectedOrders.length === selectableOrdersCount ? 'Deselect All' : 'Select All'}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            {getVisibleOrders()?.length === 0 && !showArchived ? (
+                                <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4">
+                                    <p>No active funeral package services found. Your booked packages will appear here.</p>
+                                </div>
+                            ) : getVisibleOrders()?.length === 0 && showArchived ? (
+                                <div className="bg-gray-100 border-l-4 border-gray-500 text-gray-700 p-4">
+                                    <p>No archived services found.</p>
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Table Header (Hidden on Mobile) */}
+                                    <div className="hidden md:flex items-center py-2 px-4 bg-gray-50 border-b border-gray-200 text-xs font-semibold uppercase text-gray-600 tracking-wider">
+                                        <div className="w-[4%] flex justify-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div className="w-[45%]">ITEM DETAILS</div>
+                                        <div className="w-[12%]">PRICE</div>
+                                        <div className="w-[8%] text-center">QUANTITY</div>
+                                        <div className="w-[12%]">TOTAL</div>
+                                        <div className="w-[10%]">
+                                            {showArchived ? 'ARCHIVED' : 'EXPIRES IN'}
+                                        </div>
+                                        <div className="w-[9%] text-right pr-4">ACTIONS</div>
+                                    </div>
+
+                                    {/* Item Rows */}
+                                    <div className="divide-y divide-gray-100 px-2 md:px-4">
+                                        {getVisibleOrders().map(order => renderOrderRow(order))}
+                                    </div>
+
+                                    {/* Totals Section - Only show for Active view */}
+                                    {!showArchived && (
+                                        <div className="flex flex-col items-end p-4 text-sm bg-gray-50 border-t border-gray-200">
+                                            <div className="flex flex-col w-full md:flex-row md:items-end md:justify-end">
+
+                                                {/* Spacer for Checkbox, Item Details, Price, Quantity */}
+                                                <div className="hidden md:block md:w-[69%]"></div>
+
+                                                {/* Container for Totals (aligns with Total, Expires In, Actions columns) */}
+                                                <div className="w-full md:w-[31%]">
+                                                    <div className="flex justify-between py-1 px-4 md:px-0 md:pr-4">
+                                                        <span className="font-semibold text-gray-700 whitespace-nowrap">Selected Total ({selectedOrders.length} items):</span>
+                                                        <span className="font-bold text-green-600 w-[38.7%] text-right whitespace-nowrap">
+                                                            {formatCurrency(parseFloat(calculateSelectedTotal()))}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between py-1 px-4 md:px-0 md:pr-4">
+                                                        <span className="font-semibold text-gray-700 whitespace-nowrap">Cart Total ({activeOrders.length} items):</span>
+                                                        <span className="font-bold text-gray-900 w-[38.7%] text-right whitespace-nowrap">
+                                                            {/* Calculate total based on active orders only */}
+                                                            {formatCurrency(activeOrders.reduce((sum, order) => sum + calculateTotalAmount(order), 0).toFixed(2))}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Proceed to Checkout Button - Only show for Active view */}
+                                    {!showArchived && (
+                                        <div className="p-4 bg-gray-100">
+                                            <button
+                                                onClick={handleToggleCheckout}
+                                                disabled={selectedOrders.length === 0}
+                                                className={`w-full md:w-auto px-6 py-3 rounded-lg font-semibold text-white transition-colors flex items-center justify-center ${selectedOrders.length === 0
+                                                    ? 'bg-gray-400 cursor-not-allowed'
+                                                    : 'bg-green-600 hover:bg-green-700'
+                                                    }`}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                </svg>
+                                                Proceed to Checkout ({selectedOrders.length} items)
+                                            </button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </>
                 )}
 
+
+                {/* Payment Checkout Form */}
                 {showCheckout && packageCartItems.length > 0 && currentUserId && (
-                    <div className="mt-6">
-                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <h2 className="text-2xl font-bold">
-                                    Payment for Order #{packageCartItems[0]?.product_id || packageCartItems[0]?.id}
-                                    {packageCartItems[0]?.service_id && ` (Service ID: ${packageCartItems[0].service_id})`}
+                    <div className="mt-6 max-w-4xl mx-auto">
+                        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6">
+                            <div className="flex justify-between items-center mb-4 border-b pb-4">
+                                <h2 className="text-xl sm:text-2xl font-bold">
+                                    Payment for {packageCartItems.length} Service{packageCartItems.length > 1 ? 's' : ''} 💳
                                 </h2>
                                 <button
                                     onClick={handleToggleCheckout}
-                                    className="text-gray-600 hover:text-gray-800"
+                                    className="text-gray-600 hover:text-gray-800 p-1"
+                                    aria-label="Back to Cart"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -293,121 +715,26 @@ const ClientPackageCart = () => {
                                 </button>
                             </div>
 
-                            {/* Service Date Selection */}
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                                <h3 className="text-lg font-semibold text-blue-800 mb-3">Service Date & Time</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-blue-700 mb-2">
-                                            Preferred Service Date & Time *
-                                        </label>
-                                        <input
-                                            type="datetime-local"
-                                            value={serviceDate}
-                                            onChange={handleServiceDateChange}
-                                            className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            min={new Date().toISOString().slice(0, 16)}
-                                            required
-                                        />
-                                        <p className="text-xs text-blue-600 mt-1">
-                                            Select when you'd like the funeral service to take place
-                                        </p>
-                                    </div>
-                                    <div className="flex items-center">
-                                        <div className="bg-white p-3 rounded-lg border border-blue-200">
-                                            <p className="text-sm text-blue-800 font-semibold">
-                                                Selected: {serviceDate ? formatDate(new Date(serviceDate)) : 'Not set'}
-                                            </p>
-                                        </div>
+                            <div className="pt-4 mb-6">
+                                <h3 className="text-lg font-semibold mb-3">Order Details</h3>
+
+                                {packageCartItems.map((item) => renderCheckoutItemCard(item))}
+
+                                {/* Grand Total */}
+                                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mt-6">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xl font-bold text-green-800">Grand Total:</span>
+                                        <span className="text-2xl sm:text-3xl font-bold text-green-600">
+                                            {formatCurrency(parseFloat(calculateCheckoutTotal()))}
+                                        </span>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div className="border-t pt-4 mb-6">
-                                <h3 className="text-lg font-semibold mb-3">Order Details</h3>
-                                {packageCartItems.map(item => (
-                                    <div key={item.id} className="bg-gray-50 p-4 rounded-lg mb-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <p className="text-sm text-gray-600">Service Name</p>
-                                                <p className="font-semibold">{item.name}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-600">Customer Name</p>
-                                                <p className="font-semibold">{item.customer_name}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-600">Email</p>
-                                                <p className="font-semibold">{item.customer_email}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-600">Phone</p>
-                                                <p className="font-semibold">{item.customer_phone}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-600">Order Date</p>
-                                                <p className="font-semibold">{formatDate(item.order_date)}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-600">Service ID</p>
-                                                <p className="font-semibold">{item.service_id}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-600">User ID</p>
-                                                <p className="font-semibold">{currentUserId}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-600">Service Date</p>
-                                                <p className="font-semibold text-green-600">
-                                                    {serviceDate ? formatDate(new Date(serviceDate)) : 'Not selected'}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {item.service_description && (
-                                            <div className="mt-4">
-                                                <p className="text-sm text-gray-600">Description</p>
-                                                <p className="text-gray-800">{item.service_description}</p>
-                                            </div>
-                                        )}
-
-                                        {item.service_inclusions && (
-                                            <div className="mt-4">
-                                                <p className="text-sm text-gray-600">Inclusions</p>
-                                                {(() => {
-                                                    let inclusions = item.service_inclusions;
-
-                                                    if (typeof inclusions === "string") {
-                                                        try {
-                                                            inclusions = JSON.parse(inclusions);
-                                                        } catch {
-                                                            inclusions = [inclusions];
-                                                        }
-                                                    }
-
-                                                    return (
-                                                        <ul className="list-disc ml-6 text-gray-800">
-                                                            {inclusions.map((inc, index) => (
-                                                                <li key={index}>{inc}</li>
-                                                            ))}
-                                                        </ul>
-                                                    );
-                                                })()}
-                                            </div>
-                                        )}
-
-                                        <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                                            <span className="text-lg font-semibold">Total Amount:</span>
-                                            <span className="text-2xl font-bold text-green-600">₱{parseFloat(item.price).toFixed(2)}</span>
-                                        </div>
-                                    </div>
-                                ))}
                             </div>
 
                             <div className="border-t pt-6">
                                 <h3 className="text-xl font-bold mb-4">Payment Information</h3>
                                 <PaymentForm
-                                    totalAmount={parseFloat(calculateTotal())}
+                                    totalAmount={parseFloat(calculateCheckoutTotal())}
                                     cartItems={packageCartItems}
                                     userId={currentUserId}
                                     onSuccess={handleCheckoutSuccess}

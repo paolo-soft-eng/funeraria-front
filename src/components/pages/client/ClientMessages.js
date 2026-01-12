@@ -634,7 +634,7 @@ export default function ClientMessages() {
                                   </span>
                                 </div>
                                 <img
-                                  src={msg.replyTo.imageUrl}
+                                  src={`${msg.replyTo.imageUrl}`}
                                   alt="Replied content"
                                   className="w-16 h-16 object-cover rounded border border-opacity-50"
                                   style={{

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { placeOrder } from "../../service/Api";
 
-export const useOrder = (email, userId, showNotification) => {
+export const useOrder = (email, userId, showNotification, refetchItems = null) => {
   const [orderStatus, setOrderStatus] = useState(null);
 
   const submitOrder = async (formData, selectedCaskets, selectedChapels, onSuccess) => {
@@ -15,16 +15,22 @@ export const useOrder = (email, userId, showNotification) => {
         selected_chapels: selectedChapels.map((c) => c.id),
       };
 
-      await placeOrder(orderData);
+      const response = await placeOrder(orderData);
 
       setOrderStatus({ type: "success", message: "Order placed successfully!" });
-      showNotification?.("Order placed successfully!", "success");
+      showNotification?.("Order placed successfully! Stock updated.", "success");
+
+      // Refetch items to update stock display
+      if (refetchItems) {
+        refetchItems();
+      }
 
       if (onSuccess) onSuccess();
 
     } catch (error) {
-      setOrderStatus({ type: "error", message: "Failed to place order. Please try again." });
-      showNotification?.("Failed to place order. Please try again.", "error");
+      const errorMessage = error.message || "Failed to place order. Please try again.";
+      setOrderStatus({ type: "error", message: errorMessage });
+      showNotification?.(errorMessage, "error");
     }
   };
 

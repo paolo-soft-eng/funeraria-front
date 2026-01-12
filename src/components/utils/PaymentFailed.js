@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 
 const PaymentFailed = () => {
   const location = useLocation();
+  const n = process.env.REACT_APP_API_URL;
 
   const urlParams = new URLSearchParams(location.search);
   const errorMessage = urlParams.get('error') || 'Your payment could not be processed.';
@@ -28,7 +29,7 @@ const PaymentFailed = () => {
           
           <div className="mt-6">
             <Link
-              to="/gomez/dashboard-client/cart"
+              to={`${n}/gomez/dashboard-client/order/customized-order`}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
             >
               Try Again
@@ -37,7 +38,7 @@ const PaymentFailed = () => {
           
           <div className="mt-4">
             <Link
-              to="/gomez/dashboard-client/menu"
+              to={`${n}/gomez/dashboard-client/services/customized-services`}
               className="text-sm text-gray-600 hover:text-gray-500"
             >
               Continue Shopping

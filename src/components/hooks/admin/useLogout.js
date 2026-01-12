@@ -3,11 +3,12 @@ import axios from 'axios';
 
 export const useLogout = (showNotification) => {
     const navigate = useNavigate();
+    const n = process.env.REACT_APP_API_URL;
 
     const handleLogout = async () => {
         try {
             showNotification('Logout Successfully', 'success');
-            await axios.post('http://localhost/funeraria/api/config/logout.php');
+            await axios.post(`${n}/api/config/logout.php`);
             localStorage.removeItem('userEmail');
             localStorage.removeItem('userRole');
 

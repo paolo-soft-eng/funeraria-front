@@ -9,6 +9,8 @@ import ClientPackageCart from './components/pages/client/ClientPackageCart';
 import ClientActiveOrders from './components/pages/client/ClientActiveOrders';
 import ClientOrderHistory from './components/pages/client/ClientOrderHistory';
 import ClientCustomized from './components/pages/client/ClientCustomized';
+import ClientArchiveOrder from './components/pages/client/ClientArchiveOrder';
+import AdminArchivedOrders from './components/pages/admin/AdminArchivedOrders';
 
 const ClientAppointment = lazy(() => import('./components/pages/client/ClientAppointment'));
 const Auth = lazy(() => import('./components/utils/Auth'));
@@ -121,11 +123,6 @@ const App = () => {
                       <ClientAbout />
                   </Suspense>
                 } />
-                <Route path="menu" element={
-                  <Suspense fallback={<LoadingScreen />}>
-                      <ClientMenu />
-                  </Suspense>
-                } />
                 <Route path="appointments" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientAppointment />
@@ -149,6 +146,11 @@ const App = () => {
                 <Route path="order/order-history" element={
                   <Suspense fallback={<LoadingScreen />}>
                       <ClientOrderHistory />
+                  </Suspense>
+                } />
+                <Route path="order/archive-order" element={
+                  <Suspense fallback={<LoadingScreen />}>
+                      <ClientArchiveOrder />
                   </Suspense>
                 } />
                 <Route path="settings" element={
@@ -196,6 +198,15 @@ const App = () => {
                   <Suspense fallback={<LoadingScreen />}>
                     <LoadingWrapper>
                       <AdminOrders/>
+                    </LoadingWrapper>
+                  </Suspense>
+                </ProtectedRoute>
+              } />
+              <Route path='/gomez/dashboard-admin/archived-orders' element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Suspense fallback={<LoadingScreen />}>
+                    <LoadingWrapper>
+                      <AdminArchivedOrders/>
                     </LoadingWrapper>
                   </Suspense>
                 </ProtectedRoute>

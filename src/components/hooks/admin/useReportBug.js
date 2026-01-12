@@ -4,13 +4,14 @@ export const useBugReport = (email) => {
   const [bugDescription, setBugDescription] = useState('');
   const [isBugSubmitting, setIsBugSubmitting] = useState(false);
   const [bugReportStatus, setBugReportStatus] = useState(null);
+  const n = process.env.REACT_APP_API_URL;
 
   const submitBugReport = async () => {
     setIsBugSubmitting(true);
     setBugReportStatus(null);
 
     try {
-      const res = await fetch('http://localhost/funeraria/api/components/adminBug.php', {
+      const res = await fetch(`${n}/api/components/adminBug.php`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

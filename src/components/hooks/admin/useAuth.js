@@ -8,11 +8,12 @@ export const useAuth = () => {
   const [userName, setUserName] = useState('');
   const { email } = useContext(EmailContext);
   const navigate = useNavigate();
+  const n = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     if (email) {
       fetch(
-        `http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(email)}`
+        `${n}/api/components/getUserId.php?email=${encodeURIComponent(email)}`
       )
         .then((res) => res.json())
         .then((data) => {

@@ -1,57 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
-import { FaTable, FaThLarge, FaCheck, FaArchive, FaChevronLeft, FaChevronRight, FaExclamationTriangle } from 'react-icons/fa';
+import { FaTable, FaThLarge, FaUndo, FaTrash, FaChevronLeft, FaChevronRight, FaExclamationTriangle } from 'react-icons/fa';
 
 // Import custom hooks
 import { useAuth } from '../../hooks/admin/useAuth';
-import { useOrders } from '../../hooks/admin/useOrders';
-import { useOrderActions } from '../../hooks/admin/useOrderActions';
-import { usePagination } from '../../hooks/admin/usePagination';
 import { useOrderView } from '../../hooks/admin/useOrderView';
 import { useStatusMessage } from '../../hooks/admin/useStatusMessage';
+import axios from 'axios';
 
-const AdminOrders = () => {
-  // Use custom hooks
+const n = process.env.REACT_APP_API_URL;
+
+const AdminArchivedOrders = () => {
   const { userId, userName } = useAuth();
-  const { statusMessage, showSuccess, showError, clearMessage } = useStatusMessage();
-
-  // State for pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const [ordersPerPage, setOrdersPerPage] = useState(10);
-
-  // Custom confirmation modal state
-  const [confirmationModal, setConfirmationModal] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: null,
-    orderId: null,
-    orderDetails: null
-  });
-
-  // Initialize orders hook
-  const {
-    orders,
-    totalOrders,
-    isLoading,
-    error,
-    fetchOrders,
-    setOrders
-  } = useOrders();
-
-  // Use your existing pagination hook
-  const {
-    totalPages,
-    handlePageChange,
-    handleItemsPerPageChange,
-    getVisiblePageNumbers,
-  } = usePagination(totalOrders, ordersPerPage, currentPage, setCurrentPage, setOrdersPerPage);
-
-  const {
-    handleAcceptOrder,
-    handleArchiveOrder
-  } = useOrderActions(userId, userName);
-
+  const { statusMessage, showSuccess, showError } = useStatusMessage();
   const {
     viewMode,
     setViewMode,
@@ -61,15 +22,139 @@ const AdminOrders = () => {
     formatDateTime
   } = useOrderView('table');
 
+  const [orders, setOrders] = useState([]);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ordersPerPage, setOrdersPerPage] = useState(10);
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: null,
+    orderId: null,
+    type: 'restore' // 'restore' or 'delete'
+  });
+
+  // Helper function to format currency
+  const formatCurrency = (amount) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-PH', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(numAmount);
+  };
+
+  // Fetch archived orders
+  const fetchArchivedOrders = async (page, limit) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(
+        `${n}/api/components/archivedOrders.php?page=${page}&limit=${limit}`
+      );
+      
+      const data = response.data;
+      
+      if (data.orders) {
+        setOrders(data.orders);
+        setTotalOrders(data.total);
+      } else if (Array.isArray(data)) {
+        setOrders(data);
+        setTotalOrders(data.length);
+      } else {
+        console.error('Unexpected response format:', data);
+        setOrders([]);
+        setTotalOrders(0);
+      }
+    } catch (error) {
+      console.error('Error fetching archived orders:', error);
+      setError(error.message);
+      setOrders([]);
+      setTotalOrders(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchArchivedOrders(currentPage, ordersPerPage);
+  }, [currentPage, ordersPerPage]);
+
+  // Restore order
+  const handleRestoreOrder = async (orderId) => {
+    const order = orders.find(o => o.id === orderId);
+    const orderInfo = order ? `Order #${order.id} for ${order.username || 'N/A'} (₱${formatCurrency(order.total_amount)})` : 'this order';
+    
+    showConfirmation(
+      'Restore Order',
+      `Are you sure you want to restore ${orderInfo}? It will be moved back to active orders.`,
+      async (id) => {
+        try {
+          const response = await axios.post(`${n}/api/components/restoreClientOrder.php`, {
+            orderId: id,
+            user_id: userId,
+            user_name: userName
+          });
+
+          if (response.data.success) {
+            showSuccess('Order restored successfully');
+            fetchArchivedOrders(currentPage, ordersPerPage);
+          } else {
+            throw new Error(response.data.message || 'Failed to restore order');
+          }
+        } catch (error) {
+          console.error('Error restoring order:', error);
+          showError('Failed to restore order. Please try again.');
+        }
+      },
+      orderId,
+      'restore'
+    );
+  };
+
+  // Permanently delete order
+  const handlePermanentDelete = async (orderId) => {
+    const order = orders.find(o => o.id === orderId);
+    const orderInfo = order ? `Order #${order.id} for ${order.username || 'N/A'} (₱${formatCurrency(order.total_amount)})` : 'this order';
+    
+    showConfirmation(
+      'Permanently Delete Order',
+      `Are you sure you want to PERMANENTLY delete ${orderInfo}? This action cannot be undone and all related data will be removed.`,
+      async (id) => {
+        try {
+          const response = await axios.post(`${n}/api/components/permanentDeleteOrder.php`, {
+            orderId: id,
+            user_id: userId,
+            user_name: userName
+          });
+
+          if (response.data.success) {
+            showSuccess('Order permanently deleted');
+            fetchArchivedOrders(currentPage, ordersPerPage);
+          } else {
+            throw new Error(response.data.message || 'Failed to delete order');
+          }
+        } catch (error) {
+          console.error('Error deleting order:', error);
+          showError('Failed to delete order. Please try again.');
+        }
+      },
+      orderId,
+      'delete'
+    );
+  };
+
   // Show confirmation modal
-  const showConfirmation = (title, message, onConfirm, orderId = null, orderDetails = null) => {
+  const showConfirmation = (title, message, onConfirm, orderId, type) => {
     setConfirmationModal({
       isOpen: true,
       title,
       message,
       onConfirm,
       orderId,
-      orderDetails
+      type
     });
   };
 
@@ -81,7 +166,7 @@ const AdminOrders = () => {
       message: '',
       onConfirm: null,
       orderId: null,
-      orderDetails: null
+      type: 'restore'
     });
   };
 
@@ -93,60 +178,47 @@ const AdminOrders = () => {
     closeConfirmation();
   };
 
-  // Helper function to format numbers with commas and no decimals
-  const formatCurrency = (amount) => {
-    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-PH', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(numAmount);
-  };
+  // Pagination
+  const totalPages = Math.ceil(totalOrders / ordersPerPage);
 
-  // Fetch orders when pagination changes
-  useEffect(() => {
-    fetchOrders(currentPage, ordersPerPage);
-  }, [currentPage, ordersPerPage]);
-
-  // Enhanced order actions with status messages
-  const handleAcceptOrderWithFeedback = async (orderId) => {
-    try {
-      const result = await handleAcceptOrder(orderId);
-      if (result.success) {
-        setOrders(orders.map(order =>
-          order.id === orderId
-            ? { ...order, status: 'completed', payment_status: 'paid' }
-            : order
-        ));
-        showSuccess('Order accepted successfully');
-      }
-    } catch (error) {
-      console.error('Error updating order:', error);
-      showError('Failed to accept order. Please try again.');
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
     }
   };
 
-  const handleArchiveOrderWithFeedback = async (orderId, orderDetails = null) => {
-    const order = orders.find(o => o.id === orderId);
-    const orderInfo = order ? `Order #${order.id} for ${order.username || 'N/A'} (₱${formatCurrency(order.total_amount)})` : 'this order';
-    
-    showConfirmation(
-      'Archive Order',
-      `Are you sure you want to archive ${orderInfo}? You can view archived orders later.`,
-      async (id) => {
-        try {
-          const result = await handleArchiveOrder(id);
-          if (result.success) {
-            showSuccess('Order archived successfully');
-            fetchOrders(currentPage, ordersPerPage); // Refresh orders after archiving
-          }
-        } catch (error) {
-          console.error('Error archiving order:', error);
-          showError('Failed to archive order. Please try again.');
-        }
-      },
-      orderId,
-      orderDetails
-    );
+  const handleItemsPerPageChange = (e) => {
+    setOrdersPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
+
+  const getVisiblePageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
   };
 
   // Calculate display range
@@ -162,7 +234,7 @@ const AdminOrders = () => {
   const { start, end } = getDisplayRange();
 
   return (
-    <AdminLayout currentPage="orders">
+    <AdminLayout currentPage="archived-orders">
       <div className="flex-grow p-3">
         <div className='bg-white rounded-lg shadow-md p-4 md:p-6 mb-6'>
           <div className="container mx-auto px-4 py-3">
@@ -187,8 +259,8 @@ const AdminOrders = () => {
 
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Client Orders</h1>
-                <p className='text-gray-600 text-sm mb-0'>manage and track customer orders</p>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Archived Orders</h1>
+                <p className='text-gray-600 text-sm mb-0'>view and manage archived customer orders</p>
               </div>
 
               <div className="flex space-x-2">
@@ -209,7 +281,6 @@ const AdminOrders = () => {
               </div>
             </div>
 
-
             {/* Orders per page selector */}
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
@@ -229,30 +300,27 @@ const AdminOrders = () => {
                 </select>
               </div>
 
-              {/* Orders count display */}
               <div className="text-sm text-gray-600">
                 Showing {start} to {end} of {totalOrders} orders
               </div>
             </div>
 
-            {isLoading && <p className="text-gray-500 py-4">Loading orders...</p>}
+            {isLoading && <p className="text-gray-500 py-4">Loading archived orders...</p>}
 
             {!isLoading && viewMode === 'table' ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Amount</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Delivery Date</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archived At</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -276,26 +344,22 @@ const AdminOrders = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.order_items || 'N/A'}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.service_name || 'N/A'}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.address}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(order.delivery_date)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(order.created_at)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDateTime(order.archived_at)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <div className="flex space-x-2">
-                            {order.status !== 'completed' && (
-                              <button
-                                onClick={() => handleAcceptOrderWithFeedback(order.id)}
-                                className="text-green-600 hover:text-green-900"
-                                title="Accept Order"
-                              >
-                                <FaCheck className="w-5 h-5" />
-                              </button>
-                            )}
                             <button
-                              onClick={() => handleArchiveOrderWithFeedback(order.id, order)}
-                              className="text-amber-600 hover:text-amber-900"
-                              title="Archive Order"
+                              onClick={() => handleRestoreOrder(order.id)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="Restore Order"
                             >
-                              <FaArchive className="w-5 h-5" />
+                              <FaUndo className="w-5 h-5" />
+                            </button>
+                            <button
+                              onClick={() => handlePermanentDelete(order.id)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Permanently Delete"
+                            >
+                              <FaTrash className="w-5 h-5" />
                             </button>
                           </div>
                         </td>
@@ -326,11 +390,6 @@ const AdminOrders = () => {
                         </div>
 
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Payment Method:</span>
-                          <span>{order.payment_method}</span>
-                        </div>
-
-                        <div className="flex justify-between">
                           <span className="text-gray-600">Payment Status:</span>
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(order.payment_status)}`}>
                             {order.payment_status || "Pending"}
@@ -338,22 +397,9 @@ const AdminOrders = () => {
                         </div>
 
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Delivery Date:</span>
-                          <span>{formatDate(order.delivery_date)}</span>
+                          <span className="text-gray-600">Archived At:</span>
+                          <span>{formatDateTime(order.archived_at)}</span>
                         </div>
-
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Created At:</span>
-                          <span>{formatDateTime(order.created_at)}</span>
-                        </div>
-
-                        {order.address && (
-                          <div className="mt-3 pt-3 border-t">
-                            <p className="text-sm text-gray-600">
-                              <span className="font-medium">Address:</span> {order.address}
-                            </p>
-                          </div>
-                        )}
 
                         {order.order_items && (
                           <div className="mt-3 pt-3 border-t">
@@ -372,19 +418,17 @@ const AdminOrders = () => {
                         )}
                       </div>
                       <div className="mt-4 flex justify-end space-x-2">
-                        {order.status !== 'completed' && (
-                          <button
-                            onClick={() => handleAcceptOrderWithFeedback(order.id)}
-                            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                          >
-                            Accept
-                          </button>
-                        )}
                         <button
-                          onClick={() => handleArchiveOrderWithFeedback(order.id, order)}
-                          className="px-3 py-1 bg-amber-600 text-white rounded hover:bg-amber-700"
+                          onClick={() => handleRestoreOrder(order.id)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                         >
-                          Archive
+                          Restore
+                        </button>
+                        <button
+                          onClick={() => handlePermanentDelete(order.id)}
+                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          Delete
                         </button>
                       </div>
                     </div>
@@ -396,7 +440,7 @@ const AdminOrders = () => {
             {/* Empty state */}
             {!isLoading && (!Array.isArray(orders) || orders.length === 0) && (
               <div className="text-center py-10">
-                <p className="text-gray-500">No orders found</p>
+                <p className="text-gray-500">No archived orders found</p>
               </div>
             )}
 
@@ -404,32 +448,29 @@ const AdminOrders = () => {
             {!isLoading && totalPages > 1 && (
               <div className="mt-6 px-4 py-3 bg-gray-50 border-t border-gray-200">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                  {/* Previous button */}
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <FaChevronLeft className="w-4 h-4" />
                     </button>
                   </div>
 
-                  {/* Page numbers */}
                   <div className="flex items-center space-x-1">
                     {getVisiblePageNumbers().map((pageNum, index) => (
                       <React.Fragment key={index}>
                         {pageNum === '...' ? (
-                          <span className="px-3 py-2 text-sm text-gray-500">
-                            ...
-                          </span>
+                          <span className="px-3 py-2 text-sm text-gray-500">...</span>
                         ) : (
                           <button
                             onClick={() => handlePageChange(pageNum)}
-                            className={`px-3 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${currentPage === pageNum
+                            className={`px-3 py-2 text-sm font-medium rounded-md ${
+                              currentPage === pageNum
                                 ? 'bg-gray-600 text-white'
                                 : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                              }`}
+                            }`}
                           >
                             {pageNum}
                           </button>
@@ -438,19 +479,17 @@ const AdminOrders = () => {
                     ))}
                   </div>
 
-                  {/* Next button */}
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-gray-500"
+                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <FaChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* Page info */}
                 <div className="mt-2 text-center text-sm text-gray-600">
                   Page {currentPage} of {totalPages}
                 </div>
@@ -464,7 +503,7 @@ const AdminOrders = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
               <div className="flex items-start mb-4">
-                <div className="flex-shrink-0 mr-3 text-amber-500">
+                <div className={`flex-shrink-0 mr-3 ${confirmationModal.type === 'delete' ? 'text-red-500' : 'text-blue-500'}`}>
                   <FaExclamationTriangle className="h-6 w-6" />
                 </div>
                 <div className="flex-1">
@@ -487,9 +526,13 @@ const AdminOrders = () => {
                 <button
                   type="button"
                   onClick={handleConfirm}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    confirmationModal.type === 'delete'
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
                 >
-                  Archive Order
+                  {confirmationModal.type === 'delete' ? 'Delete Permanently' : 'Restore Order'}
                 </button>
               </div>
             </div>
@@ -500,4 +543,4 @@ const AdminOrders = () => {
   );
 };
 
-export default AdminOrders;
+export default AdminArchivedOrders;

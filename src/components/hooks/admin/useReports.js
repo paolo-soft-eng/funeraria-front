@@ -4,8 +4,9 @@ export const useReports = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const n = process.env.REACT_APP_API_URL;
 
-  const API_BASE_URL = 'http://localhost/funeraria/api/components/adminReport.php';
+  const API_BASE_URL = `${n}/api/components/adminReport.php`;
 
   // Fetch all reports
   const fetchReports = async () => {

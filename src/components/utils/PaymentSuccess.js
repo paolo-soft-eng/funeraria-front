@@ -762,13 +762,13 @@ const PaymentSuccess = () => {
       if (isEwallet) {
         payload.type = storedMethod || 'gcash';
         payload.redirect = {
-          success: `${window.location.origin}/funeraria/gomez/payment-success`,
-          failed: `${window.location.origin}/funeraria/gomez/payment-failed`
+          success: `${window.location.origin}/gomez/payment-success`,
+          failed: `${window.location.origin}/gomez/payment-failed`
         };
       } else {
         payload.payment_method = "card";
-        payload.successUrl = `${window.location.origin}/funeraria/gomez/payment-success?payment_intent=${encodeURIComponent(intentId)}&userId=${encodeURIComponent(userId || '')}`;
-        payload.cancelUrl = `${window.location.origin}/funeraria/gomez/payment-failed`;
+        payload.successUrl = `${window.location.origin}/gomez/payment-success?payment_intent=${encodeURIComponent(intentId)}&userId=${encodeURIComponent(userId || '')}`;
+        payload.cancelUrl = `${window.location.origin}/gomez/payment-failed`;
         payload.paymentIntentId = intentId;
       }
 
@@ -837,16 +837,6 @@ const PaymentSuccess = () => {
               Retry attempt {state.retryCount}/4...
             </p>
           )}
-
-          {/* Enhanced debug info */}
-          <div className="mt-4 p-3 bg-gray-100 rounded text-xs text-left">
-            <p><strong>Debug Info:</strong></p>
-            <p>Payment Intent: {paymentIntentId || 'None'}</p>
-            <p>Source ID: {sourceId || 'None'}</p>
-            <p>Session ID: {sessionId || 'None'}</p>
-            <p>User ID: {userId || 'None'}</p>
-            <p>URL Params: {window.location.search}</p>
-          </div>
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-4">
             <p className="text-sm text-yellow-800">
@@ -948,7 +938,7 @@ const PaymentSuccess = () => {
 
             <ActionButtons
               onRefresh={() => window.location.reload()}
-              backToCartLink="/gomez/dashboard-client/cart"
+              backToCartLink="/gomez/dashboard-client/order/active-orders"
             />
           </div>
         </div>
@@ -980,7 +970,7 @@ const PaymentSuccess = () => {
             <ActionButtons
               onRefresh={verifyAndRecord}
               onResume={resumePayment}
-              backToCartLink="/gomez/dashboard-client/cart"
+              backToCartLink="/gomez/dashboard-client/order/active-orders"
               showResume={true}
             />
 
@@ -1010,7 +1000,7 @@ const PaymentSuccess = () => {
 
             <ActionButtons
               onRefresh={() => window.location.reload()}
-              backToCartLink="/gomez/dashboard-client/cart"
+              backToCartLink="/gomez/dashboard-client/order/active-orders"
             />
 
             <div className="mt-4 text-xs text-gray-500">
@@ -1080,7 +1070,7 @@ const PaymentSuccess = () => {
 
           <div className="mt-6">
             <Link
-              to="/gomez/dashboard-client/menu"
+              to="/gomez/dashboard-client/services"
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-700"
             >
               Continue Shopping
@@ -1089,7 +1079,7 @@ const PaymentSuccess = () => {
 
           <div className="mt-4">
             <button
-              onClick={() => navigate("/gomez/dashboard-client/cart")}
+              onClick={() => navigate("/gomez/dashboard-client/order/order-history")}
               className="text-sm text-gray-600 hover:text-gray-500"
             >
               View your orders

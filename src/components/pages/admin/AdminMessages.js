@@ -4,8 +4,8 @@ import { MessageSquare, Trash2, Send, ArrowLeft, X, ZoomIn, Image, Camera, Corne
 import AdminLayout from './AdminLayout';
 import { EmailContext } from '../../utils/EmailContext';
 import { useNavigate } from 'react-router-dom';
-
-const API_URL = 'http://localhost/funeraria/api/components/admin_messages.php';
+const n = process.env.REACT_APP_API_URL;
+const API_URL = `${n}/api/components/admin_messages.php`;
 
 const AdminMessages = () => {
   const [senders, setSenders] = useState([]);
@@ -41,7 +41,7 @@ const AdminMessages = () => {
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-
+  const selectedUserRef = useRef(selectedUser);
   const { email } = useContext(EmailContext);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);
@@ -83,7 +83,7 @@ const AdminMessages = () => {
   // Activity logging function
   const addActivity = async (activityType, description, relatedId = null) => {
     try {
-      await axios.post('http://localhost/funeraria/api/components/addActivity.php', {
+      await axios.post(`${n}/api/components/addActivity.php`, {
         activity_type: activityType,
         description: description,
         related_id: relatedId,
@@ -98,11 +98,15 @@ const AdminMessages = () => {
       console.error('Error logging activity:', error);
     }
   };
+useEffect(() => {
+  selectedUserRef.current = selectedUser;
+  console.log('📌 Selected user updated in ref:', selectedUser?.user_id, selectedUser?.name);
+}, [selectedUser]);
 
   // Login validation
   useEffect(() => {
     if (email) {
-      fetch(`http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(email)}`)
+      fetch(`${n}/api/components/getUserId.php?email=${encodeURIComponent(email)}`)
         .then(response => response.json())
         .then(data => {
           if (data.userId) {
@@ -125,13 +129,28 @@ const AdminMessages = () => {
     }
   }, [email, navigate]);
 
-  // Fetch senders and establish WebSocket
   useEffect(() => {
-    fetchSenders();
+  fetchSenders();
 
-    const ws = new WebSocket('ws://localhost:8080');
+  let ws = null;
+  let reconnectTimeout = null;
+
+  const connectWebSocket = () => {
+    let wsUrl;
+    
+    if (n.includes('ngrok')) {
+      wsUrl = n.replace('https://', 'wss://').replace('http://', 'wss://') + '/ws';
+    } else if (n.startsWith('http://localhost')) {
+      wsUrl = 'ws://localhost/ws';
+    } else {
+      wsUrl = 'ws://localhost:8080';
+    }
+
+    console.log('🔌 Admin connecting to WebSocket:', wsUrl);
+    ws = new WebSocket(wsUrl);
+
     ws.onopen = () => {
-      console.log('WebSocket connected');
+      console.log('✅ Admin WebSocket connected successfully');
       setIsConnected(true);
       setSocket(ws);
 
@@ -142,79 +161,186 @@ const AdminMessages = () => {
           isAdmin: true
         };
         ws.send(JSON.stringify(registerMessage));
+        console.log('📝 Admin registered with ID:', 'admin_' + userId);
       }
     };
 
     ws.onclose = () => {
-      console.log('WebSocket disconnected');
+      console.log('❌ Admin WebSocket disconnected');
       setIsConnected(false);
       setSocket(null);
+      
+      reconnectTimeout = setTimeout(() => {
+        console.log('🔄 Admin attempting to reconnect...');
+        connectWebSocket();
+      }, 5000);
     };
 
     ws.onerror = (error) => {
-      // console.error('WebSocket error:', error);
+      console.error('⚠️ Admin WebSocket error:', error);
     };
 
     ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  
-  if (data.type === 'message') {
-    // Check if this message is for the current conversation
-    const isForCurrentUser = selectedUser &&
-      ((data.isAdmin && data.senderId === 'admin_' + userId && selectedUser.user_id === data.receiverId) ||
-        (!data.isAdmin && data.senderId === selectedUser.user_id));
-
-    if (isForCurrentUser || data.isOwnMessage) {
-      setMessages(prev => {
-        // If this is a confirmation for our optimistic update, replace the temp message
-        if (data.tempId) {
-          const filtered = prev.filter(msg => msg.id !== data.tempId);
-          
-          const newMessage = {
-            id: data.id,
-            message: data.message,
-            timestamp: data.timestamp,
-            image_path: data.imageUrl,
-            is_admin_message: data.is_admin_message ? 1 : 0,
-            reply_to_id: data.replyToId,
-            reply_to_message: data.replyToMessage,
-            reply_image_path: data.replyImagePath,
-            reply_sender_name: data.replySenderName,
-            sender_name: data.senderName || (data.isAdmin ? "You" : selectedUser.name)
-          };
-          return [...filtered, newMessage];
-        }
-
-        // Avoid duplicates for regular messages
-        if (prev.some(msg => msg.id === data.id)) {
-          return prev;
-        }
+      try {
+        const data = JSON.parse(event.data);
+        console.log('📨 ==========================================');
+        console.log('📨 Admin received WebSocket message:');
+        console.log('📨 Type:', data.type);
+        console.log('📨 Message ID:', data.id);
+        console.log('📨 Sender ID:', data.senderId);
+        console.log('📨 Receiver ID:', data.receiverId);
+        console.log('📨 Is Admin:', data.isAdmin);
+        console.log('📨 Is Own Message:', data.isOwnMessage);
+        console.log('📨 Temp ID:', data.tempId);
+        console.log('📨 Message:', data.message);
+        console.log('📨 ==========================================');
         
-        const newMessage = {
-          id: data.id,
-          message: data.message,
-          timestamp: data.timestamp,
-          image_path: data.imageUrl,
-          is_admin_message: data.is_admin_message ? 1 : 0,
-          reply_to_id: data.replyToId,
-          reply_to_message: data.replyToMessage,
-          reply_image_path: data.replyImagePath,
-          reply_sender_name: data.replySenderName,
-          sender_name: data.senderName || (data.isAdmin ? "You" : selectedUser.name)
-        };
+        if (data.type === 'message') {
+          const currentSelectedUser = selectedUserRef.current;
+          
+          console.log('🔍 Current context:');
+          console.log('  - Admin user ID:', userId);
+          console.log('  - Admin connection ID:', 'admin_' + userId);
+          console.log('  - Selected user ID:', currentSelectedUser?.user_id);
+          console.log('  - Selected user name:', currentSelectedUser?.name);
+          
+          // More flexible routing logic
+          let isForCurrentUser = false;
+          
+          if (data.isOwnMessage) {
+            // This is our own message confirmation
+            console.log('✅ This is own message confirmation');
+            isForCurrentUser = true;
+          } else if (data.isAdmin === false || data.isAdmin === 0) {
+            // Message FROM client TO admin
+            // Check if the client is the currently selected user
+            console.log('📥 Message from CLIENT to admin');
+            console.log('  - Client sender ID:', data.senderId);
+            console.log('  - Expected receiver (admin):', 'admin_' + userId);
+            console.log('  - Actual receiver:', data.receiverId);
+            
+            // Check if this client is the one we're chatting with
+            if (currentSelectedUser && data.senderId == currentSelectedUser.user_id) {
+              console.log('✅ Message is from currently selected client!');
+              isForCurrentUser = true;
+            } else {
+              console.log('❌ Message is from different client');
+              console.log('  - Expected:', currentSelectedUser?.user_id);
+              console.log('  - Actual:', data.senderId);
+            }
+          } else if (data.isAdmin === true || data.isAdmin === 1) {
+            // Message FROM admin TO client
+            console.log('📤 Message from ADMIN to client');
+            console.log('  - Admin sender:', data.senderId);
+            console.log('  - Client receiver:', data.receiverId);
+            console.log('  - Currently chatting with:', currentSelectedUser?.user_id);
+            
+            // Check if we're sending to the currently selected user
+            if (currentSelectedUser && data.receiverId == currentSelectedUser.user_id) {
+              console.log('✅ Message is to currently selected client!');
+              isForCurrentUser = true;
+            } else {
+              console.log('❌ Message is to different client');
+            }
+          }
 
-        return [...prev, newMessage];
-      });
-    }
-  }
-};
+          console.log('🎯 Final routing decision: isForCurrentUser =', isForCurrentUser);
 
-    return () => {
-      if (ws) {
-        ws.close();
+          if (isForCurrentUser) {
+            console.log('✅ Adding message to conversation');
+            
+            setMessages(prev => {
+              // If this is a confirmation for our optimistic update, replace the temp message
+              if (data.tempId) {
+                console.log('🔄 Replacing temp message:', data.tempId, 'with real ID:', data.id);
+                const filtered = prev.filter(msg => msg.id !== data.tempId);
+                
+                const newMessage = {
+                  id: data.id,
+                  message: data.message,
+                  timestamp: data.timestamp,
+                  image_path: data.imageUrl,
+                  is_admin_message: data.is_admin_message ? 1 : 0,
+                  reply_to_id: data.replyToId,
+                  reply_to_message: data.replyToMessage,
+                  reply_image_path: data.replyImagePath,
+                  reply_sender_name: data.replySenderName,
+                  sender_name: data.senderName || (data.isAdmin ? "You" : currentSelectedUser?.name)
+                };
+                
+                console.log('✅ Temp message replaced');
+                return [...filtered, newMessage];
+              }
+
+              // Avoid duplicates for regular messages
+              if (prev.some(msg => msg.id === data.id)) {
+                console.log('⚠️ Duplicate message detected, skipping:', data.id);
+                return prev;
+              }
+              
+              console.log('➕ Adding new message with ID:', data.id);
+              const newMessage = {
+                id: data.id,
+                message: data.message,
+                timestamp: data.timestamp,
+                image_path: data.imageUrl,
+                is_admin_message: data.is_admin_message ? 1 : 0,
+                reply_to_id: data.replyToId,
+                reply_to_message: data.replyToMessage,
+                reply_image_path: data.replyImagePath,
+                reply_sender_name: data.replySenderName,
+                sender_name: data.senderName || (data.isAdmin ? "You" : currentSelectedUser?.name)
+              };
+
+              console.log('✅ New message added successfully');
+              return [...prev, newMessage];
+            });
+          } else {
+            console.log('⏭️ Message not for current conversation, ignoring');
+          }
+        }
+
+        // Handle message deletion
+        if (data.type === 'message_deleted') {
+          console.log('🗑️ Removing deleted message:', data.messageId);
+          setMessages(prev => prev.filter(msg => msg.id !== data.messageId));
+        }
+      } catch (error) {
+        console.error('❌ Error processing WebSocket message:', error);
+        console.error('Raw message:', event.data);
       }
     };
-  }, [userId]);
+  };
+
+  // Initial connection
+  if (userId) {
+    connectWebSocket();
+  }
+
+  // Cleanup function
+  return () => {
+    if (reconnectTimeout) {
+      clearTimeout(reconnectTimeout);
+    }
+    if (ws) {
+      console.log('🔌 Closing admin WebSocket connection');
+      ws.close();
+    }
+  };
+}, [userId, n]); // Only depend on userId and n
+
+  // Keep the re-registration effect
+  useEffect(() => {
+    if (socket && isConnected && userId) {
+      const registerMessage = {
+        type: 'register',
+        userId: 'admin_' + userId,
+        isAdmin: true
+      };
+      socket.send(JSON.stringify(registerMessage));
+      console.log('🔄 Admin re-registered due to user selection change');
+    }
+  }, [selectedUser, socket, isConnected, userId]);
 
   // Scroll to bottom
   useEffect(() => {
@@ -256,6 +382,18 @@ const AdminMessages = () => {
       }
     };
   }, [showCamera]);
+
+  useEffect(() => {
+  if (socket && isConnected && userId) {
+    const registerMessage = {
+      type: 'register',
+      userId: 'admin_' + userId,
+      isAdmin: true
+    };
+    socket.send(JSON.stringify(registerMessage));
+    console.log('🔄 Admin re-registered:', 'admin_' + userId);
+  }
+}, [selectedUser, socket, isConnected, userId]);
 
   const fetchSenders = async () => {
     try {
@@ -441,93 +579,93 @@ const AdminMessages = () => {
   };
 
   const sendImageMessage = async () => {
-  if (!selectedFile || !selectedUser) return;
+    if (!selectedFile || !selectedUser) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const formData = new FormData();
-    formData.append('image', selectedFile);
+      const formData = new FormData();
+      formData.append('image', selectedFile);
 
-    const uploadResponse = await fetch('http://localhost/funeraria/api/components/upload.php', {
-      method: 'POST',
-      body: formData
-    });
+      const uploadResponse = await fetch(`${n}/api/components/upload.php`, {
+        method: 'POST',
+        body: formData
+      });
 
-    const uploadData = await uploadResponse.json();
+      const uploadData = await uploadResponse.json();
 
-    if (uploadData.status !== 'success') {
-      throw new Error(uploadData.message || 'Failed to upload image');
-    }
+      if (uploadData.status !== 'success') {
+        throw new Error(uploadData.message || 'Failed to upload image');
+      }
 
-    const imagePath = uploadData.imageUrl;
+      const imagePath = uploadData.imageUrl;
 
-    // Store reply info before clearing
-    const replyToId = replyingTo?.id || null;
-    const replyToMessage = replyingTo?.text || null;
-    const replyImagePath = replyingTo?.imagePath || null;
-    const replySenderName = replyingTo?.senderName || null;
+      // Store reply info before clearing
+      const replyToId = replyingTo?.id || null;
+      const replyToMessage = replyingTo?.text || null;
+      const replyImagePath = replyingTo?.imagePath || null;
+      const replySenderName = replyingTo?.senderName || null;
 
-    // Create temp message for optimistic update
-    const tempMessageId = 'temp-' + Date.now();
-    const tempMessage = {
-      id: tempMessageId,
-      message: replyText || 'Image message',
-      timestamp: new Date().toISOString(),
-      image_path: imagePath,
-      is_admin_message: 1,
-      reply_to_id: replyToId,
-      sender_name: "You",
-      reply_to_message: replyToMessage,           // ← Add this
-      reply_image_path: replyImagePath,           // ← Add this
-      reply_sender_name: replySenderName          // ← Add this
-    };
-
-    // Add optimistic update
-    setMessages(prev => [...prev, tempMessage]);
-
-    // Clear input immediately
-    setReplyText('');
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setReplyingTo(null);
-
-    // Send via WebSocket with reply info
-    if (socket && isConnected) {
-      const messageData = {
-        type: 'message',
-        senderId: 'admin_' + userId,
-        receiverId: selectedUser.user_id,
+      // Create temp message for optimistic update
+      const tempMessageId = 'temp-' + Date.now();
+      const tempMessage = {
+        id: tempMessageId,
         message: replyText || 'Image message',
-        imageUrl: imagePath,
-        isAdmin: true,
         timestamp: new Date().toISOString(),
-        replyToId: replyToId,
-        replyToMessage: replyToMessage,           // ← Add this
-        replyImagePath: replyImagePath,           // ← Add this
-        replySenderName: replySenderName,         // ← Add this
-        tempId: tempMessageId
+        image_path: imagePath,
+        is_admin_message: 1,
+        reply_to_id: replyToId,
+        sender_name: "You",
+        reply_to_message: replyToMessage,           // ← Add this
+        reply_image_path: replyImagePath,           // ← Add this
+        reply_sender_name: replySenderName          // ← Add this
       };
 
-      socket.send(JSON.stringify(messageData));
+      // Add optimistic update
+      setMessages(prev => [...prev, tempMessage]);
 
-      addActivity(
-        'Message',
-        `Sent image message to client '${selectedUser.name}'`,
-        selectedUser.user_id
-      );
-    } else {
-      setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
-      setError('WebSocket not connected. Please refresh the page.');
+      // Clear input immediately
+      setReplyText('');
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setReplyingTo(null);
+
+      // Send via WebSocket with reply info
+      if (socket && isConnected) {
+        const messageData = {
+          type: 'message',
+          senderId: 'admin_' + userId,
+          receiverId: selectedUser.user_id,
+          message: replyText || 'Image message',
+          imageUrl: imagePath,
+          isAdmin: true,
+          timestamp: new Date().toISOString(),
+          replyToId: replyToId,
+          replyToMessage: replyToMessage,           // ← Add this
+          replyImagePath: replyImagePath,           // ← Add this
+          replySenderName: replySenderName,         // ← Add this
+          tempId: tempMessageId
+        };
+
+        socket.send(JSON.stringify(messageData));
+
+        addActivity(
+          'Message',
+          `Sent image message to client '${selectedUser.name}'`,
+          selectedUser.user_id
+        );
+      } else {
+        setMessages(prev => prev.filter(msg => msg.id !== tempMessageId));
+        setError('WebSocket not connected. Please refresh the page.');
+      }
+    } catch (err) {
+      console.error('Error sending image message:', err);
+      setError('Failed to send image message. Please try again.');
+      fetchUserMessages(selectedUser.user_id);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error('Error sending image message:', err);
-    setError('Failed to send image message. Please try again.');
-    fetchUserMessages(selectedUser.user_id);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleReplySubmit = async (e) => {
     e.preventDefault();
@@ -647,10 +785,10 @@ const AdminMessages = () => {
       return;
     }
 
-    const messagePreview = messageToDelete?.message 
-      ? (messageToDelete.message.length > 50 
-          ? `${messageToDelete.message.substring(0, 50)}...` 
-          : messageToDelete.message)
+    const messagePreview = messageToDelete?.message
+      ? (messageToDelete.message.length > 50
+        ? `${messageToDelete.message.substring(0, 50)}...`
+        : messageToDelete.message)
       : 'Image message';
 
     showConfirmation(
@@ -755,455 +893,455 @@ const AdminMessages = () => {
   return (
     <AdminLayout currentPage="messages">
       <div className="container mx-auto px-4 py-6">
-      <div className='bg-white rounded-lg shadow-md p-4 md:p-6 mb-6'>
-        {error && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
-            <p>{error}</p>
-          </div>
-        )}
-
-        <div>
-          {!selectedUser ? (
-            <div>
-              <div className="p-4 border-b">
-                <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Client Messages</h2>
-                <p className="text-gray-600 text-sm">View and respond to client inquiries</p>
-              </div>
-
-              {loading ? (
-                <div className="p-8 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-600">Loading messages...</p>
-                </div>
-              ) : senders.length === 0 ? (
-                <div className="p-8 text-center">
-                  <MessageSquare size={32} className="text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600">No messages yet</p>
-                </div>
-              ) : (
-                <ul className="divide-y divide-gray-200">
-                  {senders.map((sender) => (
-                    <li key={sender.user_id} className="hover:bg-gray-50">
-                      <button
-                        className="w-full text-left p-4 flex items-center"
-                        onClick={() => handleUserSelect(sender)}
-                      >
-                        <div className="bg-indigo-100 text-indigo-800 rounded-full h-10 w-10 flex items-center justify-center mr-3">
-                          {sender.profile_image ? (
-                            <img src={`http://localhost/funeraria/api/components/${sender.profile_image}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
-                          ) : (
-                            sender.name.charAt(0).toUpperCase()
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between">
-                            <span className="font-medium">{sender.name}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 truncate">
-                              {sender.email}
-                            </span>
-                            <div className="flex items-center">
-                              <span className="text-sm text-gray-500 mr-2">
-                                {sender.message_count} messages
-                              </span>
-                              {parseInt(sender.unread_count) > 0 && (
-                                <span className="bg-indigo-600 text-white text-xs rounded-full px-2 py-0.5">
-                                  {sender.unread_count} new
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+        <div className='bg-white rounded-lg shadow-md p-4 md:p-6 mb-6'>
+          {error && (
+            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+              <p>{error}</p>
             </div>
-          ) : (
-            <div className="flex flex-col h-[calc(100vh-12rem)]">
-              <div className="p-4 border-b flex items-center">
-                <button
-                  onClick={handleBackToList}
-                  className="mr-3 p-1 rounded-full hover:bg-gray-100"
-                >
-                  <ArrowLeft size={20} />
-                </button>
-                <div>
-                  <h2 className="text-lg font-semibold">{selectedUser.name}</h2>
-                  <p className="text-gray-600 text-sm">{selectedUser.email}</p>
+          )}
+
+          <div>
+            {!selectedUser ? (
+              <div>
+                <div className="p-4 border-b">
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-800">Client Messages</h2>
+                  <p className="text-gray-600 text-sm">View and respond to client inquiries</p>
                 </div>
-              </div>
 
-              {/* Reply Indicator */}
-              {replyingTo && (
-                <div className="p-3 bg-blue-50 border-l-4 border-blue-500 flex justify-between items-center">
-                  <div className="flex-1">
-                    <div className="flex items-center text-xs text-blue-600 font-medium mb-1">
-                      <CornerUpLeft size={14} className="mr-1" />
-                      Replying to {replyingTo.sender}
-                    </div>
-
-                    {/* Show actual image if replying to an image message */}
-                    {replyingTo.imagePath ? (
-                      <div className="flex items-center space-x-3">
-                        <div className="flex items-center space-x-1">
-                          <Image size={14} className="text-blue-600" />
-                          <span className="text-sm text-blue-600 font-medium">Image:</span>
-                        </div>
-                        <img
-                          src={
-                            replyingTo.imagePath.startsWith('http')
-                              ? replyingTo.imagePath
-                              : `http://localhost/funeraria/api/components/${replyingTo.imagePath}`
-                          }
-                          alt="Replied content"
-                          className="w-12 h-12 object-cover rounded border border-blue-300"
-                        />
-                      </div>
-                    ) : replyingTo.text ? (
-                      <p className="text-sm text-blue-600">
-                        {replyingTo.text.length > 60
-                          ? `${replyingTo.text.substring(0, 60)}...`
-                          : replyingTo.text
-                        }
-                      </p>
-                    ) : (
-                      <p className="text-sm text-blue-600 italic">Image message</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={cancelReply}
-                    className="ml-2 text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100"
-                    title="Cancel reply"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              )}
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {loading ? (
-                  <div className="text-center">
+                  <div className="p-8 text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Loading conversation...</p>
+                    <p className="mt-2 text-gray-600">Loading messages...</p>
                   </div>
-                ) : messages.length === 0 ? (
-                  <div className="text-center py-8">
+                ) : senders.length === 0 ? (
+                  <div className="p-8 text-center">
                     <MessageSquare size={32} className="text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-600">No messages in this conversation</p>
+                    <p className="text-gray-600">No messages yet</p>
                   </div>
                 ) : (
-                  messages.map((msg, index) => {
-                    const isAdminMsg = msg.is_admin_message === "1" || msg.is_admin_message === 1;
-
-                    return (
-                      <div
-                        key={msg.id || `msg-${index}`}
-                        className={`flex ${isAdminMsg ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={`max-w-[75%] rounded-lg p-3 relative ${isAdminMsg ? "bg-gray-200 text-black" : "bg-gray-200 text-black"
-                            }`}
-                          onClick={() => handleMessageClick(msg)}
+                  <ul className="divide-y divide-gray-200">
+                    {senders.map((sender) => (
+                      <li key={sender.user_id} className="hover:bg-gray-50">
+                        <button
+                          className="w-full text-left p-4 flex items-center"
+                          onClick={() => handleUserSelect(sender)}
                         >
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-medium text-black">
-                              {isAdminMsg ? "You" : selectedUser.name}
-                            </span>
-                            {isAdminMsg && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteMessage(msg.id, msg);
-                                }}
-                                className="ml-2 opacity-50 hover:opacity-100 text-black"
-                                title="Delete message"
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                          <div className="bg-indigo-100 text-indigo-800 rounded-full h-10 w-10 flex items-center justify-center mr-3">
+                            {sender.profile_image ? (
+                              <img src={`${n}/api/components/${sender.profile_image}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
+                            ) : (
+                              sender.name.charAt(0).toUpperCase()
                             )}
                           </div>
-                          {msg.reply_to_id && (
-                            <div className={`text-xs mb-2 border-l-2 pl-2 ${isAdminMsg ? 'border-blue-500' : 'border-blue-500'}`}>
-                              <div className="font-medium text-gray-800 mb-1">
-                                Replying to {msg.reply_sender_name === "You" || msg.reply_sender_name === "Admin" ? 'yourself' : msg.reply_sender_name}
-                              </div>
-
-                              {/* Show image if the replied message has an image */}
-                              {msg.reply_image_path ? (
-                                <div className="bg-blue-50 p-2 rounded border border-blue-200">
-                                  <div className="flex items-center space-x-2 mb-1">
-                                    <Image size={12} className="text-blue-600 flex-shrink-0" />
-                                    <span className="text-blue-600 text-xs font-medium">Image:</span>
-                                  </div>
-                                  <img
-                                    src={
-                                      msg.reply_image_path.startsWith('http')
-                                        ? msg.reply_image_path
-                                        : `http://localhost/funeraria/api/components/${msg.reply_image_path}`
-                                    }
-                                    alt="Replied image"
-                                    className="w-16 h-16 object-cover rounded border border-blue-300 cursor-pointer"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleImageClick(msg.reply_image_path);
-                                    }}
-                                  />
-                                </div>
-                              ) : msg.reply_to_message ? (
-                                // Show text preview if available
-                                <div className="text-gray-600 bg-blue-50 p-2 rounded border border-blue-200">
-                                  {msg.reply_to_message.length > 50
-                                    ? `${msg.reply_to_message.substring(0, 50)}...`
-                                    : msg.reply_to_message
-                                  }
-                                </div>
-                              ) : (
-                                // Fallback if no message or image
-                                <div className="text-gray-500 italic text-xs bg-blue-50 p-2 rounded">
-                                  Original message not available
-                                </div>
-                              )}
+                          <div className="flex-1">
+                            <div className="flex justify-between">
+                              <span className="font-medium">{sender.name}</span>
                             </div>
-                          )}
-
-                          <p className="whitespace-pre-line text-black">{msg.message}</p>
-                          {msg.image_path && (
-                            <div className="relative mt-2 group">
-                              <img
-                                src={
-                                  msg.image_path.startsWith('http')
-                                    ? msg.image_path
-                                    : `http://localhost/funeraria/api/components/${msg.image_path}`
-                                }
-                                alt="Attached"
-                                className="w-60 h-auto rounded cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleImageClick(msg.image_path);
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleImageClick(msg.image_path);
-                                }}>
-                                <ZoomIn size={24} className="text-white" />
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600 truncate">
+                                {sender.email}
+                              </span>
+                              <div className="flex items-center">
+                                <span className="text-sm text-gray-500 mr-2">
+                                  {sender.message_count} messages
+                                </span>
+                                {parseInt(sender.unread_count) > 0 && (
+                                  <span className="bg-indigo-600 text-white text-xs rounded-full px-2 py-0.5">
+                                    {sender.unread_count} new
+                                  </span>
+                                )}
                               </div>
                             </div>
-                          )}
-                          <div
-                            className={`text-xs mt-1 ${isAdminMsg ? "text-black" : "text-black"
-                              }`}
-                          >
-                            {formatDate(msg.timestamp)}
                           </div>
-
-                          {/* Message actions menu */}
-                          {selectedMessage?.id === msg.id && (
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-white p-2 rounded shadow flex space-x-2 border border-gray-300 z-10">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleCopyMessage(msg.message);
-                                  setSelectedMessage(null);
-                                }}
-                                title="Copy message"
-                              >
-                                <Copy size={18} className="text-gray-900" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleReplyToMessage(msg);
-                                }}
-                                title="Reply to this message"
-                              >
-                                <CornerUpLeft size={18} className="text-gray-900" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 )}
-                <div ref={messagesEndRef} />
               </div>
+            ) : (
+              <div className="flex flex-col h-[calc(100vh-12rem)]">
+                <div className="p-4 border-b flex items-center">
+                  <button
+                    onClick={handleBackToList}
+                    className="mr-3 p-1 rounded-full hover:bg-gray-100"
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+                  <div>
+                    <h2 className="text-lg font-semibold">{selectedUser.name}</h2>
+                    <p className="text-gray-600 text-sm">{selectedUser.email}</p>
+                  </div>
+                </div>
 
-              {/* Reply Form */}
-              <form onSubmit={handleReplySubmit} className="p-4 border-t">
-                {previewUrl && (
-                  <div className="mb-4 relative">
-                    <img
-                      src={previewUrl}
-                      alt="Preview"
-                      className="max-h-32 rounded border"
-                    />
+                {/* Reply Indicator */}
+                {replyingTo && (
+                  <div className="p-3 bg-blue-50 border-l-4 border-blue-500 flex justify-between items-center">
+                    <div className="flex-1">
+                      <div className="flex items-center text-xs text-blue-600 font-medium mb-1">
+                        <CornerUpLeft size={14} className="mr-1" />
+                        Replying to {replyingTo.sender}
+                      </div>
+
+                      {/* Show actual image if replying to an image message */}
+                      {replyingTo.imagePath ? (
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-1">
+                            <Image size={14} className="text-blue-600" />
+                            <span className="text-sm text-blue-600 font-medium">Image:</span>
+                          </div>
+                          <img
+                            src={
+                              replyingTo.imagePath.startsWith('http')
+                                ? replyingTo.imagePath
+                                : `${n}/api/components/${replyingTo.imagePath}`
+                            }
+                            alt="Replied content"
+                            className="w-12 h-12 object-cover rounded border border-blue-300"
+                          />
+                        </div>
+                      ) : replyingTo.text ? (
+                        <p className="text-sm text-blue-600">
+                          {replyingTo.text.length > 60
+                            ? `${replyingTo.text.substring(0, 60)}...`
+                            : replyingTo.text
+                          }
+                        </p>
+                      ) : (
+                        <p className="text-sm text-blue-600 italic">Image message</p>
+                      )}
+                    </div>
                     <button
-                      type="button"
-                      onClick={() => {
-                        setPreviewUrl(null);
-                        setSelectedFile(null);
-                      }}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                      onClick={cancelReply}
+                      className="ml-2 text-blue-600 hover:text-blue-800 p-1 rounded-full hover:bg-blue-100"
+                      title="Cancel reply"
                     >
                       <X size={16} />
                     </button>
                   </div>
                 )}
 
-                <div className="flex items-center space-x-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowCamera(true)}
-                    className="p-2 rounded-full hover:bg-gray-200"
-                  >
-                    <Camera size={20} className="text-gray-600" />
-                  </button>
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {loading ? (
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                      <p className="mt-2 text-gray-600">Loading conversation...</p>
+                    </div>
+                  ) : messages.length === 0 ? (
+                    <div className="text-center py-8">
+                      <MessageSquare size={32} className="text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600">No messages in this conversation</p>
+                    </div>
+                  ) : (
+                    messages.map((msg, index) => {
+                      const isAdminMsg = msg.is_admin_message === "1" || msg.is_admin_message === 1;
 
-                  <button
-                    type="button"
-                    onClick={handleFileInputClick}
-                    className="p-2 rounded-full hover:bg-gray-200"
-                  >
-                    <Image size={20} className="text-gray-600" />
-                  </button>
+                      return (
+                        <div
+                          key={msg.id || `msg-${index}`}
+                          className={`flex ${isAdminMsg ? "justify-end" : "justify-start"}`}
+                        >
+                          <div
+                            className={`max-w-[75%] rounded-lg p-3 relative ${isAdminMsg ? "bg-gray-200 text-black" : "bg-gray-200 text-black"
+                              }`}
+                            onClick={() => handleMessageClick(msg)}
+                          >
+                            <div className="flex justify-between items-start mb-1">
+                              <span className="font-medium text-black">
+                                {isAdminMsg ? "You" : selectedUser.name}
+                              </span>
+                              {isAdminMsg && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteMessage(msg.id, msg);
+                                  }}
+                                  className="ml-2 opacity-50 hover:opacity-100 text-black"
+                                  title="Delete message"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
+                            </div>
+                            {msg.reply_to_id && (
+                              <div className={`text-xs mb-2 border-l-2 pl-2 ${isAdminMsg ? 'border-blue-500' : 'border-blue-500'}`}>
+                                <div className="font-medium text-gray-800 mb-1">
+                                  Replying to {msg.reply_sender_name === "You" || msg.reply_sender_name === "Admin" ? 'yourself' : msg.reply_sender_name}
+                                </div>
 
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
+                                {/* Show image if the replied message has an image */}
+                                {msg.reply_image_path ? (
+                                  <div className="bg-blue-50 p-2 rounded border border-blue-200">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <Image size={12} className="text-blue-600 flex-shrink-0" />
+                                      <span className="text-blue-600 text-xs font-medium">Image:</span>
+                                    </div>
+                                    <img
+                                      src={
+                                        msg.reply_image_path.startsWith('http')
+                                          ? msg.reply_image_path
+                                          : `${n}/api/components/${msg.reply_image_path}`
+                                      }
+                                      alt="Replied image"
+                                      className="w-16 h-16 object-cover rounded border border-blue-300 cursor-pointer"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleImageClick(msg.reply_image_path);
+                                      }}
+                                    />
+                                  </div>
+                                ) : msg.reply_to_message ? (
+                                  // Show text preview if available
+                                  <div className="text-gray-600 bg-blue-50 p-2 rounded border border-blue-200">
+                                    {msg.reply_to_message.length > 50
+                                      ? `${msg.reply_to_message.substring(0, 50)}...`
+                                      : msg.reply_to_message
+                                    }
+                                  </div>
+                                ) : (
+                                  // Fallback if no message or image
+                                  <div className="text-gray-500 italic text-xs bg-blue-50 p-2 rounded">
+                                    Original message not available
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            <p className="whitespace-pre-line text-black">{msg.message}</p>
+                            {msg.image_path && (
+                              <div className="relative mt-2 group">
+                                <img
+                                  src={
+                                    msg.image_path.startsWith('http')
+                                      ? msg.image_path
+                                      : `${n}/api/components/${msg.image_path}`
+                                  }
+                                  alt="Attached"
+                                  className="w-60 h-auto rounded cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleImageClick(msg.image_path);
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleImageClick(msg.image_path);
+                                  }}>
+                                  <ZoomIn size={24} className="text-white" />
+                                </div>
+                              </div>
+                            )}
+                            <div
+                              className={`text-xs mt-1 ${isAdminMsg ? "text-black" : "text-black"
+                                }`}
+                            >
+                              {formatDate(msg.timestamp)}
+                            </div>
+
+                            {/* Message actions menu */}
+                            {selectedMessage?.id === msg.id && (
+                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 bg-white p-2 rounded shadow flex space-x-2 border border-gray-300 z-10">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCopyMessage(msg.message);
+                                    setSelectedMessage(null);
+                                  }}
+                                  title="Copy message"
+                                >
+                                  <Copy size={18} className="text-gray-900" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleReplyToMessage(msg);
+                                  }}
+                                  title="Reply to this message"
+                                >
+                                  <CornerUpLeft size={18} className="text-gray-900" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Reply Form */}
+                <form onSubmit={handleReplySubmit} className="p-4 border-t">
+                  {previewUrl && (
+                    <div className="mb-4 relative">
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="max-h-32 rounded border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPreviewUrl(null);
+                          setSelectedFile(null);
+                        }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowCamera(true)}
+                      className="p-2 rounded-full hover:bg-gray-200"
+                    >
+                      <Camera size={20} className="text-gray-600" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleFileInputClick}
+                      className="p-2 rounded-full hover:bg-gray-200"
+                    >
+                      <Image size={20} className="text-gray-600" />
+                    </button>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+
+                    <input
+                      type="text"
+                      value={replyText}
+                      onChange={handleReplyChange}
+                      placeholder={
+                        replyingTo
+                          ? "Type your reply..."
+                          : "Type your message..."
+                      }
+                      className="flex-1 border rounded-l-lg px-4 py-2"
+                    />
+
+                    <button
+                      type="submit"
+                      className="bg-indigo-600 text-white px-4 py-2 rounded-r-lg"
+                      disabled={!replyText.trim() && !selectedFile}
+                    >
+                      <Send size={20} />
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+
+          {/* Camera Modal */}
+          {showCamera && (
+            <div className="fixed inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center z-50">
+              <div className="relative w-full max-w-2xl mx-4">
+                <div className="aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
+                    style={{ transform: 'scaleX(-1)' }}
                   />
+                </div>
 
-                  <input
-                    type="text"
-                    value={replyText}
-                    onChange={handleReplyChange}
-                    placeholder={
-                      replyingTo
-                        ? "Type your reply..."
-                        : "Type your message..."
-                    }
-                    className="flex-1 border rounded-l-lg px-4 py-2"
-                  />
+                <canvas ref={canvasRef} className="hidden" />
 
+                <div className="flex justify-center space-x-6 mt-6">
                   <button
-                    type="submit"
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-r-lg"
-                    disabled={!replyText.trim() && !selectedFile}
+                    onClick={capturePhoto}
+                    className="bg-white rounded-full p-4 hover:bg-gray-200 transition"
                   >
-                    <Send size={20} />
+                    <Camera size={28} className="text-gray-800" />
+                  </button>
+                  <button
+                    onClick={closeCamera}
+                    className="bg-red-500 text-white rounded-full px-6 py-2 hover:bg-red-600 transition"
+                  >
+                    Close
                   </button>
                 </div>
-              </form>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Camera Modal */}
-        {showCamera && (
-          <div className="fixed inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center z-50">
-            <div className="relative w-full max-w-2xl mx-4">
-              <div className="aspect-w-16 aspect-h-9 bg-black rounded-lg overflow-hidden">
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                  style={{ transform: 'scaleX(-1)' }}
+          {/* Image Enlargement Modal */}
+          {enlargedImage && (
+            <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+              <div className="relative max-w-full max-h-full">
+                <button
+                  onClick={closeEnlargedImage}
+                  className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors mt-4"
+                  title="Close (ESC)"
+                >
+                  <X size={32} />
+                </button>
+
+                <img
+                  src={`${n}/api/components/${enlargedImage}`}
+                  alt="Enlarged view"
+                  className="max-w-[70vw] max-h-[70vh] object-contain rounded-lg shadow-2xl"
+                  onClick={closeEnlargedImage}
+                />
+
+                <div
+                  className="absolute inset-0 -z-10"
+                  onClick={closeEnlargedImage}
                 />
               </div>
-
-              <canvas ref={canvasRef} className="hidden" />
-
-              <div className="flex justify-center space-x-6 mt-6">
-                <button
-                  onClick={capturePhoto}
-                  className="bg-white rounded-full p-4 hover:bg-gray-200 transition"
-                >
-                  <Camera size={28} className="text-gray-800" />
-                </button>
-                <button
-                  onClick={closeCamera}
-                  className="bg-red-500 text-white rounded-full px-6 py-2 hover:bg-red-600 transition"
-                >
-                  Close
-                </button>
-              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Image Enlargement Modal */}
-        {enlargedImage && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div className="relative max-w-full max-h-full">
-              <button
-                onClick={closeEnlargedImage}
-                className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors mt-4"
-                title="Close (ESC)"
-              >
-                <X size={32} />
-              </button>
-
-              <img
-                src={`http://localhost/funeraria/api/components/${enlargedImage}`}
-                alt="Enlarged view"
-                className="max-w-[70vw] max-h-[70vh] object-contain rounded-lg shadow-2xl"
-                onClick={closeEnlargedImage}
-              />
-
-              <div
-                className="absolute inset-0 -z-10"
-                onClick={closeEnlargedImage}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Custom Confirmation Modal */}
-        {confirmationModal.isOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-              <div className="flex items-start mb-4">
-                <div className="flex-shrink-0 mr-3 text-red-500">
-                  <AlertTriangle size={24} />
+          {/* Custom Confirmation Modal */}
+          {confirmationModal.isOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <div className="flex items-start mb-4">
+                  <div className="flex-shrink-0 mr-3 text-red-500">
+                    <AlertTriangle size={24} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-medium text-gray-900 mb-1">
+                      {confirmationModal.title}
+                    </h3>
+                    <p className="text-gray-600 whitespace-pre-line">
+                      {confirmationModal.message}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">
-                    {confirmationModal.title}
-                  </h3>
-                  <p className="text-gray-600 whitespace-pre-line">
-                    {confirmationModal.message}
-                  </p>
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={closeConfirmation}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirm}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Delete Message
+                  </button>
                 </div>
               </div>
-              <div className="flex justify-end space-x-3 mt-6">
-                <button
-                  type="button"
-                  onClick={closeConfirmation}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
-                >
-                  Delete Message
-                </button>
-              </div>
             </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
     </AdminLayout>

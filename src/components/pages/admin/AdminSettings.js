@@ -22,12 +22,16 @@ import { usePassword } from '../../hooks/admin/usePassword';
 import { useStaff } from '../../hooks/admin/useStaff';
 import { useBugReport } from '../../hooks/admin/useReportBug';
 import { useStatusMessage } from '../../hooks/admin/useStatusMessage';
+const n = process.env.REACT_APP_API_URL;
 
 const AdminSettings = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const { email } = useContext(EmailContext);
   const [profileImageRemovalCancelled, setProfileImageRemovalCancelled] = useState(false);
   
+  // State for all field validation errors
+  const [validationErrors, setValidationErrors] = useState({});
+
   // State for profile image removal confirmation
   const [profileImageDeleteModal, setProfileImageDeleteModal] = useState({
     isOpen: false
@@ -37,7 +41,7 @@ const AdminSettings = () => {
     formData,
     profilePreview,
     isLoading,
-    handleInputChange,
+    handleInputChange, 
     handleProfileImageChange,
     updateProfile,
     removeProfileImage
@@ -88,12 +92,98 @@ const AdminSettings = () => {
     { id: 'report', label: 'Report Bug', icon: <Bug size={18} /> },
     { id: 'help', label: 'Help', icon: <HelpCircle size={18} /> }
   ];
+  const capitalize = (str) =>
+  str
+    .trim()
+    .split(/\s+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+
+  // **CENTRALIZED VALIDATION FUNCTION**
+  const runValidation = (data) => {
+    const errors = {};
+    const nameRegex = /^[A-Za-z\s]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^9\d{9}$/;
+    
+    // First Name
+    if (!data.firstName.trim()) {
+      errors.firstName = 'First Name is required.';
+    } else if (!nameRegex.test(data.firstName)) {
+      errors.firstName = 'Name can only contain letters and spaces.';
+    }
+
+    // Last Name
+    if (!data.lastName.trim()) {
+      errors.lastName = 'Last Name is required.';
+    } else if (!nameRegex.test(data.lastName)) {
+      errors.lastName = 'Name can only contain letters and spaces.';
+    }
+
+    // Email Address
+    if (!data.email.trim()) {
+      errors.email = 'Email Address is required.';
+    } else if (!emailRegex.test(data.email)) {
+      errors.email = 'Invalid email format.';
+    }
+
+    // Phone Number
+    const cleanedPhone = data.phone.replace(/[^0-9]/g, '');
+    if (!cleanedPhone) {
+      errors.phone = 'Phone number is required.';
+    } else if (cleanedPhone.length !== 10) {
+      errors.phone = 'Phone number must be exactly 10 digits.';
+    } else if (!phoneRegex.test(cleanedPhone)) {
+      errors.phone = 'Phone number must start with 9 (e.g., 9XXXXXXXXX).';
+    }
+
+    // Address
+    if (!data.address.trim()) {
+      errors.address = 'Address is required.';
+    }
+    
+    // Emergency Contact
+    if (!data.emergencyContact.trim()) {
+      errors.emergencyContact = 'Emergency Contact is required.';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // **ENHANCED INPUT CHANGE HANDLER**
+  // This updates formData and runs validation on the specific field
+  const handleProfileInputChange = (e) => {
+    const { name, value } = e.target;
+
+    // 1. Update form data via hook (assuming it takes the event object)
+    handleInputChange(e);
+
+    // 2. Clear the specific error on change
+    setValidationErrors(prevErrors => ({
+      ...prevErrors,
+      [name]: undefined,
+    }));
+    
+    // 3. Re-run partial validation for immediate feedback (optional, but good UX)
+    // We'll rely mostly on submit validation for simplicity, 
+    // but we can add light validation here if needed.
+    // For now, let's keep it simple and just run full validation on blur/submit.
+  };
 
   // Profile handlers
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
     clearMessage();
 
+    // **PRE-SUBMISSION VALIDATION**
+    const isValid = runValidation(formData);
+    
+    if (!isValid) {
+      showError('Please correct the highlighted errors before saving.');
+      return; // Stop submission
+    }
+    
     if (profileImageRemovalCancelled) {
       showSuccess('Profile updated (image removal was cancelled)');
       setProfileImageRemovalCancelled(false);
@@ -226,6 +316,9 @@ const AdminSettings = () => {
     }
   };
 
+  // Utility to check if there are any current validation errors
+  const hasErrors = Object.values(validationErrors).some(error => error);
+
   if (isLoading) {
     return (
       <AdminLayout currentPage="settings">
@@ -238,11 +331,22 @@ const AdminSettings = () => {
     );
   }
 
+  // Helper component for error display
+  const ErrorMessage = ({ error }) => {
+    if (!error) return null;
+    return (
+      <p className="mt-1 text-sm text-red-600 flex items-center">
+        <AlertCircle size={16} className="mr-1" />
+        {error}
+      </p>
+    );
+  };
+
   return (
     <AdminLayout currentPage="settings">
       <div className="container mx-auto px-4 py-6">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">Admin Settings</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-1">Settings</h1>
           <p className="text-gray-600">Manage your funeral home administration settings</p>
         </div>
 
@@ -279,6 +383,7 @@ const AdminSettings = () => {
                         onClick={() => {
                           setActiveTab(tab.id);
                           clearMessage();
+                          setValidationErrors({}); // Clear errors on tab switch
                         }}
                         className={`flex items-center w-full px-4 py-3 rounded-lg text-left text-sm ${
                           activeTab === tab.id
@@ -313,7 +418,7 @@ const AdminSettings = () => {
                               <img
                                 src={profilePreview.startsWith('blob:')
                                   ? profilePreview
-                                  : `http://localhost/funeraria/api/components/${profilePreview}`}
+                                  : `${n}/api/components/${profilePreview}`}
                                 alt="Profile"
                                 className="h-full w-full object-cover"
                               />
@@ -356,13 +461,25 @@ const AdminSettings = () => {
                             First Name
                           </label>
                           <input
-                            type="text"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded-md"
+                          type="text"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={(e) => {
+                            const value = capitalize(e.target.value);
+                            handleInputChange({
+                              target: { name: "firstName", value }
+                            });
+                            // Use centralized change handler
+                            handleProfileInputChange({ target: { name: "firstName", value: e.target.value } });
+                          }}
+                          onBlur={() => runValidation(formData)} // Validate on blur
+                          // Apply conditional styling
+                          className={`w-full p-2 border ${validationErrors.firstName ? 'border-red-500' : 'border-gray-300'} rounded-md`}
+                          required
                           />
+                          <ErrorMessage error={validationErrors.firstName} />
                         </div>
+                        
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Last Name
@@ -371,10 +488,22 @@ const AdminSettings = () => {
                             type="text"
                             name="lastName"
                             value={formData.lastName}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded-md"
+                            onChange={(e) => {
+                            const value = capitalize(e.target.value);
+                            handleInputChange({
+                              target: { name: "lastName", value }
+                            });
+                            // Use centralized change handler
+                            handleProfileInputChange({ target: { name: "lastName", value: e.target.value } });
+                          }}
+                          onBlur={() => runValidation(formData)} // Validate on blur
+                          // Apply conditional styling
+                          className={`w-full p-2 border ${validationErrors.lastName ? 'border-red-500' : 'border-gray-300'} rounded-md`}
+                          required
                           />
+                          <ErrorMessage error={validationErrors.lastName} />
                         </div>
+                        
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Email Address
@@ -387,12 +516,16 @@ const AdminSettings = () => {
                               type="email"
                               name="email"
                               value={formData.email}
-                              onChange={handleInputChange}
-                              className="w-full p-2 border border-gray-300 rounded-md"
-                              readOnly
+                              onChange={handleProfileInputChange} // Use centralized change handler
+                              onBlur={() => runValidation(formData)} // Validate on blur
+                              // Apply conditional styling
+                              className={`w-full p-2 border ${validationErrors.email ? 'border-red-500' : 'border-gray-300'} rounded-md`}
+                              required
                             />
                           </div>
+                          <ErrorMessage error={validationErrors.email} />
                         </div>
+                        
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Phone Number
@@ -404,12 +537,19 @@ const AdminSettings = () => {
                             <input
                               type="tel"
                               name="phone"
+                              required
                               value={formData.phone}
-                              onChange={handleInputChange}
-                              className="w-full p-2 border border-gray-300 rounded-md"
+                              placeholder='9XXXXXXXXX'
+                              onChange={handleProfileInputChange} // Use centralized change handler
+                              onBlur={() => runValidation(formData)} // Validate on blur
+                              // Apply conditional styling
+                              className={`w-full p-2 border ${validationErrors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md`}
+                              maxLength="10"
                             />
                           </div>
+                          <ErrorMessage error={validationErrors.phone} />
                         </div>
+                        
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Address
@@ -418,10 +558,15 @@ const AdminSettings = () => {
                             type="text"
                             name="address"
                             value={formData.address}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded-md"
+                            onChange={handleProfileInputChange} // Use centralized change handler
+                            onBlur={() => runValidation(formData)} // Validate on blur
+                            required
+                            // Apply conditional styling
+                            className={`w-full p-2 border ${validationErrors.address ? 'border-red-500' : 'border-gray-300'} rounded-md`}
                           />
+                          <ErrorMessage error={validationErrors.address} />
                         </div>
+                        
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
                             Emergency Contact
@@ -430,9 +575,13 @@ const AdminSettings = () => {
                             type="text"
                             name="emergencyContact"
                             value={formData.emergencyContact}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded-md"
+                            required
+                            onChange={handleProfileInputChange} // Use centralized change handler
+                            onBlur={() => runValidation(formData)} // Validate on blur
+                            // Apply conditional styling
+                            className={`w-full p-2 border ${validationErrors.emergencyContact ? 'border-red-500' : 'border-gray-300'} rounded-md`}
                           />
+                          <ErrorMessage error={validationErrors.emergencyContact} />
                         </div>
                       </div>
                     </div>
@@ -440,7 +589,9 @@ const AdminSettings = () => {
                     <div className="flex justify-end">
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center"
+                        // Disable button if there are any errors
+                        className={`px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center ${hasErrors || isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={hasErrors || isLoading}
                       >
                         <Save size={16} className="mr-2" />
                         Save Changes

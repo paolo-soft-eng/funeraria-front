@@ -6,13 +6,14 @@ export const useOrders = () => {
   const [totalOrders, setTotalOrders] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+      const n = process.env.REACT_APP_API_URL;
 
   const fetchOrders = async (currentPage, ordersPerPage) => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await axios.get(
-        `http://localhost/funeraria/api/components/adminOrders.php?page=${currentPage}&limit=${ordersPerPage}`
+        `${n}/api/components/adminOrders.php?page=${currentPage}&limit=${ordersPerPage}`
       );
       
       const data = response.data;

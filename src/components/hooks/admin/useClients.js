@@ -6,7 +6,8 @@ export const useClients = (isLoggedIn, currentPage, itemsPerPage, searchTerm, st
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0); // Changed from totalItems to totalCount
+  const [totalCount, setTotalCount] = useState(0);
+  const n = process.env.REACT_APP_API_URL;
 
   const fetchClients = async () => {
     if (!isLoggedIn) return;
@@ -21,7 +22,7 @@ export const useClients = (isLoggedIn, currentPage, itemsPerPage, searchTerm, st
       if (searchTerm) params.append('search', searchTerm);
       if (statusFilter) params.append('status', statusFilter);
 
-      const response = await axios.get(`http://localhost/funeraria/api/components/fetchClients.php?${params}`);
+      const response = await axios.get(`${n}/api/components/fetchClients.php?${params}`);
       
       if (response.data.success) {
         setClients(response.data.data || []);

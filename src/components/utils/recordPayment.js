@@ -19,6 +19,7 @@ export async function recordPayment(paymentData) {
         sourceId: sourceId,
         checkoutSessionId: checkoutSessionId || null,
         amount: paymentData.amount,
+        status:'paid',
         serviceId: paymentData.serviceId || null,
         address: paymentData.address,
         orderId: paymentData.orderId,

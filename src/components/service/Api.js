@@ -1,7 +1,6 @@
 const n = process.env.REACT_APP_API_URL;
 export const API_BASE_URL = `${n}/api`;
 
-
 // Fetch all available funeral services
 export const fetchServices = async () => {
     try {
@@ -13,19 +12,16 @@ export const fetchServices = async () => {
         });
 
         if (!response.ok) {
-            // First try to get error message from response JSON if possible
             try {
                 const errorData = await response.json();
                 throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             } catch (jsonError) {
-                // If response isn't JSON, use status text
                 throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
             }
         }
 
         const data = await response.json();
         
-        // Ensure the response is an array
         if (!Array.isArray(data)) {
             console.warn('Expected array but received:', data);
             return [];
@@ -34,7 +30,6 @@ export const fetchServices = async () => {
         return data;
     } catch (error) {
         console.error('Failed to fetch services:', error);
-        // Return empty array but also log the error for debugging
         return [];
     }
 };
@@ -42,7 +37,6 @@ export const fetchServices = async () => {
 // Fetch a specific service by ID
 export const fetchServiceById = async (serviceId) => {
     try {
-        // Fixed URL path
         const response = await fetch(`${API_BASE_URL}/components/services.php?id=${serviceId}`);
         if (!response.ok) {
             throw new Error(`Error: ${response.statusText}`);
@@ -57,7 +51,6 @@ export const fetchServiceById = async (serviceId) => {
 // Place a new order
 export const placeOrder = async (orderData) => {
     try {
-        // Fixed URL path
         const response = await fetch(`${API_BASE_URL}/components/orders.php`, {
             method: 'POST',
             headers: {
@@ -66,7 +59,6 @@ export const placeOrder = async (orderData) => {
             body: JSON.stringify(orderData),
         });
 
-        // Handle non-JSON responses
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
             const text = await response.text();
@@ -85,6 +77,7 @@ export const placeOrder = async (orderData) => {
         throw error;
     }
 };
+
 export const fetchCaskets = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/components/caskets.php`, {
@@ -130,14 +123,35 @@ export const fetchCaskets = async () => {
     }
 };
 
-// Fetch all chapels
-export const fetchChapels = async () => {
+// Fetch all chapels - FIXED to use service_id parameter and bypass cache
+export const fetchChapels = async (serviceId = null, timestamp = null) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/components/chapel.php`, {
+        // Build URL with service_id if provided and cache-busting timestamp
+        let url = `${API_BASE_URL}/components/chapel.php`;
+        const params = new URLSearchParams();
+        
+        if (serviceId) {
+            params.append('service_id', serviceId);
+        }
+        
+        // Add timestamp to prevent caching
+        if (timestamp) {
+            params.append('_t', timestamp);
+        }
+        
+        if (params.toString()) {
+            url += `?${params.toString()}`;
+        }
+
+        console.log('Fetching chapels from:', url);
+
+        const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-            }
+            },
+            // Disable caching
+            cache: 'no-store'
         });
 
         if (!response.ok) {
@@ -156,6 +170,7 @@ export const fetchChapels = async () => {
         let data;
         try {
             data = await response.json();
+            console.log('Received chapel data:', data);
 
             if (!Array.isArray(data)) {
                 console.warn('API did not return an array for chapels:', data);
@@ -175,9 +190,43 @@ export const fetchChapels = async () => {
         return [];
     }
 };
+// Fetch all items with stock information
+export const fetchItems = async () => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/components/items.php`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        if (!response.ok) {
+            try {
+                const errorData = await response.json();
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            } catch (jsonError) {
+                throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+            }
+        }
+
+        const data = await response.json();
+        console.log("STock: "+data);
+        
+        
+        if (!Array.isArray(data)) {
+            console.warn('Expected array but received:', data);
+            return [];
+        }
+
+        return data;
+    } catch (error) {
+        console.error('Failed to fetch items:', error);
+        return [];
+    }
+};
 
 // Fetch caskets by service ID
-export const fetchCasketsByServiceId = async (serviceId) => {
+export const fetchCasketsByServiceId = async (serviceId, timestamp = null) => {
     try {
         const allCaskets = await fetchCaskets();
         return allCaskets.filter(casket => casket.service_id == serviceId);
@@ -187,11 +236,11 @@ export const fetchCasketsByServiceId = async (serviceId) => {
     }
 };
 
-// Fetch chapels by service ID
-export const fetchChapelsByServiceId = async (serviceId) => {
+// Fetch chapels by service ID - FIXED to use server-side filtering
+export const fetchChapelsByServiceId = async (serviceId, timestamp = null) => {
     try {
-        const allChapels = await fetchChapels();
-        return allChapels.filter(chapel => chapel.service_id == serviceId);
+        // Use the updated fetchChapels function with service_id parameter
+        return await fetchChapels(serviceId, timestamp || Date.now());
     } catch (error) {
         console.error(`Failed to fetch chapels for service ${serviceId}:`, error);
         return [];

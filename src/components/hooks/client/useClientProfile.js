@@ -2,8 +2,8 @@
 import { useState, useEffect, useContext, useCallback } from 'react';
 import { EmailContext } from '../../utils/EmailContext';
 const n = process.env.REACT_APP_API_URL;
-const API_BASE_URL = `${n}/api/components/user_profile.php`;
-const IMAGE_BASE_URL = `${n}/api/components/`;
+const API_BASE_URL = `http://localhost/funeraria/api/components/user_profile.php`;
+const IMAGE_BASE_URL = `http://localhost/funeraria/api/components/`;
 
 // Authentication Hook
 export const useAuth = () => {
@@ -16,7 +16,7 @@ export const useAuth = () => {
     const validateLogin = async () => {
       if (email) {
         try {
-          const response = await fetch(`${n}/api/components/getUserId.php?email=${encodeURIComponent(email)}`);
+          const response = await fetch(`http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(email)}`);
           const data = await response.json();
           
           if (data.userId) {

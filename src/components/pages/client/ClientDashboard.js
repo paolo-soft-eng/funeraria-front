@@ -14,7 +14,6 @@ import {
   LogOut,
   Settings,
   X,
-  Bell,
   AlertTriangle,
   ChevronDown,
   ChevronRight,
@@ -105,7 +104,7 @@ const ClientDashboard = () => {
     const path = location.pathname.split('/').pop();
     
     // Check for order-related paths
-    if (path === 'active-orders' || path === 'order-history' || path === 'funeral-order' || path === 'customized-order') {
+    if (path === 'active-orders' || path === 'order-history' || path === 'funeral-order' || path === 'customized-order' || path === "archive-order") {
       setCurrentPage('Order');
       setIsOrderExpanded(true);
     }
@@ -159,7 +158,6 @@ const ClientDashboard = () => {
 
   const mainNavItems = [
     { name: 'home', icon: <Home size={20} />, label: 'Home' },
-    { name: 'about', icon: <Info size={20} />, label: 'About' },
     { 
       name: 'services', 
       icon: <BriefcaseBusiness size={20} />, 
@@ -170,7 +168,6 @@ const ClientDashboard = () => {
         { name: 'services/customized-services', icon: <Flower size={18} />, label: 'Customized Packages' },
       ]
     },
-    { name: 'appointments', icon: <Clock size={20} />, label: 'Appointments' }, 
     { 
       name: 'order', 
       icon: <ShoppingCart size={20} />, 
@@ -180,11 +177,15 @@ const ClientDashboard = () => {
         { name: 'order/funeral-order', icon: <ShoppingBag size={18} />, label: 'Full Package Order' },
         { name: 'order/customized-order', icon: <Briefcase size={18} />, label: 'Customized Package Order' },
         { name: 'order/active-orders', icon: <Clock size={18} />, label: 'Active Orders' },
-        { name: 'order/order-history', icon: <CheckCircle size={18} />, label: 'Order History' }
+        { name: 'order/order-history', icon: <CheckCircle size={18} />, label: 'Order History' },
+        { name: 'order/archive-order', icon: <Archive size={18} />, label: 'Archive Orders' }
       ]
     },
+    { name: 'appointments', icon: <Clock size={20} />, label: 'Appointments' },
     { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
-    { name: 'settings', icon: <Settings size={20} />, label: 'Settings' }
+    { name: 'settings', icon: <Settings size={20} />, label: 'Settings' },
+    { name: 'about', icon: <Info size={20} />, label: 'About' },
+    
   ];
 
   return (
@@ -355,7 +356,6 @@ const ClientDashboard = () => {
             </div>
 
             <div className="flex items-center space-x-4">
-              <button className="relative p-2 text-gray-600 hover:text-indigo-600 transition-colors"><Bell size={20}/><span className="absolute top-1 right-1 bg-red-500 rounded-full w-2 h-2"></span></button>
               <div className="relative" ref={dropdownRef}>
                 <button onClick={toggleDropdown} className="flex items-center space-x-2 focus:outline-none">
                   {profileImage ? (

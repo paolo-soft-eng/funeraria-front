@@ -6,6 +6,7 @@ export const usePassword = (email) => {
     newPassword: '',
     confirmPassword: ''
   });
+      const n = process.env.REACT_APP_API_URL;
 
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
@@ -17,7 +18,7 @@ export const usePassword = (email) => {
       throw new Error('New password and confirmation do not match.');
     }
 
-    const res = await fetch('http://localhost/funeraria/api/components/updateAdminPassword.php', {
+    const res = await fetch(`${n}/api/components/updateAdminPassword.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

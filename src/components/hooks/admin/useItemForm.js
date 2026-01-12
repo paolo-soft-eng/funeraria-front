@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+    const n = process.env.REACT_APP_API_URL;
 
 export const useItemForm = (userId, userName, fetchItems) => {
   const [formData, setFormData] = useState({
@@ -94,7 +95,7 @@ export const useItemForm = (userId, userName, fetchItems) => {
       }
 
       await axios.post(
-        'http://localhost/funeraria/api/components/itemlist.php',
+        `${n}/api/components/itemlist.php`,
         formDataToSend,
         { headers: { 'Content-Type': 'multipart/form-data' } }
       );
@@ -128,7 +129,7 @@ export const useItemForm = (userId, userName, fetchItems) => {
 
       const res = await axios({
         method: 'POST',
-        url: 'http://localhost/funeraria/api/components/itemlist.php?_method=PUT',
+        url: `${n}/api/components/itemlist.php?_method=PUT`,
         data: formDataToSend,
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -159,7 +160,7 @@ export const useItemForm = (userId, userName, fetchItems) => {
         try {
           setIsLoading(true);
           await axios.delete(
-            `http://localhost/funeraria/api/components/itemlist.php?id=${itemId}&user_id=${userId}&user_name=${encodeURIComponent(userName)}`
+            `${n}/api/components/itemlist.php?id=${itemId}&user_id=${userId}&user_name=${encodeURIComponent(userName)}`
           );
           fetchItems();
           toast.success('Item deleted successfully 🗑️');
@@ -185,7 +186,7 @@ export const useItemForm = (userId, userName, fetchItems) => {
     });
 
     if (item.image_path) {
-      setImagePreview(`http://localhost/funeraria/api/components/${item.image_path}`);
+      setImagePreview(`${n}/api/components/${item.image_path}`);
     } else {
       setImagePreview(null);
     }

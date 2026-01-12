@@ -28,6 +28,7 @@ const AdminAnalytics = () => {
   const [paperSize, setPaperSize] = useState('A4');
   const navigate = useNavigate();
   const printRef = useRef();
+  const n = process.env.REACT_APP_API_URL;
 
   const [analyticsData, setAnalyticsData] = useState({
     revenue: [],
@@ -116,7 +117,7 @@ const AdminAnalytics = () => {
   useEffect(() => {
     const fetchServiceTypes = async () => {
       try {
-        const response = await fetch('http://localhost/funeraria/api/components/analytics.php?action=service-types');
+        const response = await fetch(`${n}/api/components/analytics.php?action=service-types`);
         const result = await response.json();
 
         if (result.success) {
@@ -144,7 +145,7 @@ const AdminAnalytics = () => {
         ...Object.fromEntries(Object.entries(filters).filter(([_, v]) => v !== ''))
       });
 
-      const response = await fetch(`http://localhost/funeraria/api/components/analytics.php?${queryParams}`);
+      const response = await fetch(`${n}/api/components/analytics.php?${queryParams}`);
       const result = await response.json();
 
       if (result.success) {
@@ -444,7 +445,7 @@ const AdminAnalytics = () => {
         <div class="header">
           <!-- Logo -->
           <div class="logo">
-            <img src="/assets/gomez_logo.jpg" alt="Funeraria Gomez Logo" />
+            <img src="/funeraria/assets/gomez_logo.jpg" alt="Funeraria Gomez Logo" />
           </div>
           
           <!-- Header Text -->

@@ -24,6 +24,7 @@ const ClientCustomized = () => {
   const [selectedOrderItem, setSelectedOrderItem] = useState(null);
   const [loadingUserData, setLoadingUserData] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
   
   // Custom hooks
   const { items, loading, error, updateItemStock } = useMenuItems();
@@ -39,42 +40,76 @@ const ClientCustomized = () => {
     item.details?.toLowerCase().includes('item')
   );
 
-  // Fetch user details and populate form
-  const fetchUserDetails = async () => {
-    setLoadingUserData(true);
-    try {
-      const response = await fetch(`${n}/api/components/get_user_details.php?email=${email}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.success && data.user) {
-        const firstName = data.user.first_name || '';
-        const lastName = data.user.last_name || '';
-        const username = data.user.username || '';
-        
-        const fullName = firstName && lastName 
-          ? `${firstName} ${lastName}` 
-          : username || '';
-        
-        setOrderFormData({
-          fullName: fullName,
-          email: data.user.email || '',
-          phoneNumber: data.user.telephone || '' // Now includes telephone
-        });
-      } else {
-        toast.error('Failed to load user details');
-      }
-    } catch (err) {
-      console.error('Error fetching user details:', err);
-      toast.error('Failed to load user information');
-    } finally {
-      setLoadingUserData(false);
-    }
+  // Phone validation function
+  const validatePhoneNumber = (phone) => {
+    const phoneRegex = /^9\d{9}$/;
+    return phoneRegex.test(phone);
   };
+
+  // Validate form
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!orderFormData.fullName.trim()) {
+      errors.fullName = 'Full name is required';
+    }
+    
+    if (!orderFormData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(orderFormData.email)) {
+      errors.email = 'Please enter a valid email';
+    }
+    
+    if (!orderFormData.phoneNumber.trim()) {
+      errors.phoneNumber = 'Phone number is required';
+    } else if (!validatePhoneNumber(orderFormData.phoneNumber)) {
+      errors.phoneNumber = 'Phone number must start with 9 and be 10 digits long';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Fetch user details and populate form
+  // Replace the fetchUserDetails function in ClientCustomized.jsx with this updated version:
+
+const fetchUserDetails = async () => {
+  setLoadingUserData(true);
+  try {
+    const response = await fetch(`${n}/api/components/get_user_details.php?email=${email}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.success && data.user) {
+      const firstName = data.user.first_name || '';
+      const lastName = data.user.last_name || '';
+      const username = data.user.username || '';
+      
+      // Construct full name from first_name and last_name, or fallback to username
+      const fullName = firstName && lastName 
+        ? `${firstName} ${lastName}` 
+        : username || '';
+      
+      // Populate form with user data including telephone
+      setOrderFormData({
+        fullName: fullName,
+        email: data.user.email || '',
+        phoneNumber: data.user.telephone || '' // Populate phone from database
+      });
+    } else {
+      toast.error('Failed to load user details');
+    }
+  } catch (err) {
+    console.error('Error fetching user details:', err);
+    toast.error('Failed to load user information');
+  } finally {
+    setLoadingUserData(false);
+  }
+};
 
   // Handle order button click
   const onBuyClick = (itemId) => {
@@ -102,12 +137,20 @@ const ClientCustomized = () => {
       ...prev,
       [name]: value
     }));
+    
+    // Clear error for this field when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
   // Handle order submission
   const handleOrderSubmit = async () => {
-    if (!orderFormData.fullName || !orderFormData.email || !orderFormData.phoneNumber) {
-      toast.error('Please fill in all fields');
+    if (!validateForm()) {
+      toast.error('Please fix the errors in the form');
       return;
     }
 
@@ -137,6 +180,7 @@ const ClientCustomized = () => {
         updateItemStock(selectedOrderItem.id, selectedOrderItem.quantity);
         setShowOrderModal(false);
         setOrderFormData({ fullName: '', email: '', phoneNumber: '' });
+        setFormErrors({});
       } else {
         toast.error('Order failed: ' + data.error);
       }
@@ -191,6 +235,7 @@ const ClientCustomized = () => {
   const handleCloseOrderModal = () => {
     setShowOrderModal(false);
     setOrderFormData({ fullName: '', email: '', phoneNumber: '' });
+    setFormErrors({});
   };
 
   // Intersection Observer
@@ -244,7 +289,6 @@ const ClientCustomized = () => {
       </div>
       <div className="p-6">
         <h2 className="text-xl font-semibold mb-3 text-gray-800">{item.name}</h2>
-        <p className="text-gray-600 mb-4 text-sm leading-relaxed">{item.details}</p>
         <div className="flex items-center justify-between mb-4">
           <p className="text-gray-900 font-bold text-xl">₱{parseFloat(item.price)}</p>
           <p className={`text-sm ${parseInt(item.stock) < 5 ? 'text-red-600' : 'text-gray-500'}`}>
@@ -267,18 +311,18 @@ const ClientCustomized = () => {
           <button
             onClick={() => onBuyClick(item.id)}
             disabled={!isLoggedIn || item.stock < 1 || purchasing}
-            className={`btn-primary px-4 py-2 rounded-lg text-sm font-medium flex-grow ${
+            className={`bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200 ${
               !isLoggedIn || item.stock < 1 || purchasing
                 ? 'opacity-50 cursor-not-allowed'
                 : 'text-white'
             }`}
           >
-            {purchasing ? 'Processing...' : item.stock < 1 ? 'Out of Stock' : 'Order Now'}
+            {purchasing ? 'Processing...' : item.stock < 1 ? 'Out of Stock' : 'Add to order'}
           </button>
           {isCustomization && (
             <button 
               onClick={() => handleViewDetails(item.id)}
-              className='btn-view px-4 py-2 rounded-lg text-sm font-medium flex-grow text-white bg-red-400 hover:bg-red-500'
+              className='btn-view px-4 py-2 rounded-lg text-sm font-medium flex-grow text-white bg-gray-600 hover:bg-gray-700'
             >
               View Details
             </button>
@@ -398,12 +442,27 @@ const ClientCustomized = () => {
               box-shadow: 0 0 0 3px rgba(75, 85, 99, 0.1);
             }
 
+            .form-input.error {
+              border-color: #ef4444;
+            }
+
+            .form-input.error:focus {
+              border-color: #ef4444;
+              box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+            }
+
             .form-label {
               display: block;
               margin-bottom: 8px;
               font-weight: 600;
               color: #374151;
               font-size: 14px;
+            }
+
+            .error-message {
+              color: #ef4444;
+              font-size: 12px;
+              margin-top: 4px;
             }
           `
         }} />
@@ -418,7 +477,7 @@ const ClientCustomized = () => {
 
         <div className="mb-16">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Gomez Package Customization</h1>
+            <h1 className="text-2xl font-bold text-gray-800 mb-2">Gomez Package Customization</h1>
             <p className="text-gray-600">Customize your service package with our additional options</p>
           </div>
 
@@ -506,9 +565,12 @@ const ClientCustomized = () => {
                       name="fullName"
                       value={orderFormData.fullName}
                       onChange={handleFormChange}
-                      className="form-input"
+                      className={`form-input ${formErrors.fullName ? 'error' : ''}`}
                       placeholder="Enter your full name"
                     />
+                    {formErrors.fullName && (
+                      <div className="error-message">{formErrors.fullName}</div>
+                    )}
                   </div>
 
                   <div>
@@ -521,9 +583,12 @@ const ClientCustomized = () => {
                       name="email"
                       value={orderFormData.email}
                       onChange={handleFormChange}
-                      className="form-input"
+                      className={`form-input ${formErrors.email ? 'error' : ''}`}
                       placeholder="Enter your email address"
                     />
+                    {formErrors.email && (
+                      <div className="error-message">{formErrors.email}</div>
+                    )}
                   </div>
 
                   <div>
@@ -536,9 +601,12 @@ const ClientCustomized = () => {
                       name="phoneNumber"
                       value={orderFormData.phoneNumber}
                       onChange={handleFormChange}
-                      className="form-input"
-                      placeholder="Enter your phone number"
+                      className={`form-input ${formErrors.phoneNumber ? 'error' : ''}`}
+                      placeholder="e.g., 9123456789"
                     />
+                    {formErrors.phoneNumber && (
+                      <div className="error-message">{formErrors.phoneNumber}</div>
+                    )}
                   </div>
 
                   <div className="flex gap-4 pt-4">

@@ -1,33 +1,43 @@
 import React, { useState } from 'react';
 
 import AdminLayout from './AdminLayout';
-import { 
-    FaTable, 
-    FaThLarge, 
-    FaUser, 
-    FaCalendarAlt, 
-    FaClock, 
-    FaEnvelope, 
-    FaChevronLeft, 
+import {
+    FaTable,
+    FaThLarge,
+    FaUser,
+    FaCalendarAlt,
+    FaClock,
+    FaEnvelope,
+    FaChevronLeft,
     FaChevronRight,
-    FaCalendar
+    FaCalendar,
+    FaEdit,
+    FaInfoCircle,
+    FaCheck
 } from 'react-icons/fa';
 import { useResponsiveView, useAppointments, useApiConfig } from '../../hooks/admin/useAppointments';
 import { usePagination } from '../../hooks/admin/usePagination';
 
 const AdminAppointments = () => {
     const { isMobile, viewMode, setViewMode } = useResponsiveView();
-    const { appointments, loading, error, setError, updateAppointmentStatus } = useAppointments();
+    const { appointments, loading, error, setError, updateAppointmentStatus, rescheduleAppointment, acceptAppointment } = useAppointments();
     const { getImageUrl } = useApiConfig();
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(5);
-    
+
     // Calendar state
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedAppointment, setSelectedAppointment] = useState(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
+    // Reschedule modal state
+    const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
+    const [rescheduleData, setRescheduleData] = useState({
+        date: '',
+        time: ''
+    });
 
     // Initialize pagination hook
     const {
@@ -55,7 +65,7 @@ const AdminAppointments = () => {
         const lastDay = new Date(year, month + 1, 0);
         const daysInMonth = lastDay.getDate();
         const startingDayOfWeek = firstDay.getDay();
-        
+
         return { daysInMonth, startingDayOfWeek, year, month };
     };
 
@@ -63,8 +73,8 @@ const AdminAppointments = () => {
         return appointments.filter(apt => {
             const aptDate = new Date(apt.appointment_date);
             return aptDate.getFullYear() === date.getFullYear() &&
-                   aptDate.getMonth() === date.getMonth() &&
-                   aptDate.getDate() === date.getDate();
+                aptDate.getMonth() === date.getMonth() &&
+                aptDate.getDate() === date.getDate();
         });
     };
 
@@ -85,37 +95,96 @@ const AdminAppointments = () => {
         if (!result.success) {
             console.error('Failed to update status:', result.error);
         }
-        // Close modal after updating status
         setIsDetailsModalOpen(false);
     };
 
+    const handleAcceptAppointment = async (appointmentId) => {
+        const result = await acceptAppointment(appointmentId);
+        if (result.success) {
+            setIsDetailsModalOpen(false);
+        }
+    };
+
+    const openRescheduleModal = (appointment) => {
+        setSelectedAppointment(appointment);
+        // Convert time back to 24-hour format for input
+        const time24 = convertTo24Hour(appointment.appointment_time);
+        setRescheduleData({
+            date: appointment.appointment_date,
+            time: time24
+        });
+        setIsRescheduleModalOpen(true);
+    };
+
+    const convertTo24Hour = (time12h) => {
+        const [time, modifier] = time12h.split(' ');
+        let [hours, minutes] = time.split(':');
+
+        if (hours === '12') {
+            hours = '00';
+        }
+
+        if (modifier === 'PM') {
+            hours = parseInt(hours, 10) + 12;
+        }
+
+        return `${hours}:${minutes}`;
+    };
+
+    const handleReschedule = async () => {
+        if (!rescheduleData.date || !rescheduleData.time) {
+            setError('Please select both date and time');
+            return;
+        }
+
+        const result = await rescheduleAppointment(
+            selectedAppointment.id,
+            rescheduleData.date,
+            rescheduleData.time
+        );
+
+        if (result.success) {
+            setIsRescheduleModalOpen(false);
+            setIsDetailsModalOpen(false);
+            setRescheduleData({ date: '', time: '' });
+        }
+    };
+
     const formatDate = (dateString) => {
-        return new Date(dateString).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
+        return new Date(dateString).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
         });
     };
 
     const getStatusColor = (status) => {
         switch (status) {
+            case 'pending':
+                return 'bg-gray-50 text-gray-700 border-gray-200';
             case 'finished':
                 return 'bg-emerald-50 text-emerald-700 border-emerald-200';
             case 'scheduled':
                 return 'bg-amber-50 text-amber-700 border-amber-200';
+            case 'accepted':
+                return 'bg-blue-50 text-blue-700 border-blue-200';
             case 'cancelled':
                 return 'bg-red-50 text-red-700 border-red-200';
             default:
-                return 'bg-blue-50 text-blue-700 border-blue-200';
+                return 'bg-gray-50 text-gray-700 border-gray-200';
         }
     };
 
     const getStatusIcon = (status) => {
         switch (status) {
+            case 'pending':
+                return '⏳';
             case 'finished':
                 return '✓';
             case 'scheduled':
                 return '○';
+            case 'accepted':
+                return '✓';
             case 'cancelled':
                 return '✕';
             default:
@@ -153,16 +222,54 @@ const AdminAppointments = () => {
         </span>
     );
 
-    const StatusSelect = ({ appointmentId, currentStatus, className = '' }) => (
-        <select
-            value={currentStatus}
-            onChange={(e) => handleStatusChange(appointmentId, e.target.value)}
-            className={`rounded-lg border-gray-300 shadow-sm text-sm font-medium focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all duration-200 ${className}`}
-        >
-            <option value="scheduled">Scheduled</option>
-            <option value="finished">Finished</option>
-            <option value="cancelled">Cancelled</option>
-        </select>
+    const ActionButtons = ({ appointment }) => (
+        <div className="flex items-center gap-2">
+            {/* Show Accept button only for pending appointments */}
+            {appointment.status === 'pending' && (
+                <button
+                    onClick={() => handleAcceptAppointment(appointment.id)}
+                    className="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition flex items-center gap-1.5"
+                    title="Accept Appointment"
+                >
+                    <FaCheck className="w-3 h-3" />
+                    Accept
+                </button>
+            )}
+
+            {/* Only show Reschedule for scheduled/accepted, not pending */}
+            {(appointment.status === 'scheduled' || appointment.status === 'accepted') && (
+                <button
+                    onClick={() => openRescheduleModal(appointment)}
+                    className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition flex items-center gap-1.5"
+                    title="Reschedule Appointment"
+                >
+                    <FaEdit className="w-3 h-3" />
+                    Reschedule
+                </button>
+            )}
+
+            {/* Only show Finish for accepted appointments */}
+            {appointment.status === 'accepted' && (
+                <button
+                    onClick={() => handleStatusChange(appointment.id, 'finished')}
+                    className="px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition"
+                    title="Mark as Finished"
+                >
+                    Finish
+                </button>
+            )}
+
+            {/* Add Cancel button for all non-finished/cancelled appointments */}
+            {(appointment.status === 'pending' || appointment.status === 'scheduled' || appointment.status === 'accepted') && (
+                <button
+                    onClick={() => handleStatusChange(appointment.id, 'cancelled')}
+                    className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition"
+                    title="Cancel Appointment"
+                >
+                    Cancel
+                </button>
+            )}
+        </div>
     );
 
     const CalendarView = () => {
@@ -180,11 +287,11 @@ const AdminAppointments = () => {
                         >
                             <FaChevronLeft className="h-5 w-5" />
                         </button>
-                        
+
                         <div className="text-center">
                             <h2 className="text-xl font-bold">{monthNames[month]} {year}</h2>
                         </div>
-                        
+
                         <button
                             onClick={() => navigateMonth(1)}
                             className="p-2 hover:bg-white/20 rounded-lg transition"
@@ -192,7 +299,7 @@ const AdminAppointments = () => {
                             <FaChevronRight className="h-5 w-5" />
                         </button>
                     </div>
-                    
+
                     <div className="flex justify-center mt-2">
                         <button
                             onClick={goToToday}
@@ -215,13 +322,13 @@ const AdminAppointments = () => {
                     {Array.from({ length: startingDayOfWeek }).map((_, index) => (
                         <div key={`empty-${index}`} className="p-2 border-b border-r border-gray-200 bg-gray-50 min-h-28"></div>
                     ))}
-                    
+
                     {Array.from({ length: daysInMonth }).map((_, index) => {
                         const day = index + 1;
                         const date = new Date(year, month, day);
                         const dayAppointments = getAppointmentsForDate(date);
                         const isToday = date.toDateString() === new Date().toDateString();
-                        
+
                         return (
                             <div
                                 key={day}
@@ -230,7 +337,7 @@ const AdminAppointments = () => {
                                 <div className={`text-sm font-medium mb-1 ${isToday ? 'text-indigo-600 font-bold' : 'text-gray-700'}`}>
                                     {day}
                                 </div>
-                                
+
                                 <div className="space-y-1">
                                     {dayAppointments.slice(0, 3).map(apt => (
                                         <div
@@ -239,12 +346,12 @@ const AdminAppointments = () => {
                                                 setSelectedAppointment(apt);
                                                 setIsDetailsModalOpen(true);
                                             }}
-                                            className={`text-xs p-1 rounded cursor-pointer ${
-                                                apt.status === 'scheduled' ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' :
-                                                apt.status === 'finished' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' :
-                                                apt.status === 'cancelled' ? 'bg-red-100 text-red-800 hover:bg-red-200' :
-                                                'bg-gray-100 text-gray-800'
-                                            }`}
+                                            className={`text-xs p-1 rounded cursor-pointer ${apt.status === 'scheduled' ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' :
+                                                apt.status === 'accepted' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' :
+                                                    apt.status === 'finished' ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' :
+                                                        apt.status === 'cancelled' ? 'bg-red-100 text-red-800 hover:bg-red-200' :
+                                                            'bg-gray-100 text-gray-800'
+                                                }`}
                                         >
                                             <div className="font-medium truncate">{apt.appointment_time}</div>
                                             <div className="truncate">{apt.user_name}</div>
@@ -282,7 +389,7 @@ const AdminAppointments = () => {
                             <tr key={appointment.id} className="hover:bg-gray-50 transition-colors duration-150">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
-                                        <UserAvatar 
+                                        <UserAvatar
                                             profilePicture={appointment.profile_picture}
                                             userName={appointment.user_name}
                                             size="sm"
@@ -313,10 +420,7 @@ const AdminAppointments = () => {
                                     <StatusBadge status={appointment.status} />
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <StatusSelect 
-                                        appointmentId={appointment.id}
-                                        currentStatus={appointment.status}
-                                    />
+                                    <ActionButtons appointment={appointment} />
                                 </td>
                             </tr>
                         ))}
@@ -331,7 +435,7 @@ const AdminAppointments = () => {
             {paginatedAppointments.map((appointment) => (
                 <div key={appointment.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:border-gray-200 transition-all duration-300 transform hover:-translate-y-1">
                     <div className="flex items-start mb-5">
-                        <UserAvatar 
+                        <UserAvatar
                             profilePicture={appointment.profile_picture}
                             userName={appointment.user_name}
                             size="md"
@@ -370,14 +474,11 @@ const AdminAppointments = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 mb-3">
                         <StatusBadge status={appointment.status} />
-                        <StatusSelect 
-                            appointmentId={appointment.id}
-                            currentStatus={appointment.status}
-                            className="text-xs"
-                        />
                     </div>
+
+                    <ActionButtons appointment={appointment} />
                 </div>
             ))}
         </div>
@@ -387,216 +488,299 @@ const AdminAppointments = () => {
         <AdminLayout currentPage='appointments'>
             <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
                 <div className='bg-white rounded-lg shadow-md p-4 md:p-6 mb-6'>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
-                    <div className="flex-1">
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 tracking-tight">Appointments</h1>
-                        <p className="text-base text-gray-600 font-medium">Manage and track all client appointments</p>
-                    </div>
-                    {!isMobile && (
-                        <div className="flex gap-2 bg-white rounded-xl shadow-md p-1.5 border border-gray-200">
-                            <button
-                                onClick={() => setViewMode('calendar')}
-                                className={`p-3 rounded-lg transition-all duration-200 ${
-                                    viewMode === 'calendar' 
-                                        ? 'bg-gray-400 text-white shadow-md' 
-                                        : 'text-gray-600 hover:bg-gray-100'
-                                }`}
-                                title="Calendar View"
-                            >
-                                <FaCalendar className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('table')}
-                                className={`p-3 rounded-lg transition-all duration-200 ${
-                                    viewMode === 'table' 
-                                        ? 'bg-gray-400 text-white shadow-md' 
-                                        : 'text-gray-600 hover:bg-gray-100'
-                                }`}
-                                title="Table View"
-                            >
-                                <FaTable className="w-5 h-5" />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('card')}
-                                className={`p-3 rounded-lg transition-all duration-200 ${
-                                    viewMode === 'card' 
-                                        ? 'bg-gray-400 text-white shadow-md' 
-                                        : 'text-gray-600 hover:bg-gray-100'
-                                }`}
-                                title="Card View"
-                            >
-                                <FaThLarge className="w-5 h-5" />
-                            </button>
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+                        <div className="flex-1">
+                            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2 tracking-tight">Appointments</h1>
+                            <p className="text-base text-gray-600 font-medium">Manage and track all client appointments</p>
                         </div>
-                    )}
-                </div>
-
-                {error && (
-                    <div className="bg-red-50 border-l-4 border-red-500 text-red-800 px-5 py-4 rounded-lg mb-6 shadow-sm">
-                        <div className="flex items-center">
-                            <span className="font-semibold mr-2">Error:</span>
-                            <span>{error}</span>
-                        </div>
-                    </div>
-                )}
-
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-16">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
-                        <p className="text-sm text-gray-600 font-medium">Loading appointments...</p>
-                    </div>
-                ) : appointments.length === 0 ? (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
-                            <FaCalendarAlt className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No appointments yet</h3>
-                        <p className="text-sm text-gray-500">Appointments will appear here once clients book them</p>
-                    </div>
-                ) : (
-                    <>
-                        {viewMode === 'calendar' ? <CalendarView /> : viewMode === 'table' ? <TableView /> : <CardView />}
-
-                        {/* Pagination Section - Only show for table and card views */}
-                        {viewMode !== 'calendar' && appointments.length > 0 && (
-                            <div className="flex flex-col sm:flex-row justify-between items-center mt-8 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                                {/* Items per page */}
-                                <div className="flex items-center gap-2">
-                                    <label className="text-sm text-gray-600 font-medium">Items per page:</label>
-                                    <select
-                                        value={itemsPerPage}
-                                        onChange={handleItemsPerPageChange}
-                                        className="border border-gray-300 rounded-md text-sm p-1.5 focus:ring-2 focus:ring-indigo-200"
-                                    >
-                                        {[5, 10, 20, 50].map(num => (
-                                            <option key={num} value={num}>{num}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {/* Page navigation */}
-                                <div className="flex items-center gap-2 mt-3 sm:mt-0">
-                                    <button
-                                        onClick={() => handlePageChange(currentPage - 1)}
-                                        disabled={currentPage === 1}
-                                        className="p-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                                    >
-                                        <FaChevronLeft className="w-3 h-3" />
-                                    </button>
-
-                                    {getVisiblePageNumbers().map((page, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => typeof page === 'number' && handlePageChange(page)}
-                                            disabled={page === '...'}
-                                            className={`px-3 py-1 text-sm rounded-md border ${
-                                                page === currentPage
-                                                    ? 'bg-gray-600 text-white border-gray-600'
-                                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100'
-                                            } ${page === '...' ? 'cursor-default opacity-60' : ''}`}
-                                        >
-                                            {page}
-                                        </button>
-                                    ))}
-
-                                    <button
-                                        onClick={() => handlePageChange(currentPage + 1)}
-                                        disabled={currentPage === totalPages}
-                                        className="p-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                                    >
-                                        <FaChevronRight className="w-3 h-3" />
-                                    </button>
-                                </div>
+                        {!isMobile && (
+                            <div className="flex gap-2 bg-white rounded-xl shadow-md p-1.5 border border-gray-200">
+                                <button
+                                    onClick={() => setViewMode('calendar')}
+                                    className={`p-3 rounded-lg transition-all duration-200 ${viewMode === 'calendar'
+                                        ? 'bg-gray-400 text-white shadow-md'
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                        }`}
+                                    title="Calendar View"
+                                >
+                                    <FaCalendar className="w-5 h-5" />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('table')}
+                                    className={`p-3 rounded-lg transition-all duration-200 ${viewMode === 'table'
+                                        ? 'bg-gray-400 text-white shadow-md'
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                        }`}
+                                    title="Table View"
+                                >
+                                    <FaTable className="w-5 h-5" />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('card')}
+                                    className={`p-3 rounded-lg transition-all duration-200 ${viewMode === 'card'
+                                        ? 'bg-gray-400 text-white shadow-md'
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                        }`}
+                                    title="Card View"
+                                >
+                                    <FaThLarge className="w-5 h-5" />
+                                </button>
                             </div>
                         )}
-                    </>
-                )}
+                    </div>
 
-                {/* Appointment Details Modal */}
-                {isDetailsModalOpen && selectedAppointment && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-xl font-bold text-gray-900">Appointment Details</h3>
-                                <button
-                                    onClick={() => {
-                                        setIsDetailsModalOpen(false);
-                                        setSelectedAppointment(null);
-                                    }}
-                                    className="text-gray-500 hover:text-gray-700 transition"
-                                >
-                                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-4 pb-4 border-b">
-                                    <UserAvatar 
-                                        profilePicture={selectedAppointment.profile_picture}
-                                        userName={selectedAppointment.user_name}
-                                        size="md"
-                                    />
-                                    <div>
-                                        <h4 className="font-semibold text-lg text-gray-900">{selectedAppointment.user_name}</h4>
-                                        <p className="text-sm text-gray-500 flex items-center gap-1">
-                                            <FaEnvelope className="w-3 h-3" />
-                                            {selectedAppointment.user_email}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-gray-50 rounded-lg p-3">
-                                        <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                                            <FaCalendarAlt className="w-3 h-3" />
-                                            Date
-                                        </p>
-                                        <p className="font-semibold text-gray-900">{formatDate(selectedAppointment.appointment_date)}</p>
-                                    </div>
-                                    <div className="bg-gray-50 rounded-lg p-3">
-                                        <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                                            <FaClock className="w-3 h-3" />
-                                            Time
-                                        </p>
-                                        <p className="font-semibold text-gray-900">{selectedAppointment.appointment_time}</p>
-                                    </div>
-                                </div>
-
-                                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
-                                    <p className="text-xs text-indigo-600 font-semibold mb-1">Purpose</p>
-                                    <p className="text-gray-900">{selectedAppointment.purpose}</p>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">Update Status</label>
-                                    <StatusSelect 
-                                        appointmentId={selectedAppointment.id}
-                                        currentStatus={selectedAppointment.status}
-                                        className="w-full"
-                                    />
-                                </div>
-
-                                <div className="pt-2">
-                                    <StatusBadge status={selectedAppointment.status} />
-                                </div>
-                            </div>
-
-                            <div className="mt-6 flex justify-end">
-                                <button
-                                    onClick={() => {
-                                        setIsDetailsModalOpen(false);
-                                        setSelectedAppointment(null);
-                                    }}
-                                    className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition"
-                                >
-                                    Close
-                                </button>
+                    {error && (
+                        <div className="bg-red-50 border-l-4 border-red-500 text-red-800 px-5 py-4 rounded-lg mb-6 shadow-sm">
+                            <div className="flex items-center">
+                                <span className="font-semibold mr-2">Error:</span>
+                                <span>{error}</span>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
+
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-16">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
+                            <p className="text-sm text-gray-600 font-medium">Loading appointments...</p>
+                        </div>
+                    ) : appointments.length === 0 ? (
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                                <FaCalendarAlt className="w-8 h-8 text-gray-400" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">No appointments yet</h3>
+                            <p className="text-sm text-gray-500">Appointments will appear here once clients book them</p>
+                        </div>
+                    ) : (
+                        <>
+                            {viewMode === 'calendar' ? <CalendarView /> : viewMode === 'table' ? <TableView /> : <CardView />}
+
+                            {/* Pagination Section */}
+                            {viewMode !== 'calendar' && appointments.length > 0 && (
+                                <div className="flex flex-col sm:flex-row justify-between items-center mt-8 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-sm text-gray-600 font-medium">Items per page:</label>
+                                        <select
+                                            value={itemsPerPage}
+                                            onChange={handleItemsPerPageChange}
+                                            className="border border-gray-300 rounded-md text-sm p-1.5 focus:ring-2 focus:ring-indigo-200"
+                                        >
+                                            {[5, 10, 20, 50].map(num => (
+                                                <option key={num} value={num}>{num}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 mt-3 sm:mt-0">
+                                        <button
+                                            onClick={() => handlePageChange(currentPage - 1)}
+                                            disabled={currentPage === 1}
+                                            className="p-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                        >
+                                            <FaChevronLeft className="w-3 h-3" />
+                                        </button>
+
+                                        {getVisiblePageNumbers().map((page, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => typeof page === 'number' && handlePageChange(page)}
+                                                disabled={page === '...'}
+                                                className={`px-3 py-1 text-sm rounded-md border ${page === currentPage
+                                                    ? 'bg-gray-600 text-white border-gray-600'
+                                                    : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                                                    } ${page === '...' ? 'cursor-default opacity-60' : ''}`}
+                                            >
+                                                {page}
+                                            </button>
+                                        ))}
+
+                                        <button
+                                            onClick={() => handlePageChange(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                            className="p-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                                        >
+                                            <FaChevronRight className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {/* Appointment Details Modal */}
+                    {isDetailsModalOpen && selectedAppointment && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-6">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h3 className="text-xl font-bold text-gray-900">Appointment Details</h3>
+                                    <button
+                                        onClick={() => {
+                                            setIsDetailsModalOpen(false);
+                                            setSelectedAppointment(null);
+                                        }}
+                                        className="text-gray-500 hover:text-gray-700 transition"
+                                    >
+                                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-4 pb-4 border-b">
+                                        <UserAvatar
+                                            profilePicture={selectedAppointment.profile_picture}
+                                            userName={selectedAppointment.user_name}
+                                            size="md"
+                                        />
+                                        <div>
+                                            <h4 className="font-semibold text-lg text-gray-900">{selectedAppointment.user_name}</h4>
+                                            <p className="text-sm text-gray-500 flex items-center gap-1">
+                                                <FaEnvelope className="w-3 h-3" />
+                                                {selectedAppointment.user_email}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                            <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                                                <FaCalendarAlt className="w-3 h-3" />
+                                                Date
+                                            </p>
+                                            <p className="font-semibold text-gray-900">{formatDate(selectedAppointment.appointment_date)}</p>
+                                        </div>
+                                        <div className="bg-gray-50 rounded-lg p-3">
+                                            <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                                                <FaClock className="w-3 h-3" />
+                                                Time
+                                            </p>
+                                            <p className="font-semibold text-gray-900">{selectedAppointment.appointment_time}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+                                        <p className="text-xs text-indigo-600 font-semibold mb-1">Purpose</p>
+                                        <p className="text-gray-900">{selectedAppointment.purpose}</p>
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <StatusBadge status={selectedAppointment.status} />
+                                    </div>
+
+                                    <div className="pt-4 border-t">
+                                        <ActionButtons appointment={selectedAppointment} />
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 flex justify-end">
+                                    <button
+                                        onClick={() => {
+                                            setIsDetailsModalOpen(false);
+                                            setSelectedAppointment(null);
+                                        }}
+                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300 transition"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {isRescheduleModalOpen && selectedAppointment && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-medium">Reschedule Appointment</h3>
+                                    <button
+                                        onClick={() => {
+                                            setIsRescheduleModalOpen(false);
+                                            setSelectedAppointment(null);
+                                            setRescheduleData({ date: '', time: '' });
+                                        }}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {/* Current appointment details */}
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                                    <p className="text-sm font-semibold text-gray-700 mb-2">Current Appointment</p>
+                                    <p className="text-sm text-gray-600 mb-1">
+                                        <span className="font-medium">Date:</span> {new Date(selectedAppointment.appointment_date).toLocaleDateString('en-US', {
+                                            weekday: 'long',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        })}
+                                    </p>
+                                    <p className="text-sm text-gray-600 mb-1">
+                                        <span className="font-medium">Time:</span> {selectedAppointment.appointment_time}
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                        <span className="font-medium">Purpose:</span> {selectedAppointment.purpose}
+                                    </p>
+                                </div>
+
+                                {/* Info message about status */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                                    <div className="flex items-start gap-2">
+                                        <FaInfoCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <p className="text-xs text-blue-700">
+                                            When admin reschedules an appointment, it will be automatically set to <span className="font-semibold">accepted</span> status since you are confirming the new date and time.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">New Date</label>
+                                        <input
+                                            type="date"
+                                            value={rescheduleData.date}
+                                            onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })}
+                                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            min={new Date().toISOString().split('T')[0]}
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">New Time</label>
+                                        <input
+                                            type="time"
+                                            value={rescheduleData.time}
+                                            onChange={(e) => setRescheduleData({ ...rescheduleData, time: e.target.value })}
+                                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 flex justify-end space-x-3">
+                                    <button
+                                        onClick={() => {
+                                            setIsRescheduleModalOpen(false);
+                                            setSelectedAppointment(null);
+                                            setRescheduleData({ date: '', time: '' });
+                                        }}
+                                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleReschedule}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                                        disabled={!rescheduleData.date || !rescheduleData.time}
+                                    >
+                                        Reschedule
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </AdminLayout>

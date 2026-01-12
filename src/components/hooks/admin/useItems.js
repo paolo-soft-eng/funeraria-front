@@ -6,12 +6,13 @@ export const useItems = (currentPage, itemsPerPage) => {
   const [items, setItems] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const n = process.env.REACT_APP_API_URL;
 
   const fetchItems = async () => {
     try {
       setIsLoading(true);
       const res = await axios.get(
-        `http://localhost/funeraria/api/components/itemlist.php?page=${currentPage}&limit=${itemsPerPage}`
+        `${n}/api/components/itemlist.php?page=${currentPage}&limit=${itemsPerPage}`
       );
 
       if (res.data.items) {

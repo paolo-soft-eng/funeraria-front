@@ -8,6 +8,7 @@ const AdminDocuments = () => {
     const [isDocumentViewerOpen, setIsDocumentViewerOpen] = useState(false);
     const [currentDocument, setCurrentDocument] = useState(null);
     const [previewUrl, setPreviewUrl] = useState('');
+    const n = process.env.REACT_APP_API_URL;
 
     useEffect(() => {
         fetchDocuments();
@@ -16,7 +17,7 @@ const AdminDocuments = () => {
     const fetchDocuments = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost/funeraria/api/components/adminDocuments.php', {
+            const response = await fetch(`${n}/api/components/adminDocuments.php`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -80,11 +81,11 @@ const AdminDocuments = () => {
     };
 
     const getDocumentUrl = (doc, action = 'file') => {
-        return `http://localhost/funeraria/api/components/documents.php?${action}=${encodeURIComponent(doc.document_path)}`;
+        return `${n}/api/components/documents.php?${action}=${encodeURIComponent(doc.document_path)}`;
     };
 
     const getPreviewUrl = (doc) => {
-        return `http://localhost/funeraria/api/components/adminDocuments.php?preview=${encodeURIComponent(doc.document_path)}`;
+        return `${n}/api/components/adminDocuments.php?preview=${encodeURIComponent(doc.document_path)}`;
     };
 
     const isPreviewable = (type) => {

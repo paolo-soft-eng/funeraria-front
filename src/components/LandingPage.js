@@ -25,7 +25,7 @@ export default function FuneralManagementLanding() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState(null);
-
+  const n = process.env.REACT_APP_API_URL;
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevData => ({
@@ -65,7 +65,7 @@ export default function FuneralManagementLanding() {
     }
 
     try {
-      const response = await fetch('http://localhost/funeraria/api/components/contact_submit.php', {
+      const response = await fetch(`${n}/api/components/contact_submit.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ export default function FuneralManagementLanding() {
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <div className="flex items-center">
       <img 
-        src='/assets/gomez_logo.jpg' 
+        src='/funeraria/assets/gomez_logo.jpg' 
         alt='gomez logo'
         className="w-12 h-12 object-cover mr-4 border-2 border-white/50"
       />
@@ -186,7 +186,7 @@ export default function FuneralManagementLanding() {
             playsInline
             className="w-full h-full object-cover"
           >
-            <source src="/assets/vid.mp4" type="video/mp4" />
+            <source src="/funeraria/assets/vid.mp4" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
           {/* Dark overlay for text readability */}
@@ -295,7 +295,7 @@ export default function FuneralManagementLanding() {
             <div className="lg:w-1/2">
               <div className="bg-gray-200 h-96 lg:h-[500px] rounded-2xl shadow-lg overflow-hidden">
                 <img
-                 src='/assets/oldgomez.jpg'
+                 src='/funeraria/assets/oldgomez.jpg'
                   alt="Funeral service professionals"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                 />

@@ -10,6 +10,7 @@ import { useItemForm } from "../../hooks/admin/useItemForm";
 import { usePagination } from "../../hooks/admin/usePagination";
 
 const AdminItemList = () => {
+  const n = process.env.REACT_APP_API_URL;
   // Authentication
   const { isLoggedIn, userId, userName } = useAuth();
 
@@ -49,11 +50,11 @@ const AdminItemList = () => {
   } = useItemForm(userId, userName, fetchItems);
 
   const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-PH', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(amount);
-    };
+    return new Intl.NumberFormat('en-PH', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
 
   // Login Required Screen
   if (!isLoggedIn) {
@@ -113,7 +114,7 @@ const AdminItemList = () => {
             encType="multipart/form-data"
           >
             <input type="hidden" name="id" value={formData.id} />
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -147,6 +148,7 @@ const AdminItemList = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Price:
                 </label>
+
                 <input
                   type="number"
                   name="price"
@@ -156,8 +158,14 @@ const AdminItemList = () => {
                   step="0.01"
                   min="0"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  onKeyDown={(e) => {
+                    if (["e", "E", "+", "-"].includes(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </div>
+
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -222,8 +230,8 @@ const AdminItemList = () => {
                 {formLoading
                   ? "Processing..."
                   : formData.id
-                  ? "Update Item"
-                  : "Add Item"}
+                    ? "Update Item"
+                    : "Add Item"}
               </button>
               {formData.id && (
                 <button
@@ -312,7 +320,7 @@ const AdminItemList = () => {
                         <td className="px-4 py-3 text-sm text-gray-800">
                           {item.image_path ? (
                             <img
-                              src={`http://localhost/funeraria/api/components/${item.image_path}`}
+                              src={`${n}/api/components/${item.image_path}`}
                               alt={item.name}
                               className="w-16 h-16 object-cover rounded-md"
                             />
@@ -382,11 +390,10 @@ const AdminItemList = () => {
                           ) : (
                             <button
                               onClick={() => handlePageChange(pageNum)}
-                              className={`px-3 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${
-                                currentPage === pageNum
+                              className={`px-3 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 ${currentPage === pageNum
                                   ? "bg-gray-600 text-white"
                                   : "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
-                              }`}
+                                }`}
                             >
                               {pageNum}
                             </button>

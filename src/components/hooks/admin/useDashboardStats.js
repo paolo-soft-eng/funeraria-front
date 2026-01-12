@@ -16,13 +16,14 @@ export const useDashboardStats = (email, isValidatingAdmin) => {
         upcoming_appointments: []
     });
     const [isLoading, setIsLoading] = useState(false);
+        const n = process.env.REACT_APP_API_URL;
 
     const fetchDashboardStats = async () => {
         if (!isValidatingAdmin && email) {
             setIsLoading(true);
             try {
                 const response = await axios.post(
-                    'http://localhost/funeraria/api/components/fetchDashboardStats.php',
+                    `${n}/api/components/fetchDashboardStats.php`,
                     { email }
                 );
                 if (response.data.success) {

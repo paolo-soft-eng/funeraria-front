@@ -15,7 +15,7 @@ const SuperAdminReport = () => {
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, reportId: null, reportEmail: '' });
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
-
+  const n = process.env.REACT_APP_API_URL;
   useEffect(() => {
     fetchReports();
   }, []);
@@ -23,7 +23,7 @@ const SuperAdminReport = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost/funeraria/api/components/superAdminReport.php?action=get_all_reports');
+      const response = await fetch(`${n}/api/components/superAdminReport.php?action=get_all_reports`);
       
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -51,7 +51,7 @@ const SuperAdminReport = () => {
 
   const handleUpdateStatus = async (reportId, newStatus) => {
     try {
-      const response = await fetch('http://localhost/funeraria/api/components/superAdminReport.php', {
+      const response = await fetch(`${n}/api/components/superAdminReport.php`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +105,7 @@ const SuperAdminReport = () => {
     const { reportId } = deleteModal;
     
     try {
-      const response = await fetch('http://localhost/funeraria/api/components/superAdminReport.php', {
+      const response = await fetch(`${n}/api/components/superAdminReport.php`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ const SuperAdminReport = () => {
 
   const handleLogoutConfirm = async () => {
     try {
-      await axios.post('http://localhost/funeraria/api/config/logout.php');
+      await axios.post(`${n}/api/config/logout.php`);
       localStorage.removeItem('userEmail');
       localStorage.removeItem('userRole');
       navigate('/gomez/auth');

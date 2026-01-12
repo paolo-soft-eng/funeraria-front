@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import BillingForm from './ClientBillingForm';
 
+const n = process.env.REACT_APP_API_URL;
+
 const PAYMENT_METHODS = {
   CARD: 'card',
   GCASH: 'gcash',
@@ -174,8 +176,8 @@ const PaymentForm = ({
                     amount: amountInCentavos,
                     currency: 'PHP',
                     payment_method: state.paymentMethod, // Specify the exact method
-                    successUrl: `${window.location.origin}/gomez/payment-success?payment_intent=${encodeURIComponent(intentId)}`,
-                    cancelUrl: `${window.location.origin}/gomez/payment-failed`,
+                    successUrl: `${window.location.origin}/funeraria/gomez/payment-success?payment_intent=${encodeURIComponent(intentId)}`,
+                    cancelUrl: `${window.location.origin}/funeraria/gomez/payment-failed`,
                     billing: {
                         name: state.billingData.name || '',
                         email: state.billingData.email || '',
@@ -222,67 +224,77 @@ const PaymentForm = ({
         window.location.href = sessionData.checkout_url;
     };
 
-    const handleCashOnDelivery = async () => {
-        const n = process.env.REACT_APP_API_URL;
-        try {
-            const payload = {
-                userId: parseInt(userId),
-                amount: parseFloat(totalAmount),
-                items: cartItems.map(item => ({
-                    id: parseInt(item.product_id || item.item_id || item.id),
-                    quantity: parseInt(item.quantity),
-                    price: parseFloat(item.price)
-                })),
-                // Use serviceDate for funeral packages, deliveryDate for regular orders
-                deliveryDate: isFuneralPackage ? serviceDate : (state.billingData.deliveryDate || null),
-                address: state.billingData.address.trim(),
-                billingInfo: {
-                    name: state.billingData.name || '',
-                    email: state.billingData.email || '',
-                    phone: state.billingData.phone || ''
+const handleCashOnDelivery = async () => {
+    const n = process.env.REACT_APP_API_URL;
+    try {
+        const payload = {
+            userId: parseInt(userId),
+            amount: parseFloat(totalAmount),
+            items: cartItems.map(item => ({
+                id: parseInt(item.product_id || item.item_id || item.id),
+                quantity: parseInt(item.quantity),
+                price: parseFloat(item.price)
+            })),
+            // Pass deliveryDate from billing form (which contains serviceDate for funeral packages)
+            deliveryDate: state.billingData.deliveryDate || null,
+            address: state.billingData.address.trim(),
+            billingInfo: {
+                name: state.billingData.name || '',
+                email: state.billingData.email || '',
+                phone: state.billingData.phone || '',
+                deliveryDate: state.billingData.deliveryDate || null // Also include in billingInfo
+            },
+            ...(orderId && { orderId: parseInt(orderId) })
+        };
+
+        console.log('COD Payload:', payload); // Debug log
+
+        const recordResponse = await fetchWithRetry(
+            `${n}/api/components/cod-order.php`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
-                ...(orderId && { orderId: parseInt(orderId) }),
-                // Add service date specifically for funeral packages
-                ...(isFuneralPackage && serviceDate && { serviceDate: serviceDate })
-            };
-
-            const recordResponse = await fetchWithRetry(
-                `${n}/api/components/cod-order.php`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload),
-                }
-            );
-
-            const recordData = await recordResponse.json();
-
-            if (!recordResponse.ok || !recordData.success) {
-                throw new Error(recordData.error || 'Order processing failed');
+                body: JSON.stringify(payload),
             }
+        );
 
-            try {
-                sessionStorage.removeItem('pendingPayment');
-                localStorage.removeItem('lastPaymentAttempt');
-            } catch (e) {
-                console.warn('Failed to clear stored data:', e);
-            }
-
-            onSuccess({
-                message: recordData.message || 'Your pay later order has been placed successfully!',
-                orderId: recordData.orderId,
-                isFuneralService: recordData.isFuneralService,
-                deletedFuneralOrder: recordData.deletedFuneralOrder
-            });
-
-        } catch (error) {
-            throw new Error(error.message || 'Failed to place paylater delivery order');
+        // Check if response is ok before parsing JSON
+        if (!recordResponse.ok) {
+            const errorText = await recordResponse.text();
+            console.error('Server error response:', errorText);
+            throw new Error(`Server error (${recordResponse.status}): ${errorText || 'Unknown error'}`);
         }
-    };
 
+        const recordData = await recordResponse.json();
+
+        if (!recordData.success) {
+            throw new Error(recordData.error || 'Order processing failed');
+        }
+
+        // Clear stored payment data
+        try {
+            sessionStorage.removeItem('pendingPayment');
+            localStorage.removeItem('lastPaymentAttempt');
+        } catch (e) {
+            console.warn('Failed to clear stored data:', e);
+        }
+
+        onSuccess({
+            message: recordData.message || 'Your pay later order has been placed successfully!',
+            orderId: recordData.orderId,
+            isFuneralService: recordData.isFuneralService,
+            deletedFuneralOrder: recordData.deletedFuneralOrder,
+            chapelOccupied: recordData.chapelOccupied
+        });
+
+    } catch (error) {
+        console.error('COD Error:', error);
+        throw new Error(error.message || 'Failed to place paylater delivery order');
+    }
+};
     const fetchWithRetry = async (url, options, maxRetries = 2) => {
     for (let i = 0; i <= maxRetries; i++) {
         try {

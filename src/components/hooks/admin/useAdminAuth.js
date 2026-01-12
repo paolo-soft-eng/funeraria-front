@@ -9,6 +9,7 @@ export const useAdminAuth = () => {
     const [isValidatingAdmin, setIsValidatingAdmin] = useState(true);
     const { email } = useContext(EmailContext);
     const navigate = useNavigate();
+    const n = process.env.REACT_APP_API_URL;
 
     const validateAdminAccess = async () => {
         if (!email) {
@@ -17,7 +18,7 @@ export const useAdminAuth = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost/funeraria/api/components/getUserId.php', {
+            const response = await axios.post(`${n}/api/components/getUserId.php`, {
                 email: email
             });
 
@@ -41,7 +42,7 @@ export const useAdminAuth = () => {
 
     useEffect(() => {
         if (!isValidatingAdmin && email) {
-            fetch(`http://localhost/funeraria/api/components/getUserId.php?email=${encodeURIComponent(email)}`)
+            fetch(`${n}/api/components/getUserId.php?email=${encodeURIComponent(email)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.userId) {

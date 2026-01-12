@@ -40,12 +40,41 @@ const ClientActiveOrders = () => {
         });
     };
 
-    // Filter orders based on status
+    // Fixed filtering logic
     const filteredOrders = activeOrders.filter(order => {
         if (statusFilter === 'all') return true;
-        if (statusFilter === 'upcoming') return order.is_upcoming;
-        return order.status.toLowerCase() === statusFilter.toLowerCase();
+        
+        // Use the new filter_status property from the backend
+        if (order.filter_status) {
+            return order.filter_status === statusFilter;
+        }
+        
+        // Fallback logic if filter_status is not available
+        switch (statusFilter) {
+            case 'upcoming':
+                return order.is_upcoming && order.status?.toLowerCase() !== 'completed';
+            case 'pending':
+                return order.status?.toLowerCase() === 'pending';
+            case 'completed':
+                return order.status?.toLowerCase() === 'completed';
+            default:
+                return true;
+        }
     });
+
+    // Get counts for each status
+    const statusCounts = {
+        all: activeOrders.length,
+        upcoming: activeOrders.filter(order => 
+            order.is_upcoming && order.status?.toLowerCase() !== 'completed'
+        ).length,
+        pending: activeOrders.filter(order => 
+            order.status?.toLowerCase() === 'pending'
+        ).length,
+        completed: activeOrders.filter(order => 
+            order.status?.toLowerCase() === 'completed'
+        ).length,
+    };
 
     if (loading) {
         return (
@@ -76,7 +105,7 @@ const ClientActiveOrders = () => {
                     <Package className="mr-2 h-5 w-5 text-green-500" />
                     Active Orders
                     <span className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                        {filteredOrders.length} orders
+                        {filteredOrders.length} {statusFilter !== 'all' ? statusFilter : ''} orders
                     </span>
                 </h2>
                 <div className="flex space-x-2">
@@ -85,10 +114,18 @@ const ClientActiveOrders = () => {
                         onChange={(e) => setStatusFilter(e.target.value)}
                         className="border rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                     >
-                        <option value="all">All Active</option>
-                        <option value="upcoming">Upcoming</option>
-                        <option value="pending">Pending</option>
-                        <option value="completed">Completed</option>
+                        <option value="all">
+                            All Active ({statusCounts.all})
+                        </option>
+                        <option value="upcoming">
+                            Upcoming ({statusCounts.upcoming})
+                        </option>
+                        <option value="pending">
+                            Pending ({statusCounts.pending})
+                        </option>
+                        <option value="completed">
+                            Completed ({statusCounts.completed})
+                        </option>
                     </select>
                 </div>
             </div>
@@ -96,8 +133,18 @@ const ClientActiveOrders = () => {
             {filteredOrders.length === 0 ? (
                 <div className="text-center py-8">
                     <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <p className="text-gray-500 text-lg mb-2">No active orders found</p>
-                    <p className="text-gray-400 text-sm">All your upcoming and pending orders will appear here.</p>
+                    <p className="text-gray-500 text-lg mb-2">
+                        {statusFilter === 'all' 
+                            ? 'No active orders found' 
+                            : `No ${statusFilter} orders found`
+                        }
+                    </p>
+                    <p className="text-gray-400 text-sm">
+                        {statusFilter === 'all' 
+                            ? 'All your upcoming and pending orders will appear here.' 
+                            : `No orders match the ${statusFilter} filter.`
+                        }
+                    </p>
                 </div>
             ) : (
                 <div className="space-y-4">

@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 export const useClientActions = (userId, userName, fetchClients) => {
   const [showActionModal, setShowActionModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
+  const n = process.env.REACT_APP_API_URL;
 
   const confirmAction = (client, action) => {
     setSelectedClient({ ...client, action });
@@ -15,7 +16,7 @@ export const useClientActions = (userId, userName, fetchClients) => {
     if (!selectedClient) return;
 
     try {
-      const response = await axios.post("http://localhost/funeraria/api/components/fetchClients.php", {
+      const response = await axios.post(`${n}/api/components/fetchClients.php`, {
         id: selectedClient.id,
         action: selectedClient.action,
         userId: userId,

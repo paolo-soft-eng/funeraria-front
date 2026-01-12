@@ -10,6 +10,7 @@ export const useStaff = () => {
   const [editingStaff, setEditingStaff] = useState(null);
   const [staffToDelete, setStaffToDelete] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const n = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     fetchStaff();
@@ -17,7 +18,7 @@ export const useStaff = () => {
 
   const fetchStaff = async () => {
     try {
-      const res = await fetch('http://localhost/funeraria/api/components/staff.php');
+      const res = await fetch(`${n}/api/components/staff.php`);
       const data = await res.json();
       if (data.success) {
         setStaffMembers(data.data);
@@ -28,7 +29,7 @@ export const useStaff = () => {
   };
 
   const addStaff = async () => {
-    const res = await fetch('http://localhost/funeraria/api/components/staff.php', {
+    const res = await fetch(`${n}/api/components/staff.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newStaff)
@@ -46,7 +47,7 @@ export const useStaff = () => {
   };
 
   const updateStaff = async () => {
-    const res = await fetch('http://localhost/funeraria/api/components/staff.php', {
+    const res = await fetch(`${n}/api/components/staff.php`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(editingStaff)
@@ -61,7 +62,7 @@ export const useStaff = () => {
   };
 
   const deleteStaff = async (staffId) => {
-    const res = await fetch('http://localhost/funeraria/api/components/staff.php', {
+    const res = await fetch(`${n}/api/components/staff.php`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ staffId })

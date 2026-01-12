@@ -5,6 +5,7 @@ import {
   FileText,
   HelpCircle,
   Mail,
+  AlertCircle,
   Smartphone,
   MapPin,
   Bug,
@@ -29,6 +30,7 @@ const ClientProfile = () => {
   const { email } = React.useContext(EmailContext);
   const [activeTab, setActiveTab] = useState('profile');
   const n = process.env.REACT_APP_API_URL;
+  const [validationErrors, setValidationErrors] = useState({});
 
   // Authentication
   const { isLoggedIn, userId, authError } = useAuth();
@@ -82,7 +84,7 @@ const ClientProfile = () => {
   // Modal states
   const [isDocumentModalOpen, setIsDocumentModalOpen] = useState(false);
   const [documentFile, setDocumentFile] = useState(null);
-  
+
   // Custom confirmation modal state
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,
@@ -115,6 +117,119 @@ const ClientProfile = () => {
     });
   };
 
+  const runValidation = (data) => {
+    const errors = {};
+    const nameRegex = /^[A-Za-zñÑ\s.'-]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^9\d{9}$/;
+
+    // First Name
+    if (!data.firstName || !data.firstName.trim()) {
+      errors.firstName = 'First Name is required.';
+    } else if (!nameRegex.test(data.firstName)) {
+      errors.firstName = 'Name can only contain letters, spaces, periods, apostrophes, and hyphens.';
+    } else if (data.firstName.trim().length < 2) {
+      errors.firstName = 'First name must be at least 2 characters.';
+    }
+
+    // Last Name
+    if (!data.lastName || !data.lastName.trim()) {
+      errors.lastName = 'Last Name is required.';
+    } else if (!nameRegex.test(data.lastName)) {
+      errors.lastName = 'Name can only contain letters, spaces, periods, apostrophes, and hyphens.';
+    } else if (data.lastName.trim().length < 2) {
+      errors.lastName = 'Last name must be at least 2 characters.';
+    }
+
+    // Email Address
+    if (!data.email || !data.email.trim()) {
+      errors.email = 'Email Address is required.';
+    } else if (!emailRegex.test(data.email)) {
+      errors.email = 'Please enter a valid email address.';
+    }
+
+    // Phone Number
+    const cleanedPhone = data.phone ? data.phone.toString().replace(/[^0-9]/g, '') : '';
+    if (!cleanedPhone) {
+      errors.phone = 'Phone number is required.';
+    } else if (cleanedPhone.length !== 10) {
+      errors.phone = 'Phone number must be exactly 10 digits.';
+    } else if (!phoneRegex.test(cleanedPhone)) {
+      errors.phone = 'Phone number must start with 9 (e.g., 9123456789).';
+    }
+
+    // Address
+    if (!data.address || !data.address.trim()) {
+      errors.address = 'Address is required.';
+    } else if (data.address.trim().length < 10) {
+      errors.address = 'Please provide a complete address (at least 10 characters).';
+    }
+
+    // Emergency Contact
+    if (!data.emergencyContact || !data.emergencyContact.trim()) {
+      errors.emergencyContact = 'Emergency Contact is required.';
+    } else if (data.emergencyContact.trim().length < 5) {
+      errors.emergencyContact = 'Please provide complete emergency contact information.';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // **ENHANCED INPUT CHANGE HANDLER**
+  const handleProfileInputChange = (e) => {
+    const { name, value } = e.target;
+
+    // Update form data via hook
+    handleInputChange(e);
+
+    // Clear the specific error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prevErrors => ({
+        ...prevErrors,
+        [name]: undefined,
+      }));
+    }
+  };
+
+  // Update the handleProfileSubmit function to include validation
+  const handleProfileSubmitWithValidation = async (e) => {
+    e.preventDefault();
+
+    // Run validation before submission
+    const isValid = runValidation(formData);
+
+    if (!isValid) {
+      showMessage('Please correct the highlighted errors before saving.', 'error');
+      return;
+    }
+
+    try {
+      const result = await handleSubmit(e);
+      if (result.status === 'success') {
+        showMessage('Profile updated successfully!', 'success');
+        setValidationErrors({}); // Clear errors on success
+      } else {
+        showMessage(result.message || 'Failed to update profile', 'error');
+      }
+    } catch (err) {
+      showMessage('Failed to update profile. Please try again.', 'error');
+    }
+  };
+
+  // Helper component for error display
+  const ErrorMessage = ({ error }) => {
+    if (!error) return null;
+    return (
+      <p className="mt-1 text-sm text-red-600 flex items-center">
+        <AlertCircle size={16} className="mr-1" />
+        {error}
+      </p>
+    );
+  };
+
+  // Check if there are any validation errors
+  const hasErrors = Object.values(validationErrors).some(error => error);
   // Close confirmation modal
   const closeConfirmation = () => {
     setConfirmationModal({
@@ -272,6 +387,14 @@ const ClientProfile = () => {
       setBugReportStatus({ type: 'error', message: 'Failed to submit bug report. Please try again.' });
     }
   };
+  const capitalize = (str) =>
+    str
+      .trim()
+      .split(/\s+/)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+
+
 
   // Early returns for different states
   if (!isLoggedIn) {
@@ -401,29 +524,26 @@ const ClientProfile = () => {
                 </div>
               </div>
             )}
-
-            {/* Profile Tab */}
             {activeTab === 'profile' && (
               <div>
                 <h2 className="text-xl font-semibold mb-6">Personal Information</h2>
-                <form onSubmit={handleProfileSubmit}>
+                <form onSubmit={handleProfileSubmitWithValidation}>
                   <div className="mb-6">
                     <div className="flex flex-col sm:flex-row items-center mb-6">
                       <div className="relative group mb-4 sm:mb-0 sm:mr-6">
                         <div className="h-24 w-24 rounded-full bg-blue-100 flex items-center justify-center overflow-hidden">
-                          {userData.profile_picture ? 
+                          {userData.profile_picture ?
                             <img
-                              src={handleProfilePicture(userData.profile_picture)}
+                              src={handleProfilePicture(`${userData.profile_picture}`)}
                               alt="Profile"
                               className="h-full w-full object-cover"
                             />
                             :
                             <User
-                            size={32}
-                            className={`text-blue-600 ${userData.profile_picture ? 'hidden' : 'block'}`}
-                          />
+                              size={32}
+                              className={`text-blue-600 ${userData.profile_picture ? 'hidden' : 'block'}`}
+                            />
                           }
-                          
                         </div>
                         <label className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black bg-opacity-30 rounded-full cursor-pointer transition-opacity">
                           <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -456,100 +576,165 @@ const ClientProfile = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          First Name
+                          First Name <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           name="firstName"
                           value={formData.firstName}
-                          onChange={handleInputChange}
-                          className="w-full p-2 border border-gray-300 rounded-md"
+                          onChange={(e) => {
+                            const value = capitalize(e.target.value);
+                            handleInputChange({
+                              target: { name: "firstName", value }
+                            });
+                            handleProfileInputChange({
+                              target: { name: "firstName", value }
+                            });
+                          }}
+                          onBlur={() => runValidation(formData)}
+                          className={`w-full p-2 border ${validationErrors.firstName ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:outline-none`}
                           required
                         />
+                        <ErrorMessage error={validationErrors.firstName} />
                       </div>
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Last Name
+                          Last Name <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           name="lastName"
                           value={formData.lastName}
-                          onChange={handleInputChange}
-                          className="w-full p-2 border border-gray-300 rounded-md"
+                          onChange={(e) => {
+                            const value = capitalize(e.target.value);
+                            handleInputChange({
+                              target: { name: "lastName", value }
+                            });
+                            handleProfileInputChange({
+                              target: { name: "lastName", value }
+                            });
+                          }}
+                          onBlur={() => runValidation(formData)}
+                          className={`w-full p-2 border ${validationErrors.lastName ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:outline-none`}
                           required
                         />
+                        <ErrorMessage error={validationErrors.lastName} />
                       </div>
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Email Address
+                          Email Address <span className="text-red-500">*</span>
                         </label>
                         <div className="flex items-center">
                           <div className="flex-shrink-0 mr-2">
                             <Mail size={18} className="text-gray-400" />
                           </div>
-                          <input
-                            type="email"
-                            name="email"
-                            value={formData.email}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            required
-                          />
+                          <div className="flex-1">
+                            <input
+                              type="email"
+                              name="email"
+                              value={formData.email}
+                              onChange={handleProfileInputChange}
+                              onBlur={() => runValidation(formData)}
+                              className={`w-full p-2 border ${validationErrors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:outline-none`}
+                              required
+                            />
+                          </div>
                         </div>
+                        <ErrorMessage error={validationErrors.email} />
                       </div>
+
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Phone Number
+                          Phone Number <span className="text-red-500">*</span>
                         </label>
                         <div className="flex items-center">
                           <div className="flex-shrink-0 mr-2">
                             <Smartphone size={18} className="text-gray-400" />
                           </div>
-                          <input
-                            type="tel"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                          />
+                          <div className="flex-1">
+                            <input
+                              type="number"
+                              name="phone"
+                              value={formData.phone}
+                              maxLength={10}
+                              onKeyDown={(e) => {
+                                const allowedKeys = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+                                if (!/[0-9]/.test(e.key) && !allowedKeys.includes(e.key)) {
+                                  e.preventDefault();
+                                }
+                              }}
+                              onChange={(e) => {
+                                let value = e.target.value;
+                                // Allow only digits
+                                if (!/^[0-9]*$/.test(value)) return;
+                                // Enforce starting with 9
+                                if (value.length === 1 && value !== "9") return;
+                                // Limit to 10 digits
+                                if (value.length > 10) return;
+                                handleInputChange(e);
+                                handleProfileInputChange(e);
+                              }}
+                              onBlur={() => runValidation(formData)}
+                              placeholder="9123456789"
+                              className={`w-full p-2 border ${validationErrors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:outline-none`}
+                              required
+                            />
+                          </div>
                         </div>
+                        <ErrorMessage error={validationErrors.phone} />
                       </div>
+
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Address
+                          Address <span className="text-red-500">*</span>
                         </label>
                         <div className="flex items-center">
                           <div className="flex-shrink-0 mr-2">
                             <MapPin size={18} className="text-gray-400" />
                           </div>
-                          <input
-                            type="text"
-                            name="address"
-                            value={formData.address}
-                            onChange={handleInputChange}
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                          />
+                          <div className="flex-1">
+                            <input
+                              type="text"
+                              name="address"
+                              value={formData.address}
+                              required
+                              onChange={handleProfileInputChange}
+                              onBlur={() => runValidation(formData)}
+                              className={`w-full p-2 border ${validationErrors.address ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:outline-none`}
+                              placeholder="Enter your complete address"
+                            />
+                          </div>
                         </div>
+                        <ErrorMessage error={validationErrors.address} />
                       </div>
+
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Emergency Contact
+                          Emergency Contact <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           name="emergencyContact"
                           value={formData.emergencyContact}
-                          onChange={handleInputChange}
-                          className="w-full p-2 border border-gray-300 rounded-md"
+                          onChange={handleProfileInputChange}
+                          onBlur={() => runValidation(formData)}
+                          className={`w-full p-2 border ${validationErrors.emergencyContact ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'} rounded-md focus:ring-2 focus:outline-none`}
                           placeholder="Name and phone number"
+                          required
                         />
+                        <ErrorMessage error={validationErrors.emergencyContact} />
                       </div>
                     </div>
                   </div>
 
                   <div className="flex justify-end">
-                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center">
+                    <button
+                      type="submit"
+                      className={`px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center ${hasErrors ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={hasErrors}
+                    >
                       <Save size={16} className="mr-2" />
                       Save Changes
                     </button>
@@ -689,16 +874,6 @@ const ClientProfile = () => {
                           />
                         </div>
                         <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Document Type</label>
-                          <input
-                            type="text"
-                            value={documentDetails.documentType}
-                            onChange={(e) => setDocumentDetails({ ...documentDetails, documentType: e.target.value })}
-                            className="w-full p-2 border border-gray-300 rounded-md"
-                            required
-                          />
-                        </div>
-                        <div className="mb-4">
                           <label className="block text-sm font-medium text-gray-700 mb-1">Select File</label>
                           <input
                             type="file"
@@ -816,11 +991,10 @@ const ClientProfile = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-start mb-4">
-              <div className={`flex-shrink-0 mr-3 ${
-                confirmationModal.type === 'danger' ? 'text-red-500' : 
-                confirmationModal.type === 'warning' ? 'text-yellow-500' : 
-                'text-blue-500'
-              }`}>
+              <div className={`flex-shrink-0 mr-3 ${confirmationModal.type === 'danger' ? 'text-red-500' :
+                confirmationModal.type === 'warning' ? 'text-yellow-500' :
+                  'text-blue-500'
+                }`}>
                 <AlertTriangle size={24} />
               </div>
               <div className="flex-1">
@@ -843,13 +1017,12 @@ const ClientProfile = () => {
               <button
                 type="button"
                 onClick={handleConfirm}
-                className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${
-                  confirmationModal.type === 'danger' 
-                    ? 'bg-red-600 hover:bg-red-700' 
-                    : confirmationModal.type === 'warning'
+                className={`px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors ${confirmationModal.type === 'danger'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : confirmationModal.type === 'warning'
                     ? 'bg-yellow-600 hover:bg-yellow-700'
                     : 'bg-blue-600 hover:bg-blue-700'
-                }`}
+                  }`}
               >
                 {confirmationModal.confirmText}
               </button>

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import DeleteModal from '../../utils/DeleteModal';
+const n = process.env.REACT_APP_API_URL;
 
 const SuperAdmin = () => {
   const [users, setUsers] = useState([]);
@@ -44,7 +45,7 @@ const SuperAdmin = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost/funeraria/api/components/superadmin/users.php');
+      const response = await fetch(`${n}/api/components/superadmin/users.php`);
 
       if (!response.ok) {
         throw new Error('Network response was not ok');
@@ -83,7 +84,7 @@ const SuperAdmin = () => {
     if (!userToDelete) return;
 
     try {
-      const response = await fetch(`http://localhost/funeraria/api/components/superadmin/delete_user.php?id=${userToDelete.id}`, {
+      const response = await fetch(`${n}/api/components/superadmin/delete_user.php?id=${userToDelete.id}`, {
         method: 'DELETE',
       });
 
@@ -159,7 +160,7 @@ const SuperAdmin = () => {
     if (!validateForm()) return;
 
     try {
-      const response = await fetch('http://localhost/funeraria/api/components/superadmin/add_admin.php', {
+      const response = await fetch(`${n}/api/components/superadmin/add_admin.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -303,7 +304,7 @@ const SuperAdmin = () => {
 
       const newStatus = effectiveCurrentStatus === 'active' ? 'disabled' : 'active';
 
-      const response = await fetch('http://localhost/funeraria/api/components/superadmin/toggleAdminStatus.php', {
+      const response = await fetch(`${n}/api/components/superadmin/toggleAdminStatus.php`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -344,7 +345,7 @@ const SuperAdmin = () => {
   const handleLogoutConfirm = async () => {
     try {
       showNotification('Logging out...', 'info');
-      await axios.post('http://localhost/funeraria/api/config/logout.php');
+      await axios.post(`${n}/api/config/logout.php`);
       localStorage.removeItem('userRole');
       localStorage.removeItem('email');
       localStorage.removeItem('token'); 
@@ -429,7 +430,7 @@ const SuperAdmin = () => {
                   <Shield size={32} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
+                  <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Super Admin Dashboard</h1>
                   <p className="text-blue-100">Manage system administrators and permissions</p>
                 </div>
               </div>
@@ -703,23 +704,7 @@ const SuperAdmin = () => {
                           {formErrors.address && <p className="text-rose-500 text-xs mt-2 flex items-center"><XCircle size={12} className="mr-1" /> {formErrors.address}</p>}
                         </div>
 
-                        <div>
-                          <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="confirmPassword">
-                            Confirm Password *
-                          </label>
-                          <input
-                            type="password"
-                            id="confirmPassword"
-                            name="confirmPassword"
-                            value={newAdmin.confirmPassword}
-                            onChange={handleInputChange}
-                            className={`w-full py-3 px-4 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
-                              formErrors.confirmPassword ? 'border-rose-500 bg-rose-50' : 'border-gray-300 bg-gray-50'
-                            }`}
-                            placeholder="Confirm your password"
-                          />
-                          {formErrors.confirmPassword && <p className="text-rose-500 text-xs mt-2 flex items-center"><XCircle size={12} className="mr-1" /> {formErrors.confirmPassword}</p>}
-                        </div>
+                       
                       </div>
 
                       <div className="md:col-span-2 flex justify-end pt-4 border-t border-gray-200">

@@ -7,6 +7,7 @@ import {
     Users,
     MessageSquare,
     ChevronDown,
+    ChevronUp,
     Menu,
     X,
     User,
@@ -22,8 +23,8 @@ import {
     BarChart2,
     AlertTriangle,
     Calendar,
-    LogOut, // Fixed: Changed from LogOutIcon to LogOut
-    LogOutIcon
+    LogOut,
+    Archive
 } from 'lucide-react';
 import { EmailContext } from '../../utils/EmailContext';
 import LoadingWrapper from '../../static/loading/LoadingWrapper';
@@ -38,6 +39,7 @@ import { useDropdown } from '../../hooks/admin/useDropDown';
 import { useLogout } from '../../hooks/admin/useLogout';
 import { useActivityUtils } from '../../hooks/admin/useActivityUtils';
 import { useNavigation } from '../../hooks/admin/useNavigation';
+const n = process.env.REACT_APP_API_URL;
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -52,6 +54,7 @@ const AdminDashboard = () => {
     const { isDropdownOpen, dropdownRef, toggleDropdown, closeDropdown } = useDropdown();
     const { handleLogout } = useLogout(showNotification);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [ordersAccordionOpen, setOrdersAccordionOpen] = useState(false);
     const { getActivityIcon, getActivityColor, formatTime12Hour } = useActivityUtils();
     const {
         handleOrders,
@@ -61,12 +64,24 @@ const AdminDashboard = () => {
         handleItems,
         handleEditProfile
     } = useNavigation();
-
+    // Add this useEffect to auto-expand orders accordion
+    
     // Main nav items with icons
     const mainNavItems = [
         { name: 'home', icon: <Home size={20} />, label: 'Home' },
         { name: 'itemlists', icon: <List size={20} />, label: 'Items' },
-        { name: 'orders', icon: <ShoppingCart size={20} />, label: 'Orders' },
+        // ↓ REPLACE THIS ENTIRE OBJECT
+        {
+            name: 'orders',
+            icon: <ShoppingCart size={20} />,
+            label: 'Orders',
+            hasAccordion: true,
+            subItems: [
+                { name: 'orders', icon: <ShoppingCart size={18} />, label: 'Active Orders' },
+                { name: 'archived-orders', icon: <Archive size={18} />, label: 'Archived Orders' }
+            ]
+        },
+        // ↑ END REPLACEMENT
         { name: 'clients', icon: <Users size={20} />, label: 'Clients' },
         { name: 'messages', icon: <MessageSquare size={20} />, label: 'Messages' },
         { name: 'documents', icon: <FileText size={20} />, label: 'Documents' },
@@ -94,7 +109,17 @@ const AdminDashboard = () => {
     const handleLogoutCancel = () => {
         setShowLogoutModal(false);
     };
+    const toggleOrdersAccordion = () => {
+        setOrdersAccordionOpen(!ordersAccordionOpen);
+    };
 
+    React.useEffect(() => {
+        // Get current route to determine if we're on orders or archived-orders page
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/orders') || currentPath.includes('/archived-orders')) {
+            setOrdersAccordionOpen(true);
+        }
+    }, []);
 
     if (!isLoggedIn && !isValidatingAdmin) {
         return (
@@ -223,7 +248,7 @@ const AdminDashboard = () => {
                     <div className={`px-4 py-6 ${isSidebarOpen ? 'flex items-center' : 'flex flex-col items-center'}`}>
                         <div className="rounded-full  flex items-center justify-center">
                             {userData && userData.profileImage ? (
-                                <img src={`http://localhost/funeraria/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
+                                <img src={`${n}/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-10 h-10 object-cover" />
                             ) : (
                                 <User size={isSidebarOpen ? 24 : 18} />
                             )}
@@ -237,23 +262,66 @@ const AdminDashboard = () => {
                     </div>
 
                     {/* Navigation */}
-                    <nav className="mt-6 flex-grow">
+                    <nav className="mt-6 flex-grow overflow-y-auto">
                         <ul className="space-y-1">
                             {mainNavItems.map((item) => (
                                 <li key={item.name}>
-                                    <Link
-                                        to={`/gomez/dashboard-admin/${item.name}`}
-                                        className={`flex items-center px-5 py-4 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
-                                            }`}
-                                        onClick={() => {
-                                            if (isMobileView) {
-                                                closeSidebar();
-                                            }
-                                        }}
-                                    >
-                                        <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
-                                        {isSidebarOpen && <span>{item.label}</span>}
-                                    </Link>
+                                    {item.hasAccordion ? (
+                                        <>
+                                            {/* Main accordion button */}
+                                            <button
+                                                onClick={toggleOrdersAccordion}
+                                                className={`flex items-center w-full px-5 py-4 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-between' : 'justify-center'
+                                                    } ${window.location.pathname.includes('/orders') || window.location.pathname.includes('/archived-orders') ? 'bg-gray-700' : ''}`}
+                                            >
+                                                <div className={`flex items-center ${isSidebarOpen ? '' : 'justify-center'}`}>
+                                                    <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
+                                                    {isSidebarOpen && <span>{item.label}</span>}
+                                                </div>
+                                                {isSidebarOpen && (
+                                                    ordersAccordionOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />
+                                                )}
+                                            </button>
+
+                                            {/* Sub-items (shown when accordion is open) */}
+                                            {ordersAccordionOpen && isSidebarOpen && (
+                                                <ul className="bg-gray-700 space-y-1">
+                                                    {item.subItems.map((subItem) => (
+                                                        <li key={subItem.name}>
+                                                            <Link
+                                                                to={`/gomez/dashboard-admin/${subItem.name}`}
+                                                                className={`flex items-center pl-12 pr-5 py-3 hover:bg-gray-600 transition-colors ${window.location.pathname.includes(subItem.name) ? 'bg-gray-600' : ''
+                                                                    }`}
+                                                                onClick={() => {
+                                                                    if (isMobileView) {
+                                                                        closeSidebar();
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <span className="mr-3">{subItem.icon}</span>
+                                                                <span>{subItem.label}</span>
+                                                            </Link>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </>
+                                    ) : (
+                                        // Regular navigation items (no accordion)
+                                        <Link
+                                            to={`/gomez/dashboard-admin/${item.name}`}
+                                            className={`flex items-center px-5 py-4 hover:bg-gray-700 transition-colors ${isSidebarOpen ? 'justify-start' : 'justify-center'
+                                                }`}
+                                            onClick={() => {
+                                                if (isMobileView) {
+                                                    closeSidebar();
+                                                }
+                                            }}
+                                        >
+                                            <span className={isSidebarOpen ? 'mr-3' : ''}>{item.icon}</span>
+                                            {isSidebarOpen && <span>{item.label}</span>}
+                                        </Link>
+                                    )}
                                 </li>
                             ))}
                         </ul>
@@ -299,7 +367,7 @@ const AdminDashboard = () => {
                                 >
                                     <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700">
                                         {userData && userData.profileImage ? (
-                                            <img src={`http://localhost/funeraria/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-8 h-8 object-cover" />
+                                            <img src={`${n}/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-8 h-8 object-cover" />
                                         ) : (
                                             <User size={18} />
                                         )}
@@ -416,7 +484,7 @@ const AdminDashboard = () => {
                                     <div className="flex flex-col items-center mb-6">
                                         <div className="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 mb-4">
                                             {userData && userData.profileImage ? (
-                                                <img src={`http://localhost/funeraria/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-24 h-24 object-cover" />
+                                                <img src={`${n}/api/components/${userData.profileImage}`} alt="Profile" className="rounded-full w-24 h-24 object-cover" />
                                             ) : (
                                                 <User size={48} />
                                             )}
@@ -520,7 +588,7 @@ const AdminDashboard = () => {
                                                         <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
                                                             {message.sender_image_path ? (
                                                                 <img
-                                                                    src={`http://localhost/funeraria/api/components/${message.sender_image_path}`}
+                                                                    src={`${n}/api/components/${message.sender_image_path}`}
                                                                     alt="Profile"
                                                                     className="rounded-full w-10 h-10 object-cover"
                                                                 />
@@ -591,7 +659,7 @@ const AdminDashboard = () => {
                                     <div className="bg-white rounded-lg shadow-sm p-5">
                                         <h3 className="text-xl font-semibold mb-6 flex items-center text-gray-800">
                                             <Clock size={20} className="mr-2 text-indigo-600" />
-                                            Upcoming Orders
+                                            Pending Delievery
                                         </h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {dashboardStats.upcoming_orders && dashboardStats.upcoming_orders.length > 0 ? (

@@ -17,7 +17,7 @@ export const useMenuItems = () => {
                 console.error('Error fetching data:', err);
                 setError(err.message);
                 setLoading(false);
-            }
+            } 
         };
 
         fetchItems();

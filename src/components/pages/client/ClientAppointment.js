@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Calendar, ChevronLeft, ChevronRight, List } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, List, AlertTriangle, Info, CheckCircle } from 'lucide-react';
 import { useAuth, useUserData, useAppointments, useNotification } from '../../hooks/client/useClientProfile';
 import { EmailContext } from '../../utils/EmailContext';
+
 const ClientAppointments = () => {
   const { email } = useContext(EmailContext);
-  
+
   const { isLoggedIn, authError } = useAuth();
   const { userData, loading, error } = useUserData(email);
   const {
@@ -27,6 +28,11 @@ const ClientAppointments = () => {
   const [viewMode, setViewMode] = useState('calendar');
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  // New state for custom modals
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [appointmentToAction, setAppointmentToAction] = useState(null);
+
   useEffect(() => {
     if (userData?.id) {
       loadAppointments();
@@ -40,7 +46,7 @@ const ClientAppointments = () => {
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
-    
+
     return { daysInMonth, startingDayOfWeek, year, month };
   };
 
@@ -48,8 +54,8 @@ const ClientAppointments = () => {
     return appointments.filter(apt => {
       const aptDate = new Date(apt.appointment_date);
       return aptDate.getFullYear() === date.getFullYear() &&
-             aptDate.getMonth() === date.getMonth() &&
-             aptDate.getDate() === date.getDate();
+        aptDate.getMonth() === date.getMonth() &&
+        aptDate.getDate() === date.getDate();
     });
   };
 
@@ -98,36 +104,93 @@ const ClientAppointments = () => {
     }
   };
 
-  const handleCancelAppointmentWithMessage = async (appointmentId) => {
-    if (window.confirm("Are you sure you want to cancel this appointment?")) {
-      try {
-        const result = await handleCancelAppointment(appointmentId);
-        if (result.status === 'success') {
-          showMessage('Appointment cancelled successfully', 'success');
-          loadAppointments();
-        } else {
-          showMessage(result.message || 'Failed to cancel appointment', 'error');
-        }
-      } catch (err) {
-        showMessage('Failed to cancel appointment. Please try again.', 'error');
+  // Open cancel modal
+  const openCancelModal = (appointment) => {
+    setAppointmentToAction(appointment);
+    setIsCancelModalOpen(true);
+  };
+
+  // Open delete modal
+  const openDeleteModal = (appointment) => {
+    setAppointmentToAction(appointment);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Handle cancel appointment with custom modal
+  const handleCancelAppointmentWithMessage = async () => {
+    if (!appointmentToAction) return;
+
+    try {
+      const result = await handleCancelAppointment(appointmentToAction.id);
+      if (result.status === 'success') {
+        showMessage('Appointment cancelled successfully', 'success');
+        loadAppointments();
+      } else {
+        showMessage(result.message || 'Failed to cancel appointment', 'error');
       }
+    } catch (err) {
+      showMessage('Failed to cancel appointment. Please try again.', 'error');
+    } finally {
+      setIsCancelModalOpen(false);
+      setAppointmentToAction(null);
     }
   };
 
-  const handleDeleteAppointmentWithMessage = async (appointmentId) => {
-    if (window.confirm("Are you sure you want to permanently delete this appointment? This action cannot be undone.")) {
-      try {
-        const result = await handleDeleteAppointment(appointmentId);
-        if (result.status === 'success') {
-          showMessage('Appointment deleted successfully', 'success');
-          loadAppointments();
-        } else {
-          showMessage(result.message || 'Failed to delete appointment', 'error');
-        }
-      } catch (err) {
-        showMessage('Failed to delete appointment. Please try again.', 'error');
+  // Handle delete appointment with custom modal
+  const handleDeleteAppointmentWithMessage = async () => {
+    if (!appointmentToAction) return;
+
+    try {
+      const result = await handleDeleteAppointment(appointmentToAction.id);
+      if (result.status === 'success') {
+        showMessage('Appointment deleted successfully', 'success');
+        loadAppointments();
+      } else {
+        showMessage(result.message || 'Failed to delete appointment', 'error');
       }
+    } catch (err) {
+      showMessage('Failed to delete appointment. Please try again.', 'error');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setAppointmentToAction(null);
     }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'accepted':
+        return 'bg-blue-100 text-blue-800';
+      case 'scheduled':
+        return 'bg-green-100 text-green-800';
+      case 'finished':
+        return 'bg-emerald-100 text-emerald-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'pending':
+        return '⏳';
+      case 'accepted':
+        return '✓';
+      case 'scheduled':
+        return '📅';
+      case 'finished':
+        return '✅';
+      case 'cancelled':
+        return '✕';
+      default:
+        return '●';
+    }
+  };
+  const canRescheduleOrCancel = (status) => {
+    return status === 'pending' || status === 'accepted';
   };
 
   if (!isLoggedIn) {
@@ -208,7 +271,7 @@ const ClientAppointments = () => {
 
   return (
     <div className="container mx-auto px-4 py-2">
-      <h1 className='flex justify-center text-4xl p-2 font-bold text-gray-600'>Appointment Calendar</h1>
+      <h1 className='flex justify-center text-3xl p-2 font-bold text-gray-600'>Appointment Calendar</h1>
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="p-6 bg-gray-50">
           {message && (
@@ -243,7 +306,7 @@ const ClientAppointments = () => {
                 List
               </button>
             </div>
-            
+
             <button
               onClick={() => setIsAppointmentModalOpen(true)}
               className="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-500 flex items-center"
@@ -265,11 +328,11 @@ const ClientAppointments = () => {
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
-                  
+
                   <div className="text-center">
                     <h2 className="text-xl font-bold">{monthNames[month]} {year}</h2>
                   </div>
-                  
+
                   <button
                     onClick={() => navigateMonth(1)}
                     className="p-2 hover:bg-gray-700 rounded-lg transition"
@@ -277,7 +340,7 @@ const ClientAppointments = () => {
                     <ChevronRight className="h-5 w-5" />
                   </button>
                 </div>
-                
+
                 <div className="flex justify-center mt-2">
                   <button
                     onClick={goToToday}
@@ -300,13 +363,13 @@ const ClientAppointments = () => {
                 {Array.from({ length: startingDayOfWeek }).map((_, index) => (
                   <div key={`empty-${index}`} className="p-2 border-b border-r border-gray-200 bg-gray-50 min-h-24"></div>
                 ))}
-                
+
                 {Array.from({ length: daysInMonth }).map((_, index) => {
                   const day = index + 1;
                   const date = new Date(year, month, day);
                   const dayAppointments = getAppointmentsForDate(date);
                   const isToday = date.toDateString() === new Date().toDateString();
-                  
+
                   return (
                     <div
                       key={day}
@@ -315,26 +378,23 @@ const ClientAppointments = () => {
                       <div className={`text-sm font-medium mb-1 ${isToday ? 'text-blue-600 font-bold' : 'text-gray-700'}`}>
                         {day}
                       </div>
-                      
+
                       <div className="space-y-1">
                         {dayAppointments.map(apt => (
                           <div
                             key={apt.id}
                             onClick={() => {
                               setSelectedAppointment(apt);
-                              if (apt.status === 'scheduled') {
+                              if (canRescheduleOrCancel(apt.status)) {
                                 setIsRescheduleModalOpen(true);
                               }
                             }}
-                            className={`text-xs p-1 rounded cursor-pointer ${
-                              apt.status === 'scheduled' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' :
-                              apt.status === 'finished' ? 'bg-green-100 text-green-800' :
-                              apt.status === 'unfinished' ? 'bg-yellow-100 text-yellow-800' :
-                              apt.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                              'bg-gray-100 text-gray-800'
-                            }`}
+                            className={`text-xs p-1 rounded ${canRescheduleOrCancel(apt.status) ? 'cursor-pointer' : 'cursor-default'} ${getStatusColor(apt.status)} ${canRescheduleOrCancel(apt.status) ? 'hover:opacity-80' : ''}`}
                           >
-                            <div className="font-medium truncate">{apt.appointment_time}</div>
+                            <div className="font-medium truncate flex items-center gap-1">
+                              <span>{getStatusIcon(apt.status)}</span>
+                              {apt.appointment_time}
+                            </div>
                             <div className="truncate">{apt.purpose}</div>
                           </div>
                         ))}
@@ -347,7 +407,7 @@ const ClientAppointments = () => {
           ) : (
             <div>
               <h2 className="text-xl font-semibold mb-4">All Appointments</h2>
-              
+
               {appointments.length === 0 ? (
                 <div className="border border-gray-200 rounded-lg p-6 bg-white">
                   <div className="text-center">
@@ -366,18 +426,25 @@ const ClientAppointments = () => {
                           <p className="text-sm text-gray-600 mt-1">
                             {new Date(appointment.appointment_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at {appointment.appointment_time}
                           </p>
-                          <span className={`inline-block mt-2 px-3 py-1 text-xs font-medium rounded-full ${
-                            appointment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                            appointment.status === 'finished' ? 'bg-green-100 text-green-800' :
-                            appointment.status === 'unfinished' ? 'bg-yellow-100 text-yellow-800' :
-                            appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
+                          <span className={`inline-flex items-center gap-1 mt-2 px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(appointment.status)}`}>
+                            <span>{getStatusIcon(appointment.status)}</span>
                             {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                           </span>
+                          {appointment.status === 'accepted' && (
+                            <p className="text-xs text-blue-600 mt-2 flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              Your appointment has been confirmed by the admin
+                            </p>
+                          )}
+                          {appointment.status === 'pending' && (
+                            <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+                              <Info className="h-3 w-3" />
+                              <span>Your appointment is pending admin approval</span>
+                            </p>
+                          )}
                         </div>
                         <div className="flex space-x-2 ml-4">
-                          {appointment.status === 'scheduled' && (
+                          {canRescheduleOrCancel(appointment.status) && (
                             <>
                               <button
                                 onClick={() => {
@@ -389,7 +456,7 @@ const ClientAppointments = () => {
                                 Reschedule
                               </button>
                               <button
-                                onClick={() => handleCancelAppointmentWithMessage(appointment.id)}
+                                onClick={() => openCancelModal(appointment)}
                                 className="px-3 py-1 text-sm font-medium text-yellow-600 hover:bg-yellow-50 rounded border border-yellow-600 transition"
                               >
                                 Cancel
@@ -397,7 +464,7 @@ const ClientAppointments = () => {
                             </>
                           )}
                           <button
-                            onClick={() => handleDeleteAppointmentWithMessage(appointment.id)}
+                            onClick={() => openDeleteModal(appointment)}
                             className="px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 rounded border border-red-600 transition"
                           >
                             Delete
@@ -411,6 +478,7 @@ const ClientAppointments = () => {
             </div>
           )}
 
+          {/* Schedule Appointment Modal */}
           {isAppointmentModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
@@ -501,15 +569,22 @@ const ClientAppointments = () => {
                     </svg>
                   </button>
                 </div>
-                
-                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600">Current appointment:</p>
-                  <p className="font-medium">{selectedAppointment.purpose}</p>
-                  <p className="text-sm text-gray-600">
-                    {new Date(selectedAppointment.appointment_date).toLocaleDateString()} at {selectedAppointment.appointment_time}
+
+                {/* Current appointment details */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm font-medium text-gray-700 mb-1">Current Appointment:</p>
+                  <p className="font-medium text-gray-900">{selectedAppointment.purpose}</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {new Date(selectedAppointment.appointment_date).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })} at {selectedAppointment.appointment_time}
                   </p>
                 </div>
-                
+
+                {/* New date and time inputs */}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">New Date</label>
@@ -533,6 +608,15 @@ const ClientAppointments = () => {
                   </div>
                 </div>
 
+                {/* Info message */}
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-xs text-blue-600 flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    <span>Rescheduled appointments will need admin approval</span>
+                  </p>
+                </div>
+
+                {/* Action buttons */}
                 <div className="mt-6 flex justify-end space-x-3">
                   <button
                     onClick={() => {
@@ -546,9 +630,117 @@ const ClientAppointments = () => {
                   </button>
                   <button
                     onClick={handleRescheduleSubmit}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                    disabled={!rescheduleData.date || !rescheduleData.time}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                   >
                     Reschedule
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Cancel Appointment Modal */}
+          {isCancelModalOpen && appointmentToAction && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-yellow-100">
+                  <AlertTriangle className="h-6 w-6 text-yellow-600" />
+                </div>
+
+                <div className="text-center mb-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Cancel Appointment</h3>
+                  <p className="text-gray-600 mb-4">
+                    Are you sure you want to cancel this appointment? This action can be undone by rescheduling.
+                  </p>
+
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-left">
+                    <p className="font-medium text-gray-900">{appointmentToAction.purpose}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {new Date(appointmentToAction.appointment_date).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })} at {appointmentToAction.appointment_time}
+                    </p>
+                    {appointmentToAction.status === 'accepted' && (
+                      <div className="mt-2 flex items-center gap-1 text-xs text-blue-600">
+                        <Info className="h-3 w-3" />
+                        <span>This appointment was accepted by the admin</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => {
+                      setIsCancelModalOpen(false);
+                      setAppointmentToAction(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                  >
+                    Keep Appointment
+                  </button>
+                  <button
+                    onClick={handleCancelAppointmentWithMessage}
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg text-sm font-medium hover:bg-yellow-700 transition flex items-center"
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-1" />
+                    Cancel Appointment
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Appointment Modal */}
+          {isDeleteModalOpen && appointmentToAction && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 rounded-full bg-red-100">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+
+                <div className="text-center mb-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Appointment</h3>
+                  <p className="text-gray-600 mb-4">
+                    Are you sure you want to permanently delete this appointment? This action cannot be undone.
+                  </p>
+
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-left">
+                    <p className="font-medium text-gray-900">{appointmentToAction.purpose}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {new Date(appointmentToAction.appointment_date).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })} at {appointmentToAction.appointment_time}
+                    </p>
+                    <p className="text-xs text-red-600 mt-2 font-medium">
+                      ⚠️ This action is permanent and cannot be reversed
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => {
+                      setIsDeleteModalOpen(false);
+                      setAppointmentToAction(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+                  >
+                    Keep Appointment
+                  </button>
+                  <button
+                    onClick={handleDeleteAppointmentWithMessage}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition flex items-center"
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-1" />
+                    Delete Permanently
                   </button>
                 </div>
               </div>

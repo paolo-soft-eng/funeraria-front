@@ -4,13 +4,14 @@ import axios from 'axios';
 export const useRecentActivities = (email, isValidatingAdmin) => {
     const [recentActivities, setRecentActivities] = useState([]);
     const [activitiesLoading, setActivitiesLoading] = useState(false);
+    const n = process.env.REACT_APP_API_URL;
 
     const fetchRecentActivities = async () => {
         if (!isValidatingAdmin && email) {
             try {
                 setActivitiesLoading(true);
                 const response = await axios.get(
-                    'http://localhost/funeraria/api/components/fetchRecentActivities.php?limit=7'
+                    `${n}/api/components/fetchRecentActivities.php?limit=7`
                 );
 
                 if (response.data.success) {
