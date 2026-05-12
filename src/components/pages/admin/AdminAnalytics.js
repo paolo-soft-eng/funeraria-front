@@ -500,11 +500,21 @@ const AdminAnalytics = () => {
               </div>
             </div>
 
-            <!-- Prepared By -->
-            <div class="signature">
-              <p style="margin: 0 0 10px 0; font-weight: bold; color: #000;">Prepared by:</p>
-              <div class="signature-line"></div>
-              <p style="margin: 0 60px; font-size: 12px; color: black; font-weight: bold;">Administrator Signature</p>
+           <!-- Signatures -->
+            <div>
+              <!-- Prepared By (Left) -->
+              <div class="signature">
+                <p style="margin: 0 0 10px 0; font-weight: bold; color: #000;">Prepared by:</p>
+                <div class="signature-line"></div>
+                <p style="margin-left: 80px; font-size: 12px; color: black; font-weight: bold;">Administrator</p>
+              </div>
+              
+              <!-- Signed By Manager (Bottom Right) -->
+              <div class="signature" style="margin-left: auto; margin-top: 30px; width: 250px;">
+                <p style="margin: 0 0 10px 0; font-weight: bold; color: #000;">Signed by:</p>
+                <div class="signature-line"></div>
+                <p style="font-size: 12px; color: black; font-weight: bold; margin-left: 100px;">Manager</p>
+              </div>
             </div>
           </div>
         </div>

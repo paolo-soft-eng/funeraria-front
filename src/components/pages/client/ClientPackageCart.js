@@ -544,7 +544,9 @@ const ClientPackageCart = () => {
 
             {/* H1 Title */}
             <div className="text-center p-4">
-                <h1 className="text-3xl font-extrabold text-gray-800">Full Package Order </h1>
+                <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl sm:tracking-tight lg:text-5xl text-center mb-6">
+                    Full Package Order
+                </h1>
             </div>
 
             <div className="container mx-auto px-4 md:p-4 flex-grow">

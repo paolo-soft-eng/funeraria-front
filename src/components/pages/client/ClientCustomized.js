@@ -110,6 +110,12 @@ const fetchUserDetails = async () => {
     setLoadingUserData(false);
   }
 };
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-PH', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
 
   // Handle order button click
   const onBuyClick = (itemId) => {
@@ -290,7 +296,7 @@ const fetchUserDetails = async () => {
       <div className="p-6">
         <h2 className="text-xl font-semibold mb-3 text-gray-800">{item.name}</h2>
         <div className="flex items-center justify-between mb-4">
-          <p className="text-gray-900 font-bold text-xl">₱{parseFloat(item.price)}</p>
+          <p className="text-gray-900 font-bold text-xl">₱{formatCurrency(item.price)}</p>
           <p className={`text-sm ${parseInt(item.stock) < 5 ? 'text-red-600' : 'text-gray-500'}`}>
             Stock: {item.stock}
           </p>

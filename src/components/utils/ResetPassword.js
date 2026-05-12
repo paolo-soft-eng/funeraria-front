@@ -41,7 +41,7 @@ const ResetPassword = () => {
         setTokenValid(false);
         const errorMsg = error.response?.data?.message || 'Unable to validate reset token';
         setTokenError(errorMsg);
-        
+
         // Check for specific error reasons
         if (error.response?.data?.reason === 'already_used') {
           setTokenError('This reset link has already been used. Please request a new password reset.');
@@ -101,7 +101,7 @@ const ResetPassword = () => {
     } catch (error) {
       const errorMsg = error.response?.data?.message || 'An error occurred. Please try again.';
       setError(errorMsg);
-      
+
       // If token was already used, disable the form
       if (errorMsg.includes('already been used') || errorMsg.includes('already used')) {
         setTokenValid(false);

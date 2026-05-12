@@ -647,6 +647,23 @@ const SuperAdmin = () => {
                           />
                           {formErrors.password && <p className="text-rose-500 text-xs mt-2 flex items-center"><XCircle size={12} className="mr-1" /> {formErrors.password}</p>}
                         </div>
+                        <div>
+                          <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="confirmPassword">
+                            Confirm Password *
+                          </label>
+                          <input
+                            type="password"
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            value={newAdmin.confirmPassword}
+                            onChange={handleInputChange}
+                            className={`w-full py-3 px-4 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
+                              formErrors.confirmPassword ? 'border-rose-500 bg-rose-50' : 'border-gray-300 bg-gray-50'
+                            }`}
+                            placeholder="Confirm password"
+                          />
+                          {formErrors.confirmPassword && <p className="text-rose-500 text-xs mt-2 flex items-center"><XCircle size={12} className="mr-1" /> {formErrors.confirmPassword}</p>}
+                        </div>
                       </div>
 
                       <div className="space-y-4">

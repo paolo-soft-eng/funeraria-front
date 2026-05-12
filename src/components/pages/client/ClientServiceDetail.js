@@ -4,8 +4,6 @@ import { EmailContext } from '../../utils/EmailContext';
 import { useServiceItems } from '../../hooks/client/useServiceItems';
 import { useOrder } from '../../hooks/client/useOrder';
 
-import { formatDateTime } from '../../utils/formatTime'
-
 const ServiceDetail = ({ 
   service, 
   onClose, 
@@ -23,6 +21,12 @@ const ServiceDetail = ({
   const [validationErrors, setValidationErrors] = useState({});
   const [formTouched, setFormTouched] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  
+  // NEW: Date range state
+  const [chapelStartDate, setChapelStartDate] = useState('');
+  const [chapelEndDate, setChapelEndDate] = useState('');
+  const [durationDays, setDurationDays] = useState(5);
+  
   const { email } = useContext(EmailContext);
 
   const { chapels, loadingItems, refetchItems } = useServiceItems(service.id, showNotification);
@@ -36,18 +40,49 @@ const ServiceDetail = ({
     quantity: 1
   });
 
+  // Initialize default dates (start: tomorrow, end: 5 days from tomorrow)
+  useEffect(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0); // Default start time 9 AM
+    
+    const defaultEndDate = new Date(tomorrow);
+    defaultEndDate.setDate(defaultEndDate.getDate() + 5);
+    
+    setChapelStartDate(formatDateTimeLocal(tomorrow));
+    setChapelEndDate(formatDateTimeLocal(defaultEndDate));
+  }, []);
+
+  // Calculate duration whenever dates change
+  useEffect(() => {
+    if (chapelStartDate && chapelEndDate) {
+      const start = new Date(chapelStartDate);
+      const end = new Date(chapelEndDate);
+      const diffTime = Math.abs(end - start);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setDurationDays(diffDays);
+    }
+  }, [chapelStartDate, chapelEndDate]);
+
   useEffect(() => {
     setShowOrderForm(openDirectlyToForm);
     if (openDirectlyToForm && isLoggedIn) {
       fetchUserDetails();
     }
-    // Set pre-selected chapels if provided
     if (preSelectedChapels && preSelectedChapels.length > 0) {
       setSelectedChapels(preSelectedChapels);
     }
-    // Refetch chapel data when modal opens to get latest occupation status
     refetchItems();
   }, [openDirectlyToForm, isLoggedIn, preSelectedChapels]);
+
+  const formatDateTimeLocal = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
 
   const validationRules = {
     customer_name: {
@@ -116,6 +151,29 @@ const ServiceDetail = ({
     return '';
   };
 
+  const validateDates = () => {
+    const errors = {};
+    const now = new Date();
+    const start = new Date(chapelStartDate);
+    const end = new Date(chapelEndDate);
+
+    if (!chapelStartDate) {
+      errors.chapelStartDate = 'Start date is required';
+    } else if (start < now) {
+      errors.chapelStartDate = 'Start date cannot be in the past';
+    }
+
+    if (!chapelEndDate) {
+      errors.chapelEndDate = 'End date is required';
+    } else if (end <= start) {
+      errors.chapelEndDate = 'End date must be after start date';
+    } else if (durationDays > 30) {
+      errors.chapelEndDate = 'Chapel occupancy cannot exceed 30 days';
+    }
+
+    return errors;
+  };
+
   const validateForm = (data = formData) => {
     const errors = {};
 
@@ -125,6 +183,10 @@ const ServiceDetail = ({
         errors[field] = error;
       }
     });
+
+    // Add date validation
+    const dateErrors = validateDates();
+    Object.assign(errors, dateErrors);
 
     return errors;
   };
@@ -170,16 +232,14 @@ const ServiceDetail = ({
       const errors = validateForm();
       setValidationErrors(errors);
     }
-  }, [formData, selectedChapels, quantity, formTouched]);
+  }, [formData, selectedChapels, quantity, chapelStartDate, chapelEndDate, formTouched]);
 
   const handleChapelSelect = (chapel) => {
-    // Check if service is out of stock
     if (isOutOfStock) {
       showNotification?.(`This service is currently out of stock. Chapel selection is not available.`, 'error');
       return;
     }
 
-    // Check if chapel is available based on is_occupied flag
     if (chapel.is_occupied === '1' || chapel.is_occupied === 1 || chapel.is_occupied === true) {
       showNotification?.(`This chapel is currently occupied. Please select another chapel.`, 'warning');
       return;
@@ -235,6 +295,33 @@ const ServiceDetail = ({
     }));
   };
 
+  const handleDateChange = (field, value) => {
+    setFormTouched(true);
+    if (field === 'start') {
+      setChapelStartDate(value);
+      
+      // Auto-adjust end date to maintain 5-day default if end is not set or is before new start
+      const newStart = new Date(value);
+      const currentEnd = new Date(chapelEndDate);
+      
+      if (!chapelEndDate || currentEnd <= newStart) {
+        const newEnd = new Date(newStart);
+        newEnd.setDate(newEnd.getDate() + 5);
+        setChapelEndDate(formatDateTimeLocal(newEnd));
+      }
+    } else {
+      setChapelEndDate(value);
+    }
+
+    if (validationErrors.chapelStartDate || validationErrors.chapelEndDate) {
+      setValidationErrors(prev => ({
+        ...prev,
+        chapelStartDate: '',
+        chapelEndDate: ''
+      }));
+    }
+  };
+
   const calculateTotal = () => {
     const basePrice = parseFloat(service.price_range) * quantity;
     return basePrice;
@@ -253,13 +340,14 @@ const ServiceDetail = ({
       return;
     }
 
-    // Extract only chapel IDs
     const chapelIds = selectedChapels.map(chapel => chapel.id);
 
     const orderDataWithQuantity = {
       ...formData,
       quantity: quantity,
-      selected_chapels: chapelIds
+      selected_chapels: chapelIds,
+      chapel_start_date: chapelStartDate,
+      chapel_end_date: chapelEndDate
     };
 
     await submitOrder(orderDataWithQuantity, selectedCaskets, selectedChapels, () => {
@@ -275,6 +363,15 @@ const ServiceDetail = ({
       setSelectedChapels([]);
       setValidationErrors({});
       setFormTouched(false);
+
+      // Reset dates to default
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(9, 0, 0, 0);
+      const defaultEndDate = new Date(tomorrow);
+      defaultEndDate.setDate(defaultEndDate.getDate() + 5);
+      setChapelStartDate(formatDateTimeLocal(tomorrow));
+      setChapelEndDate(formatDateTimeLocal(defaultEndDate));
 
       setTimeout(() => {
         refetchServices();
@@ -355,213 +452,7 @@ const ServiceDetail = ({
                 </div>
               </div>
 
-              {loadingItems ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
-                </div>
-              ) : (
-                <>
-                  {chapels.length > 0 && (
-                    <div className="mb-8">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-semibold text-gray-900">Available Chapels</h3>
-                        {validationErrors.chapels && (
-                          <span className="text-red-600 text-sm font-medium">{validationErrors.chapels}</span>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        {chapels.map((chapel) => {
-                          const isOccupied = chapel.is_occupied;
-                          const isSelected = selectedChapels.some(c => c.id === chapel.id);
-                          const occupiedAt = chapel.occupied_at ? new Date(chapel.occupied_at) : null;
-                          const occupiedUntil = chapel.occupied_until ? new Date(chapel.occupied_until) : null;
-                          const now = new Date();
-
-                          const formatDateTime = (date) => {
-                            if (!date) return 'N/A';
-                            return date.toLocaleDateString('en-PH', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            });
-                          };
-
-                          const getTimeUntilAvailable = () => {
-                            if (!occupiedUntil || !isOccupied) return null;
-
-                            const timeDiff = occupiedUntil.getTime() - now.getTime();
-                            const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-                            const hoursDiff = Math.ceil(timeDiff / (1000 * 60 * 60));
-
-                            if (daysDiff > 1) {
-                              return `${daysDiff} days`;
-                            } else if (daysDiff === 1) {
-                              return '1 day';
-                            } else if (hoursDiff > 1) {
-                              return `${hoursDiff} hours`;
-                            } else if (hoursDiff === 1) {
-                              return '1 hour';
-                            } else {
-                              return 'Less than an hour';
-                            }
-                          };
-
-                          const isAvailableNow = () => {
-                            if (!isOccupied) return true;
-                            if (!occupiedUntil) return true;
-                            return now >= occupiedUntil;
-                          };
-
-                          const getStatusInfo = () => {
-                            if (isOutOfStock) {
-                              return {
-                                text: 'Service Out of Stock',
-                                color: 'bg-red-100 text-red-800',
-                                borderColor: 'border-red-300'
-                              };
-                            }
-                            
-                            if (!isOccupied || isAvailableNow()) {
-                              return {
-                                text: 'Available Now',
-                                color: 'bg-green-100 text-green-800',
-                                borderColor: 'border-green-300'
-                              };
-                            }
-
-                            const timeUntilAvailable = getTimeUntilAvailable();
-                            return {
-                              text: `Available in ${timeUntilAvailable}`,
-                              color: 'bg-yellow-100 text-yellow-800',
-                              borderColor: 'border-yellow-300'
-                            };
-                          };
-
-                          const statusInfo = getStatusInfo();
-                          const isDisabled = isOutOfStock || (isOccupied && !isAvailableNow());
-
-                          return (
-                            <div
-                              key={chapel.id}
-                              className={`bg-white rounded-xl shadow-sm overflow-hidden transition-all duration-200 relative ${
-                                isDisabled
-                                  ? 'opacity-70 cursor-not-allowed'
-                                  : isSelected
-                                    ? 'ring-2 ring-gray-900 cursor-pointer'
-                                    : 'hover:shadow-md cursor-pointer'
-                              } ${validationErrors.chapels ? 'border border-red-300' : statusInfo.borderColor} border-2`}
-                              onClick={() => {
-                                if (isOutOfStock) {
-                                  showNotification?.('This service is out of stock. Chapel selection is not available.', 'error');
-                                } else if (isOccupied && !isAvailableNow()) {
-                                  showNotification?.('This chapel is currently occupied and cannot be selected', 'warning');
-                                } else {
-                                  handleChapelSelect(chapel);
-                                }
-                              }}
-                            >
-                              {isOutOfStock && (
-                                <div className="absolute top-2 right-2 bg-red-600 text-white px-3 py-1 rounded-full text-xs font-semibold z-10 shadow-lg flex items-center">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                  OUT OF STOCK
-                                </div>
-                              )}
-
-                              {!isOutOfStock && isOccupied && !isAvailableNow() && (
-                                <div className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold z-10 shadow-lg flex items-center">
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                  </svg>
-                                  OCCUPIED
-                                </div>
-                              )}
-
-                              {chapel.image && (
-                                <div className="h-48 w-full relative">
-                                  <img
-                                    src={`${API_BASE_URL}/components/uploads/chapels/${chapel.image}`}
-                                    alt={chapel.name}
-                                    className={`w-full h-full object-cover ${isDisabled ? 'grayscale' : ''}`}
-                                    onError={(e) => {
-                                      e.target.onerror = null;
-                                      e.target.src = `${API_BASE_URL}/components/uploads/default.jpg`;
-                                    }}
-                                  />
-                                  {isDisabled && (
-                                    <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center">
-                                      <div className="text-center text-white p-4">
-                                        <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          {isOutOfStock ? (
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                          ) : (
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                          )}
-                                        </svg>
-                                        <p className="font-bold text-lg">
-                                          {isOutOfStock ? 'Service Out of Stock' : 'Currently Occupied'}
-                                        </p>
-                                        {!isOutOfStock && (
-                                          <>
-                                            <p className="text-sm mt-1">Available on:</p>
-                                            <p className="font-semibold">{formatDateTime(occupiedUntil)}</p>
-                                          </>
-                                        )}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              <div className="p-4">
-                                <div className="flex justify-between items-start mb-2">
-                                  <h4 className="font-semibold text-lg text-gray-900">{chapel.name}</h4>
-                                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${statusInfo.color}`}>
-                                    {statusInfo.text}
-                                  </span>
-                                </div>
-
-                                {!isOutOfStock && isOccupied && !isAvailableNow() ? (
-                                  <div className="space-y-2 bg-gray-50 p-3 rounded-lg">
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-sm text-gray-600">Occupied since:</span>
-                                      <span className="text-sm font-medium">{formatDateTime(occupiedAt)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                      <span className="text-sm text-gray-600">Available from:</span>
-                                      <span className="text-sm font-medium text-green-600">{formatDateTime(occupiedUntil)}</span>
-                                    </div>
-                                    <div className="text-center mt-2">
-                                      <p className="text-xs text-gray-500">
-                                        {getTimeUntilAvailable()} until available
-                                      </p>
-                                    </div>
-                                  </div>
-                                ) : isOutOfStock ? (
-                                  <div className="bg-red-50 p-3 rounded-lg">
-                                    <p className="text-sm text-red-700 text-center font-medium">
-                                      Chapel unavailable - Service out of stock
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div>
-                                  
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              <div className="border-t border-gray-200 pt-6 mt-6">
+              {/* <div className="border-t border-gray-200 pt-6 mt-6">
                 <div className="flex justify-between items-center mb-6">
                   <p className="text-2xl font-bold text-gray-900">₱{formatCurrency(parseFloat(service.price_range))}</p>
                   {!isLoggedIn ? (
@@ -583,7 +474,7 @@ const ServiceDetail = ({
                     </button>
                   )}
                 </div>
-              </div>
+              </div> */}
             </>
           ) : (
             <div className="max-w-2xl mx-auto">
@@ -600,6 +491,60 @@ const ServiceDetail = ({
 
               <div className="bg-gray-50 rounded-lg p-6 mb-6">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Order Details</h4>
+
+                {/* Chapel Occupancy Date Range */}
+                <div className="mb-6 pb-6 border-b border-gray-200">
+                  <h5 className="text-sm font-semibold text-gray-700 mb-3">Chapel Occupancy Period</h5>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Start Date & Time *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={chapelStartDate}
+                        onChange={(e) => handleDateChange('start', e.target.value)}
+                        min={formatDateTimeLocal(new Date())}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent ${
+                          validationErrors.chapelStartDate ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      {validationErrors.chapelStartDate && (
+                        <p className="mt-1 text-sm text-red-600">{validationErrors.chapelStartDate}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        End Date & Time *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={chapelEndDate}
+                        onChange={(e) => handleDateChange('end', e.target.value)}
+                        min={chapelStartDate}
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent ${
+                          validationErrors.chapelEndDate ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      {validationErrors.chapelEndDate && (
+                        <p className="mt-1 text-sm text-red-600">{validationErrors.chapelEndDate}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-center">
+                      <svg className="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm text-blue-700 font-medium">
+                        Duration: {`${durationDays+1} days`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
                 <div className="mb-4 pb-4 border-b border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -744,6 +689,7 @@ const ServiceDetail = ({
                     <p className="mt-1 text-sm text-red-600">{validationErrors.customer_phone}</p>
                   )}
                 </div>
+
 
                 {validationErrors.chapels && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">

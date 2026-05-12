@@ -398,7 +398,7 @@ const ClientCart = () => {
 
             <div className="container mx-auto p-4 flex-grow">
                 <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl sm:tracking-tight lg:text-5xl text-center mb-6">
-                    Customized Order
+                    Customized Package Order
                 </h1>
 
                 {/* ... (Error/Success Messages - unchanged) ... */}
@@ -427,8 +427,6 @@ const ClientCart = () => {
                         <p>{successMessage}</p>
                     </div>
                 )}
-
-                <h2 className="text-2xl font-bold mb-4">Customized Package</h2>
 
                 {cartItems?.length === 0 ? (
                     <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4">
